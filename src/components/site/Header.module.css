@@ -29,15 +29,6 @@
   transform: translateY(-100%);
 }
 
-.menuOpen {
-  color: var(--cream);
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  z-index: 160;
-}
-
 .inner {
   height: 100%;
   max-width: var(--max);
@@ -117,12 +108,6 @@
   gap: 32px;
   transition: opacity 0.4s;
 }
-.menuOpen .quick,
-.menuOpen .right {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .quickLink {
   position: relative;
   padding: 12px 0;
@@ -160,8 +145,7 @@
   color: var(--brass);
   transition: transform 1.2s var(--ease-out);
 }
-.clear .logoMark,
-.menuOpen .logoMark {
+.clear .logoMark {
   color: var(--brass-light);
 }
 @media (hover: hover) {
