@@ -1,0 +1,87 @@
+/* Not drawn in the design; built from its tokens (cream panel, serif links,
+   forest buttons) so it reads as part of the same system. */
+.panel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 28px;
+  overflow-y: auto;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--bronze);
+  font-weight: 600;
+}
+
+.close {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+}
+
+.link {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--forest);
+  text-decoration: none;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.actions {
+  margin-top: auto;
+  padding-top: 32px;
+  display: grid;
+  gap: 10px;
+}
+
+.primary,
+.primary:hover,
+.secondary {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.primary,
+.primary:hover {
+  background: var(--forest);
+  color: var(--cream);
+}
+
+.secondary {
+  border: 1px solid var(--forest);
+}

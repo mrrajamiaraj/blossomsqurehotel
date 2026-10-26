@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mobile booking — guest details</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Jost:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0F3B2E}a:hover{color:#0A2A21}
+.ph{background-color:#1E4A3C;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 1px,transparent 1px 14px)}
+.field{border:1px solid #CFC4AE;background:#FFFFFF;font:inherit;font-size:16px;color:#1B2420;padding:0 14px;min-height:52px;box-sizing:border-box;width:100%;outline:none}
+.lbl{font-size:11px;letter-spacing:.16em;color:#7A5B2E;font-weight:600}
+</style>
+</helmet>
+<div style="width: 390px; height: 1600px; position: relative; overflow: hidden; font-family: 'Jost', 'Avenir Next', 'Segoe UI', sans-serif; color: #1B2420; background: #FBF8F2; font-size: 16px; line-height: 1.55">
+
+<header style="padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #E2D9C8">
+<a href="MobileRoom.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0F3B2E"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg></a>
+<div style="display: flex; flex-direction: column; line-height: 1.2"><span style="font-size: 12px; color: #56605A">Step 2 of 3</span><span style="font-weight: 500">Guest details</span></div>
+</header>
+<div aria-hidden="true" style="height: 3px; background: #E2D9C8"><div style="width: 66%; height: 3px; background: #0F3B2E"></div></div>
+
+<details style="margin: 16px; background: #FFFFFF; border: 1px solid #E2D9C8">
+<summary style="list-style: none; display: flex; gap: 14px; align-items: center; padding: 12px; cursor: pointer; min-height: 44px">
+<span class="ph" style="width: 72px; height: 72px; flex-shrink: 0"></span>
+<span style="flex: 1; display: flex; flex-direction: column; line-height: 1.3"><span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 22px; color: #0F3B2E">King Suite</span><span style="font-size: 13px; color: #56605A">12 – 15 Dec · 3 nights · 2 adults</span><span style="font-size: 15px; font-weight: 600; margin-top: 2px">৳37,500 <span style="font-weight: 400; color: #56605A; font-size: 13px">+ VAT</span></span></span>
+<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#56605A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+</summary>
+</details>
+
+<form style="padding: 8px 16px 0; display: flex; flex-direction: column; gap: 18px">
+<h1 style="margin: 0 0 4px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 36px; line-height: 1.05; color: #0F3B2E">Who's staying?</h1>
+<label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">FULL NAME *</span><input class="field" type="text" value="Rahim Uddin" autocomplete="name"></label>
+<label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">MOBILE *</span><input class="field" type="tel" value="+880 17XX-XXXXXX" autocomplete="tel"></label>
+<label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">EMAIL *</span><input class="field" type="email" value="rahim@example.com" autocomplete="email"></label>
+<label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">EXPECTED ARRIVAL</span><select class="field"><option>2 PM – 4 PM</option><option>4 PM – 6 PM</option><option>After 6 PM</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">SPECIAL REQUESTS</span><textarea class="field" rows="3" style="padding: 12px 14px; min-height: 96px">Late arrival around 9 PM.</textarea></label>
+<label style="display: flex; gap: 12px; align-items: center; font-size: 15px; min-height: 44px"><input type="checkbox" style="width: 22px; height: 22px; accent-color: #0F3B2E">Need airport pickup (extra charge)</label>
+
+<fieldset style="border: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 10px">
+<legend style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; color: #0F3B2E; margin-bottom: 10px; padding: 0">Payment</legend>
+<label style="display: flex; gap: 14px; align-items: center; padding: 16px; background: #FFFFFF; border: 2px solid #0F3B2E; min-height: 44px"><input type="radio" name="pay" checked style="width: 20px; height: 20px; accent-color: #0F3B2E"><span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 500">Pay at the hotel</span><span style="font-size: 13px; color: #56605A">We'll call to confirm</span></span></label>
+<label style="display: flex; gap: 14px; align-items: center; padding: 16px; background: #FFFFFF; border: 2px solid #E2D9C8; min-height: 44px"><input type="radio" name="pay" style="width: 20px; height: 20px; accent-color: #0F3B2E"><span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 500">bKash / Nagad</span><span style="font-size: 13px; color: #56605A">Pay [ADVANCE %] now, confirmed instantly</span></span></label>
+<label style="display: flex; gap: 14px; align-items: center; padding: 16px; background: #FFFFFF; border: 2px solid #E2D9C8; min-height: 44px"><input type="radio" name="pay" style="width: 20px; height: 20px; accent-color: #0F3B2E"><span style="display: flex; flex-direction: column; line-height: 1.3"><span style="font-weight: 500">Card</span><span style="font-size: 13px; color: #56605A">Visa, Mastercard via [GATEWAY]</span></span></label>
+</fieldset>
+<p style="margin: 0; font-size: 13px; color: #56605A">By booking you agree to the cancellation policy and house rules.</p>
+</form>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FBF8F2; border-top: 1px solid #E2D9C8; padding: 12px 16px 22px; box-shadow: 0 -10px 24px -14px rgba(10,42,33,0.3)">
+<button type="button" style="width: 100%; background: #0F3B2E; color: #FBF8F2; border: none; min-height: 54px; font: inherit; font-size: 14px; letter-spacing: 0.14em; font-weight: 500; cursor: pointer">CONFIRM BOOKING</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1600}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

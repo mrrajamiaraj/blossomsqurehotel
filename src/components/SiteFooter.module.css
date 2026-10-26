@@ -1,0 +1,74 @@
+.footer {
+  background: var(--forest-deep);
+  color: var(--mist);
+  font-size: 14px;
+}
+
+.grid {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 72px var(--gutter) 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 40px;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.brandName {
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--cream);
+  line-height: 1;
+}
+
+.brandSub {
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  color: var(--gold);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.col a,
+.col a:hover {
+  color: var(--mist);
+  text-decoration: none;
+}
+
+.heading {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+}
+
+.bottom {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 20px var(--gutter) 28px;
+  border-top: 1px solid rgba(201, 211, 204, 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--mist-dim);
+}
+
+@media (max-width: 860px) {
+  .grid {
+    padding: 56px 20px 32px;
+  }
+  .bottom {
+    padding: 20px 20px 28px;
+  }
+}

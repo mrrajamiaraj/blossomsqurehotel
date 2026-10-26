@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Book your stay — Blossom Square</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Jost:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FBF8F2}
+a{color:#0F3B2E}a:hover{color:#0A2A21}
+.ph{background-color:#1E4A3C;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.045) 0 1px,transparent 1px 16px)}
+.field{border:1px solid #CFC4AE;background:#FFFFFF;font:inherit;font-size:16px;color:#1B2420;padding:0 14px;min-height:50px;box-sizing:border-box;width:100%;outline:none}
+.field:focus{border-color:#0F3B2E;box-shadow:0 0 0 3px rgba(15,59,46,.15)}
+.lbl{font-size:12px;letter-spacing:.16em;color:#7A5B2E;font-weight:600}
+</style>
+</helmet>
+<div style="font-family: 'Jost', 'Avenir Next', 'Segoe UI', sans-serif; color: #1B2420; background: #FBF8F2; font-size: 16px; line-height: 1.6; min-height: 1500px">
+
+<header style="background: #0F3B2E; color: #FBF8F2">
+<div style="max-width: 1200px; margin: 0 auto; padding: 18px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="Main.dc.html" style="text-decoration: none; display: flex; flex-direction: column; line-height: 1; gap: 6px">
+<span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; font-weight: 600; color: #FBF8F2">Blossom Square</span>
+<span style="font-size: 10px; letter-spacing: 0.32em; color: #D2B07A">HOTEL &amp; SUITES · COX'S BAZAR</span>
+</a>
+<div style="display: flex; gap: 24px; align-items: center; font-size: 14px; color: #C9D3CC; flex-wrap: wrap">
+<span style="display: flex; gap: 8px; align-items: center"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="1.5"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Secure booking</span>
+<a href="tel:+8801792450562" style="color: #FBF8F2; text-decoration: none">Help: +880 1792-450562</a>
+</div>
+</div>
+</header>
+
+<nav aria-label="Booking steps" style="border-bottom: 1px solid #E2D9C8; background: #FBF8F2">
+<ol style="max-width: 1200px; margin: 0 auto; padding: 22px 32px; list-style: none; display: flex; flex-wrap: wrap; gap: 12px 40px">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+<li style="display: flex; gap: 12px; align-items: center">
+<span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; {{s.dot}}">{{s.n}}</span>
+<span style="font-size: 15px; {{s.text}}">{{s.label}}</span>
+</li>
+</sc-for>
+</ol>
+</nav>
+
+<sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="done-h" style="max-width: 760px; margin: 0 auto; padding: 88px 32px 120px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 22px">
+<span style="width: 84px; height: 84px; border-radius: 50%; background: #0F3B2E; color: #FBF8F2; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></span>
+<p style="margin: 0; font-size: 13px; letter-spacing: 0.32em; color: #7A5B2E; font-weight: 600">BOOKING RECEIVED · REF BSQ-24817</p>
+<h1 id="done-h" style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 56px; line-height: 1.02; color: #0F3B2E; text-wrap: balance">See you on the 12th, Rahim.</h1>
+<p style="margin: 0; font-size: 18px; color: #3E4843; max-width: 560px">We've sent the details to your email and phone. {{doneNote}}</p>
+<div style="width: 100%; margin-top: 18px; background: #FFFFFF; border: 1px solid #E2D9C8; text-align: left; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr))">
+<div style="padding: 22px 26px; border-right: 1px solid #E2D9C8; display: flex; flex-direction: column; gap: 4px"><span class="lbl">ROOM</span><span style="font-size: 17px">{{sel.name}}</span></div>
+<div style="padding: 22px 26px; border-right: 1px solid #E2D9C8; display: flex; flex-direction: column; gap: 4px"><span class="lbl">DATES</span><span style="font-size: 17px">12 – 15 Dec · 3 nights</span></div>
+<div style="padding: 22px 26px; display: flex; flex-direction: column; gap: 4px"><span class="lbl">TOTAL</span><span style="font-size: 17px">{{sel.total}} + VAT</span></div>
+</div>
+<div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 10px">
+<button type="button" style="background: #0F3B2E; color: #FBF8F2; border: none; padding: 0 26px; min-height: 52px; font: inherit; font-size: 14px; letter-spacing: 0.1em; font-weight: 500; cursor: pointer">ADD TO CALENDAR</button>
+<a href="Main.dc.html" style="border: 1px solid #0F3B2E; color: #0F3B2E; text-decoration: none; padding: 0 26px; min-height: 52px; font-size: 14px; letter-spacing: 0.1em; font-weight: 500; display: flex; align-items: center">BACK TO HOME</a>
+</div>
+<button type="button" onClick="{{restart}}" style="background: none; border: none; color: #56605A; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; min-height: 44px">Restart prototype</button>
+</section>
+</sc-if>
+
+<sc-if value="{{notDone}}" hint-placeholder-val="{{true}}">
+<div style="max-width: 1200px; margin: 0 auto; padding: 48px 32px 112px; display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start">
+
+<main style="flex: 999 1 560px; min-width: 0">
+
+<sc-if value="{{is1}}" hint-placeholder-val="{{true}}">
+<section aria-labelledby="s1-h" style="display: flex; flex-direction: column; gap: 32px">
+<h1 id="s1-h" style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 48px; line-height: 1.05; color: #0F3B2E">Choose your room</h1>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 14px">
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">CHECK-IN</span><input class="field" type="text" value="Fri, 12 Dec 2026" readonly></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">CHECK-OUT</span><input class="field" type="text" value="Mon, 15 Dec 2026" readonly></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">GUESTS</span><select class="field"><option>2 adults</option><option>1 adult</option><option>2 adults, 1 child</option></select></label>
+</div>
+<div role="radiogroup" aria-label="Room" style="display: flex; flex-direction: column; gap: 14px">
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="3">
+<button type="button" role="radio" aria-checked="{{r.checked}}" onClick="{{r.pick}}" style="display: flex; text-align: left; padding: 0; background: #FFFFFF; cursor: pointer; font: inherit; color: inherit; {{r.ring}}">
+<span class="ph" style="width: 180px; flex-shrink: 0; min-height: 140px; display: flex; align-items: flex-end; padding: 10px; box-sizing: border-box"><span style="font-size: 10px; letter-spacing: 0.18em; color: #C9D3CC">{{r.photo}}</span></span>
+<span style="flex: 1; padding: 22px 26px; display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center">
+<span style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px; line-height: 1.1; color: #0F3B2E">{{r.name}}</span>
+<span style="font-size: 14px; color: #56605A">{{r.meta}}</span>
+</span>
+<span style="display: flex; gap: 18px; align-items: center">
+<span style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25"><span style="font-family: 'Cormorant Garamond', Georgia, serif; font-size: 28px">{{r.price}}</span><span style="font-size: 13px; color: #56605A">per night</span></span>
+<span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; {{r.radio}}"></span>
+</span>
+</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: flex-end"><button type="button" onClick="{{next}}" style="background: #0F3B2E; color: #FBF8F2; border: none; padding: 0 34px; min-height: 56px; font: inherit; font-size: 14px; letter-spacing: 0.12em; font-weight: 500; cursor: pointer">CONTINUE TO GUEST DETAILS</button></div>
+</section>
+</sc-if>
+
+<sc-if value="{{is2}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="s2-h" style="display: flex; flex-direction: column; gap: 28px">
+<h1 id="s2-h" style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 48px; line-height: 1.05; color: #0F3B2E">Who's staying?</h1>
+<form style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 20px">
+<label style="display: flex; flex-direction: column; gap: 8px; grid-column: 1 / -1"><span class="lbl">FULL NAME *</span><input class="field" type="text" value="Rahim Uddin"></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">EMAIL *</span><input class="field" type="email" value="rahim@example.com"></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">MOBILE (BD) *</span><input class="field" type="tel" value="+880 17XX-XXXXXX"></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">COUNTRY</span><select class="field"><option>Bangladesh</option><option>India</option><option>Other</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">EXPECTED ARRIVAL</span><select class="field"><option>2 PM – 4 PM</option><option>4 PM – 6 PM</option><option>After 6 PM</option><option>Before 2 PM (early check-in)</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 8px; grid-column: 1 / -1"><span class="lbl">SPECIAL REQUESTS</span><textarea class="field" rows="4" style="padding: 12px 14px; min-height: 110px; resize: vertical">Honeymoon trip, flowers in the room if possible.</textarea></label>
+<label style="grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; font-size: 15px; min-height: 44px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #0F3B2E">Need airport pickup (extra charge, we'll call to arrange)</label>
+</form>
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<button type="button" onClick="{{back}}" style="background: transparent; color: #0F3B2E; border: 1px solid #0F3B2E; padding: 0 26px; min-height: 56px; font: inherit; font-size: 14px; letter-spacing: 0.12em; font-weight: 500; cursor: pointer">BACK</button>
+<button type="button" onClick="{{next}}" style="background: #0F3B2E; color: #FBF8F2; border: none; padding: 0 34px; min-height: 56px; font: inherit; font-size: 14px; letter-spacing: 0.12em; font-weight: 500; cursor: pointer">CONTINUE TO PAYMENT</button>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{is3}}" hint-placeholder-val="{{false}}">
+<section aria-labelledby="s3-h" style="display: flex; flex-direction: column; gap: 28px">
+<h1 id="s3-h" style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 48px; line-height: 1.05; color: #0F3B2E">How would you like to pay?</h1>
+<div role="radiogroup" aria-label="Payment method" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px">
+<sc-for list="{{pays}}" as="p" hint-placeholder-count="4">
+<button type="button" role="radio" aria-checked="{{p.checked}}" onClick="{{p.pick}}" style="background: #FFFFFF; text-align: left; padding: 22px 22px; font: inherit; color: inherit; cursor: pointer; display: flex; gap: 16px; align-items: flex-start; min-height: 110px; {{p.ring}}">
+<span aria-hidden="true" style="width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; box-sizing: border-box; {{p.radio}}"></span>
+<span style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 500">{{p.name}}</span><span style="font-size: 14px; color: #56605A">{{p.note}}</span></span>
+</button>
+</sc-for>
+</div>
+<div style="background: #F3ECDF; padding: 20px 24px; font-size: 15px; color: #3E4843; display: flex; gap: 14px; align-items: flex-start"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F3B2E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M11 12h1v5h1"></path></svg><span>{{payNote}}</span></div>
+<label style="display: flex; gap: 12px; align-items: center; font-size: 15px; min-height: 44px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #0F3B2E">I agree to the hotel's cancellation policy and house rules.</label>
+<div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+<button type="button" onClick="{{back}}" style="background: transparent; color: #0F3B2E; border: 1px solid #0F3B2E; padding: 0 26px; min-height: 56px; font: inherit; font-size: 14px; letter-spacing: 0.12em; font-weight: 500; cursor: pointer">BACK</button>
+<button type="button" onClick="{{next}}" style="background: #0F3B2E; color: #FBF8F2; border: none; padding: 0 34px; min-height: 56px; font: inherit; font-size: 14px; letter-spacing: 0.12em; font-weight: 500; cursor: pointer">{{payCta}}</button>
+</div>
+</section>
+</sc-if>
+</main>
+
+<aside aria-label="Your booking" style="flex: 1 1 340px; background: #FFFFFF; border: 1px solid #E2D9C8; position: sticky; top: 24px">
+<div class="ph" style="height: 170px; display: flex; align-items: flex-end; padding: 12px; box-sizing: border-box"><span style="font-size: 10px; letter-spacing: 0.18em; color: #C9D3CC">PHOTO · {{sel.photo}}</span></div>
+<div style="padding: 26px 28px; display: flex; flex-direction: column; gap: 18px">
+<div><p style="margin: 0 0 4px; font-size: 12px; letter-spacing: 0.2em; color: #7A5B2E; font-weight: 600">YOUR STAY</p><h2 style="margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; font-size: 30px; line-height: 1.1; color: #0F3B2E">{{sel.name}}</h2></div>
+<dl style="margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 15px">
+<div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #56605A">Dates</dt><dd style="margin: 0">12 – 15 Dec 2026</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #56605A">Guests</dt><dd style="margin: 0">2 adults</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #E2D9C8; padding-top: 12px"><dt style="color: #56605A">{{sel.price}} × 3 nights</dt><dd style="margin: 0">{{sel.total}}</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #56605A">Breakfast for 2</dt><dd style="margin: 0; color: #0F3B2E; font-weight: 500">Included</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #56605A">VAT &amp; service</dt><dd style="margin: 0">[৳ AMOUNT]</dd></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #E2D9C8; padding-top: 12px; font-weight: 600; font-size: 18px"><dt>Total</dt><dd style="margin: 0">[৳ TOTAL]</dd></div>
+</dl>
+<p style="margin: 0; font-size: 13px; color: #56605A">Check-in from 2:00 PM · Check-out until 12:00 PM</p>
+</div>
+</aside>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 1, room: 'king', pay: 'hotel' };
+  }
+  renderVals() {
+    const step = this.state.step || 1;
+    const roomId = this.state.room || 'king';
+    const payId = this.state.pay || 'hotel';
+    const roomData = [
+      { id: 'deluxe', name: 'Deluxe Couple', meta: 'Double bed · Sea view · Balcony', price: '৳7,800', total: '৳23,400', photo: 'DSC5550' },
+      { id: 'queen', name: 'Business Queen Suite', meta: 'Queen bed · 2nd floor · Sea view', price: '৳10,500', total: '৳31,500', photo: 'DSC5579' },
+      { id: 'king', name: 'King Suite', meta: 'Double bed · 2nd floor · Largest room', price: '৳12,500', total: '৳37,500', photo: 'DSC5566' }
+    ];
+    const on = 'border: 2px solid #0F3B2E; box-shadow: 0 12px 28px -16px rgba(10,42,33,0.45)';
+    const off = 'border: 2px solid #E2D9C8';
+    const radioOn = 'border: 7px solid #0F3B2E; background: #FFFFFF';
+    const radioOff = 'border: 1.5px solid #9AA39E; background: #FFFFFF';
+    const rooms = roomData.map((r) => ({
+      ...r,
+      checked: r.id === roomId ? 'true' : 'false',
+      ring: r.id === roomId ? on : off,
+      radio: r.id === roomId ? radioOn : radioOff,
+      pick: () => this.setState({ room: r.id })
+    }));
+    const payData = [
+      { id: 'hotel', name: 'Pay at the hotel', note: 'Reserve now, pay at check-in.' },
+      { id: 'bkash', name: 'bKash', note: 'Pay [ADVANCE %] now to confirm instantly.' },
+      { id: 'nagad', name: 'Nagad', note: 'Pay [ADVANCE %] now to confirm instantly.' },
+      { id: 'card', name: 'Visa / Mastercard', note: 'Secure card payment via [GATEWAY].' }
+    ];
+    const pays = payData.map((p) => ({
+      ...p,
+      checked: p.id === payId ? 'true' : 'false',
+      ring: p.id === payId ? on : off,
+      radio: p.id === payId ? radioOn : radioOff,
+      pick: () => this.setState({ pay: p.id })
+    }));
+    const labels = ['Room', 'Guest details', 'Payment', 'Confirmed'];
+    const steps = labels.map((label, i) => {
+      const n = i + 1;
+      const done = n < step;
+      const cur = n === step;
+      return {
+        n: done ? '✓' : String(n),
+        label,
+        dot: done ? 'background: #0F3B2E; color: #FBF8F2' : cur ? 'background: #D2B07A; color: #0A2A21' : 'background: transparent; color: #56605A; border: 1.5px solid #CFC4AE',
+        text: cur ? 'color: #0F3B2E; font-weight: 600' : done ? 'color: #1B2420' : 'color: #56605A'
+      };
+    });
+    const sel = roomData.find((r) => r.id === roomId);
+    const atHotel = payId === 'hotel';
+    return {
+      steps, rooms, pays, sel,
+      is1: step === 1, is2: step === 2, is3: step === 3,
+      isDone: step === 4, notDone: step !== 4,
+      payCta: atHotel ? 'CONFIRM BOOKING' : 'PAY & CONFIRM',
+      payNote: atHotel ? 'Your room is held and our front desk will call you within [X] hours to confirm. No payment is taken now.' : 'You will be taken to a secure payment page. Your booking is confirmed as soon as the advance is paid.',
+      doneNote: atHotel ? 'Our front desk will call to confirm within [X] hours.' : 'Your advance payment is received and the room is confirmed.',
+      next: () => this.setState({ step: Math.min(4, step + 1) }),
+      back: () => this.setState({ step: Math.max(1, step - 1) }),
+      restart: () => this.setState({ step: 1 })
+    };
+  }
+}
+</script>
+</body>
+</html>

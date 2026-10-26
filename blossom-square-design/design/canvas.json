@@ -1,0 +1,24 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-26T20:20:00Z"},
+  "title": "Blossom Square Hotel Website",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 4700, "title": "Home", "expand": "fill"},
+    "Rooms.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 2500, "title": "Rooms & Suites", "expand": "fill"},
+    "RoomDetail.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 2900, "title": "Room detail — King Suite", "expand": "fill"},
+    "Booking.dc.html": {"x": 4560, "y": 0, "w": 1440, "h": 1500, "title": "Booking flow (clickable)", "expand": "fill", "is_interactive": true},
+    "MobileHome.dc.html": {"x": 0, "y": 5100, "w": 390, "h": 2500, "title": "Mobile — Home"},
+    "MobileRoom.dc.html": {"x": 470, "y": 5100, "w": 390, "h": 2100, "title": "Mobile — Room"},
+    "MobileBooking.dc.html": {"x": 940, "y": 5100, "w": 390, "h": 1600, "title": "Mobile — Booking"},
+    "Admin.dc.html": {"x": 0, "y": 8000, "w": 1440, "h": 1400, "title": "Admin — Front desk", "expand": "fill"}
+  },
+  "order": ["Main.dc.html", "Rooms.dc.html", "RoomDetail.dc.html", "Booking.dc.html", "MobileHome.dc.html", "MobileRoom.dc.html", "MobileBooking.dc.html", "Admin.dc.html"],
+  "notes": {
+    "t1": {"x": 0, "y": -300, "text": "Guest website — desktop", "kind": "title1", "maxW": 6000},
+    "t2": {"x": 0, "y": 4820, "text": "Guest website — mobile", "kind": "title1", "maxW": 1330},
+    "t3": {"x": 0, "y": 7720, "text": "Hotel admin", "kind": "title1", "maxW": 1440}
+  },
+  "designSystems": []
+}

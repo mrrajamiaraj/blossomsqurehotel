@@ -1,0 +1,93 @@
+:root {
+  --forest: #0f3b2e;
+  --forest-deep: #0a2a21;
+  --forest-photo: #1e4a3c;
+  --forest-photo-alt: #164a3a;
+  --cream: #fbf8f2;
+  --sand: #f3ecdf;
+  --sand-photo: #e6dcc8;
+  --line: #e2d9c8;
+  --dot: #cfc4ae;
+  --ink: #1b2420;
+  --ink-soft: #3e4843;
+  --muted: #56605a;
+  --gold: #d2b07a;
+  --bronze: #7a5b2e;
+  --mist: #c9d3cc;
+  --mist-light: #dce3de;
+  --mist-dim: #a9b6ae;
+
+  --serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --sans: var(--font-jost), "Jost", "Avenir Next", "Segoe UI", sans-serif;
+
+  --container: 1280px;
+  --gutter: 32px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--forest);
+}
+a:hover {
+  color: var(--forest-deep);
+}
+
+button {
+  font: inherit;
+}
+
+/* Photo placeholders: diagonal hairlines, as in the design. */
+.ph {
+  background-color: var(--forest-photo);
+  background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 16px);
+}
+.ph-l {
+  background-color: var(--sand-photo);
+  background-image: repeating-linear-gradient(135deg, rgba(15, 59, 46, 0.06) 0 1px, transparent 1px 16px);
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* Layout variants from the separate mobile boards. A .mobile-only element
+   gets its display from its own module styles inside the 860px query. */
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  body {
+    line-height: 1.55;
+  }
+  .ph {
+    background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 14px);
+  }
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: block;
+  }
+}
