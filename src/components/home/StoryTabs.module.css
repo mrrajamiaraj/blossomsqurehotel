@@ -26,8 +26,8 @@
   gap: 12px;
   padding: 0 0 20px;
   font-family: var(--font-display);
-  font-size: clamp(1.6rem, 3vw, 2.6rem);
-  font-weight: 400;
+  font-size: clamp(1.25rem, 2.2vw, 1.9rem);
+  font-weight: 500;
   color: rgba(247, 242, 232, 0.45);
   white-space: nowrap;
   transition: color 0.5s var(--ease-out);
@@ -51,7 +51,6 @@
 }
 .tabOn {
   color: var(--cream);
-  font-style: italic;
 }
 .tabOn::after {
   transform: scaleX(1);
@@ -132,7 +131,6 @@
   gap: 16px;
   padding: 12px 0;
   border-top: 1px solid var(--line-light);
-  font-style: italic;
   font-size: 1.08rem;
 }
 .points li::before {

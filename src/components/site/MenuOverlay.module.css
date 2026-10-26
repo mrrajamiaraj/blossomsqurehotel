@@ -67,16 +67,15 @@
 
 .num {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 1.1rem;
   color: var(--brass-light);
 }
 
 .label {
   font-family: var(--font-display);
-  font-weight: 300;
-  font-size: clamp(2.1rem, 4.6vw, 4.2rem);
-  line-height: 1;
+  font-weight: 500;
+  font-size: clamp(1.8rem, 3.6vw, 3.2rem);
+  line-height: 1.1;
   letter-spacing: -0.01em;
   transition:
     transform 0.7s var(--ease-out),
@@ -85,7 +84,6 @@
 }
 
 .note {
-  font-style: italic;
   font-size: 1rem;
   color: var(--mist);
   opacity: 0;
@@ -99,7 +97,6 @@
   .link:hover .label,
   .link:focus-visible .label {
     transform: translateX(14px);
-    font-style: italic;
     color: var(--brass-light);
   }
   .link:hover .note,

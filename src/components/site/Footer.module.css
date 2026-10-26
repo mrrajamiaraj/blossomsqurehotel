@@ -107,7 +107,6 @@
 
 .muted {
   margin-top: 10px;
-  font-style: italic;
   color: var(--mist);
   opacity: 0.8;
 }
@@ -120,9 +119,9 @@
 .wordmark {
   display: block;
   font-family: var(--font-display);
-  font-weight: 300;
-  font-size: clamp(3.4rem, 15.4vw, 15rem);
-  line-height: 0.8;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 11.6vw, 11.5rem);
+  line-height: 0.9;
   letter-spacing: -0.035em;
   white-space: nowrap;
   color: transparent;
@@ -148,7 +147,6 @@
   align-items: center;
   gap: 12px;
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--mist);
   opacity: 0.8;
 }

@@ -207,9 +207,9 @@
   gap: 10px;
   width: fit-content;
   padding: 10px 16px 6px;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 500;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--a-pine);
 }
 .groupHead span {

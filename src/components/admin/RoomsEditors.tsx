@@ -43,7 +43,7 @@ export function RoomTypeEditor(p: TypeProps) {
   return (
     <form onSubmit={save} className="a-panel" style={{ display: "flex", flexDirection: "column" }}>
       <div className="a-panel-head">
-        <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.45rem", fontWeight: 500, color: "var(--a-pine)" }}>{p.name}</h3>
+        <h3 style={{ fontSize: "1.05rem", fontWeight: 600, color: "var(--a-pine)" }}>{p.name}</h3>
         <span className="a-muted" style={{ fontSize: "0.76rem" }}>
           {p.units} {p.units === 1 ? "room" : "rooms"}
         </span>

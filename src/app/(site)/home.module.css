@@ -88,7 +88,6 @@
   font-size: clamp(1.15rem, 1.4vw, 1.3rem);
   line-height: 1.55;
   color: var(--mist);
-  font-style: italic;
 }
 
 .scrollCue {
@@ -191,7 +190,6 @@
   left: 0;
   bottom: 0;
   max-width: 40%;
-  font-style: italic;
   font-size: 1rem;
   color: var(--muted);
 }
@@ -209,8 +207,9 @@
 .dropcap::first-letter {
   float: left;
   font-family: var(--font-display);
-  font-size: 4.9em;
-  line-height: 0.78;
+  font-weight: 500;
+  font-size: 3.7em;
+  line-height: 0.82;
   padding: 0.06em 0.1em 0 0;
   color: var(--pine-800);
 }
@@ -235,13 +234,13 @@
 
 .factValue {
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 2.4vw, 2.4rem);
-  line-height: 1;
+  font-weight: 500;
+  font-size: clamp(1.4rem, 1.8vw, 1.8rem);
+  line-height: 1.1;
   color: var(--pine-800);
 }
 
 .factLabel {
-  font-style: italic;
   font-size: 1rem;
   color: var(--muted);
 }
@@ -359,12 +358,12 @@
 
 .amenName {
   font-family: var(--font-display);
-  font-size: 1.65rem;
-  line-height: 1.1;
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.25;
 }
 
 .amenNote {
-  font-style: italic;
   color: var(--muted);
   transition: color 0.6s var(--ease-out);
 }
@@ -499,7 +498,6 @@
   line-height: 1.35;
 }
 .nearbyNote {
-  font-style: italic;
   font-size: 0.98rem;
   color: var(--muted);
 }

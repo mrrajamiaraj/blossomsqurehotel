@@ -33,11 +33,11 @@
   color-scheme: light;
 
   /* Type */
-  --font-display: var(--font-cormorant), "Cormorant Garamond", Garamond, Georgia, serif;
-  --font-text: var(--font-garamond), "EB Garamond", Garamond, Georgia, serif;
-  /* Sora: the interface voice — labels, buttons, menus, forms, admin */
-  --font-ui: var(--font-sora), "Sora", "Segoe UI", system-ui, sans-serif;
-  --font-caps: var(--font-ui);
+  /* Playfair Display for headings and room titles; Inter for everything else */
+  --font-display: var(--font-playfair), "Playfair Display", Georgia, serif;
+  --font-text: var(--font-inter), "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-ui: var(--font-text);
+  --font-caps: var(--font-text);
 
   /* Layout */
   --max: 1440px;
@@ -108,9 +108,10 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-text);
-  font-size: 1.125rem;
-  line-height: 1.6;
-  font-feature-settings: "kern", "liga", "onum";
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
+  font-feature-settings: "kern", "liga", "cv11";
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -225,36 +226,44 @@ button {
 
 /* ---------- Type ---------- */
 
+/* Playfair is wide with a tall x-height, so sizes sit well below a
+   Garamond scale and lines get a little more air. */
 .display {
   font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(3.1rem, 8.6vw, 9.25rem);
-  line-height: 0.9;
-  letter-spacing: -0.025em;
+  font-weight: 500;
+  font-size: clamp(2.5rem, 6.2vw, 6.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
 }
 
 .h1 {
   font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(2.9rem, 6.6vw, 6.5rem);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  font-size: clamp(2.3rem, 4.8vw, 4.6rem);
+  line-height: 1.06;
+  letter-spacing: -0.018em;
 }
 
 .h2 {
   font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(2.4rem, 4.8vw, 4.6rem);
-  line-height: 1;
+  font-weight: 500;
+  font-size: clamp(1.95rem, 3.4vw, 3.3rem);
+  line-height: 1.1;
   letter-spacing: -0.015em;
 }
 
 .h3 {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: clamp(1.75rem, 2.5vw, 2.5rem);
-  line-height: 1.05;
+  font-size: clamp(1.4rem, 1.9vw, 1.85rem);
+  line-height: 1.18;
   letter-spacing: -0.01em;
+}
+
+/* Italic is reserved for the accent phrase in a Playfair headline; any other
+   <em> stays upright (emphasis comes from colour or weight instead). */
+em {
+  font-style: normal;
 }
 
 .display em,
@@ -262,21 +271,21 @@ button {
 .h2 em,
 .h3 em {
   font-style: italic;
-  font-weight: 400;
+  font-weight: inherit;
 }
 
 .caps {
   font-family: var(--font-caps);
   font-size: 0.72rem;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.4;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .lede {
-  font-size: clamp(1.2rem, 1.55vw, 1.4rem);
-  line-height: 1.55;
+  font-size: clamp(1.05rem, 1.2vw, 1.2rem);
+  line-height: 1.7;
   color: var(--ink-soft);
   text-wrap: pretty;
 }
@@ -327,9 +336,9 @@ button {
   background: var(--btn-bg);
   color: var(--btn-fg);
   font-family: var(--font-caps);
-  font-size: 0.74rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   transition: color 0.5s var(--ease-out), border-color 0.5s var(--ease-out);
@@ -527,7 +536,6 @@ select.input {
 
 .field-error {
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--rust);
 }
 

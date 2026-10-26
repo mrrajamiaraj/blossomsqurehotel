@@ -118,7 +118,7 @@ export default async function GuestsPage({ searchParams }: { searchParams: Promi
           <aside className="a-panel" aria-label="Guest history" style={{ position: "sticky", top: 84 }}>
             <div className="a-panel-head">
               <div>
-                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 500, color: "var(--a-pine)", lineHeight: 1.1 }}>
+                <h2 style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--a-pine)", lineHeight: 1.1 }}>
                   {selected?.guest_name ?? history[0]?.guest_name ?? "Guest"}
                 </h2>
                 <p className="a-muted" style={{ fontSize: "0.78rem" }}>

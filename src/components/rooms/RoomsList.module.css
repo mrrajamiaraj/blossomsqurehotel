@@ -179,7 +179,6 @@
 }
 .index span {
   font-family: var(--font-display);
-  font-style: italic;
   font-size: 1rem;
   letter-spacing: 0;
   margin-right: 8px;
@@ -187,9 +186,9 @@
 
 .name {
   font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(2.2rem, 3.4vw, 3.3rem);
-  line-height: 1;
+  font-weight: 500;
+  font-size: clamp(1.7rem, 2.5vw, 2.4rem);
+  line-height: 1.15;
   letter-spacing: -0.01em;
   color: var(--pine-800);
 }
@@ -207,7 +206,6 @@
 }
 
 .meta {
-  font-style: italic;
   color: var(--muted);
   white-space: pre-wrap;
 }
@@ -250,13 +248,14 @@
 }
 
 .price {
-  font-family: var(--font-display);
-  font-size: 2.3rem;
+  font-family: var(--font-text);
+  font-weight: 600;
+  font-size: 1.7rem;
+  letter-spacing: -0.02em;
   font-variant-numeric: lining-nums;
 }
 .price span {
   font-family: var(--font-text);
-  font-style: italic;
   font-size: 1rem;
   color: var(--muted);
 }
@@ -267,7 +266,6 @@
 }
 
 .few {
-  font-style: italic;
   color: var(--rust);
 }
 

@@ -45,7 +45,7 @@ export default function MapEmbed() {
             <path d="M120 0c-8 40 6 70-4 110s10 80 0 120-6 50-2 70" stroke="#a8834a" strokeWidth="1" fill="none" />
             <path d="M118 150 C 180 140, 230 160, 400 140" stroke="#16201c" strokeOpacity=".35" strokeWidth="5" fill="none" />
             <path d="M200 0 C 205 80, 195 200, 210 300" stroke="#16201c" strokeOpacity=".18" strokeWidth="3" fill="none" />
-            <text x="22" y="270" fontFamily="serif" fontStyle="italic" fontSize="13" fill="#4f7c74">Bay of Bengal</text>
+            <text x="22" y="270" fontFamily="serif" fontSize="13" fill="#4f7c74">Bay of Bengal</text>
             <text x="250" y="132" fontFamily="serif" fontSize="9" letterSpacing="2" fill="#3b4641">LIGHT HOUSE RD</text>
           </svg>
           <span className={styles.pin}>

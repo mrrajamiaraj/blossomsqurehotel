@@ -26,13 +26,13 @@
   flex: 1;
   min-width: 0;
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-weight: 500;
+  font-size: 1.2rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .title span {
-  font-style: italic;
   color: var(--mist);
   margin-left: 10px;
 }

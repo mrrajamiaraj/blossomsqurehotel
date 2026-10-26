@@ -47,8 +47,9 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--line-strong);
-  font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-family: var(--font-text);
+  font-weight: 600;
+  font-size: 0.88rem;
   font-variant-numeric: lining-nums;
   transition: background-color 0.5s var(--ease-out), color 0.5s, border-color 0.5s;
 }
@@ -189,18 +190,17 @@
 
 .roomName {
   font-family: var(--font-display);
-  font-size: 1.9rem;
-  line-height: 1.05;
+  font-weight: 500;
+  font-size: 1.45rem;
+  line-height: 1.2;
   color: var(--pine-800);
 }
 
 .roomMeta {
-  font-style: italic;
   color: var(--muted);
 }
 
 .few {
-  font-style: italic;
   font-size: 0.95rem;
   color: var(--rust);
 }
@@ -214,15 +214,15 @@
 }
 
 .roomRate {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
+  font-family: var(--font-text);
+  font-weight: 600;
+  font-size: 1.3rem;
   font-variant-numeric: lining-nums;
 }
 
 .roomPer,
 .roomTotal {
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--muted);
 }
 
@@ -259,7 +259,6 @@
 
 .counter {
   font-size: 0.9rem;
-  font-style: italic;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -287,7 +286,7 @@
 
 .reviewTitle {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 500;
   color: var(--pine-800);
 }
@@ -314,7 +313,6 @@
   gap: 12px;
 }
 .reviewList dt {
-  font-style: italic;
   color: var(--muted);
 }
 .reviewList dd {
@@ -322,7 +320,6 @@
 }
 
 .requests {
-  font-style: italic;
   white-space: pre-wrap;
 }
 
@@ -364,9 +361,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 500;
+  font-family: var(--font-text);
+  font-size: 1.02rem;
+  font-weight: 600;
   line-height: 1.1;
 }
 
@@ -382,7 +379,6 @@
 
 .payNote {
   font-size: 0.98rem;
-  font-style: italic;
   color: var(--muted);
 }
 
@@ -455,8 +451,9 @@
 
 .summaryName {
   font-family: var(--font-display);
-  font-size: 1.9rem;
-  line-height: 1.1;
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1.2;
   color: var(--pine-800);
 }
 
@@ -486,12 +483,10 @@
 }
 
 .included {
-  font-style: italic;
   color: var(--pine-800);
 }
 
 .mutedDd {
-  font-style: italic;
   color: var(--muted);
 }
 
@@ -505,8 +500,9 @@
   font-weight: 500;
 }
 .totalLine dd {
-  font-family: var(--font-display);
-  font-size: 1.7rem;
+  font-family: var(--font-text);
+  font-weight: 700;
+  font-size: 1.35rem;
   line-height: 1;
   animation: tick 0.7s var(--ease-out);
 }
@@ -519,7 +515,6 @@
 
 .small {
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--muted);
 }
 
@@ -534,7 +529,6 @@
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid var(--line);
-  font-style: italic;
   color: var(--ink-soft);
 }
 
@@ -554,16 +548,16 @@
   background: var(--ivory);
   border: 1px solid var(--line);
   text-align: left;
-  font-style: italic;
 }
 
 .mobileTotal {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: var(--font-display);
+  font-family: var(--font-text);
   font-style: normal;
-  font-size: 1.3rem;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 .mobileTotal svg {
   transition: transform 0.4s var(--ease-out);
@@ -663,7 +657,6 @@
   padding: 10px 16px;
   background: var(--sand);
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--ink-soft);
 }
 

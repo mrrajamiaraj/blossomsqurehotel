@@ -1,31 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, EB_Garamond, Sora } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import MotionRoot from "@/components/motion/MotionRoot";
 import Toaster from "@/components/ui/Toaster";
 import "./globals.css";
 
-const cormorant = Cormorant_Garamond({
+// Type system (per the hotel's spec):
+//   Playfair Display — hero (500–600), section headings and room titles (500)
+//   Inter — body (400), navigation (500), buttons (500–600), the whole admin
+//           (400–600) and dashboard figures (600–700)
+// Both are variable fonts, so every weight comes from one file per style.
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
-  variable: "--font-cormorant",
+  variable: "--font-playfair",
   display: "swap",
 });
 
-const garamond = EB_Garamond({
+// Inter is never set in italic, so only the upright style is loaded.
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-garamond",
-  display: "swap",
-});
-
-// Interface face: labels, buttons, menus, forms, and the whole admin panel.
-const sora = Sora({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-sora",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -55,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${garamond.variable} ${sora.variable}`}
+      className={`${playfair.variable} ${inter.variable}`}
       suppressHydrationWarning
     >
       {/* Browser extensions (e.g. Grammarly) add attributes to <body> before hydration. */}

@@ -26,15 +26,14 @@
 }
 
 .label {
-  font-family: var(--font-display);
-  font-size: 1.45rem;
-  font-weight: 500;
+  font-family: var(--font-text);
+  font-size: 1.02rem;
+  font-weight: 600;
   color: var(--pine-800);
 }
 
 .note {
   font-size: 0.95rem;
-  font-style: italic;
   color: var(--muted);
 }
 
@@ -72,7 +71,8 @@
 .count {
   min-width: 36px;
   text-align: center;
-  font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-family: var(--font-text);
+  font-weight: 600;
+  font-size: 1.25rem;
   font-variant-numeric: lining-nums tabular-nums;
 }
