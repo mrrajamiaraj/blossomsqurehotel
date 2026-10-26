@@ -1,0 +1,663 @@
+/* ==========================================================================
+   QueueCommerce Hotel Booking — Frontend Styles
+   Color Scheme: #BD966F (warm gold), #F5EDE0 (cream), #2C2C2A (near-black)
+   ========================================================================== */
+
+:root {
+    --qc-primary: #BD966F;
+    --qc-primary-dark: #a37d58;
+    --qc-primary-light: #d4b896;
+    --qc-cream: #F5EDE0;
+    --qc-white: #FFFFFF;
+    --qc-dark: #2C2C2A;
+    --qc-text: #4a4a48;
+    --qc-text-light: #7a7a78;
+    --qc-border: #e8e0d6;
+    --qc-success: #4caf50;
+    --qc-error: #e53935;
+    --qc-radius: 12px;
+    --qc-shadow: 0 2px 12px rgba(44, 44, 42, 0.08);
+    --qc-shadow-hover: 0 8px 30px rgba(44, 44, 42, 0.15);
+    --qc-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Rooms Grid ---------- */
+.qc-rooms-listing {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.qc-rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+}
+
+@media (max-width: 1024px) {
+    .qc-rooms-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .qc-rooms-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+/* ---------- Room Card ---------- */
+.qc-room-card {
+    background: var(--qc-white);
+    border-radius: var(--qc-radius);
+    overflow: hidden;
+    box-shadow: var(--qc-shadow);
+    transition: transform var(--qc-transition), box-shadow var(--qc-transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.qc-room-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--qc-shadow-hover);
+}
+
+.qc-room-card-image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 11;
+    background: var(--qc-cream);
+}
+
+.qc-room-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--qc-transition);
+}
+
+.qc-room-card:hover .qc-room-card-image img {
+    transform: scale(1.05);
+}
+
+.qc-room-card-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.qc-room-type-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: var(--qc-primary);
+    color: var(--qc-white);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.qc-room-card-body {
+    padding: 20px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.qc-room-card-title {
+    margin: 0 0 12px;
+    font-size: 19px;
+    line-height: 1.3;
+}
+
+.qc-room-card-title a {
+    color: var(--qc-dark);
+    text-decoration: none;
+    transition: color var(--qc-transition);
+}
+
+.qc-room-card-title a:hover {
+    color: var(--qc-primary);
+}
+
+.qc-room-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.qc-room-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--qc-primary);
+}
+
+.qc-room-price small {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--qc-text-light);
+}
+
+.qc-room-guests-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    color: var(--qc-text-light);
+    background: var(--qc-cream);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.qc-room-guests-badge svg {
+    width: 16px;
+    height: 16px;
+}
+
+.qc-room-card-amenities {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.qc-amenity-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--qc-cream);
+    color: var(--qc-primary);
+    transition: background var(--qc-transition);
+}
+
+.qc-amenity-icon:hover {
+    background: var(--qc-primary);
+    color: var(--qc-white);
+}
+
+.qc-amenity-more {
+    font-size: 12px;
+    color: var(--qc-text-light);
+    font-weight: 600;
+}
+
+.qc-room-cta {
+    margin-top: auto;
+    text-align: center;
+}
+
+/* ---------- Buttons ---------- */
+.qc-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 2px solid var(--qc-primary);
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--qc-transition);
+    line-height: 1.4;
+}
+
+.qc-btn-primary {
+    background: transparent;
+    color: var(--qc-primary);
+}
+
+.qc-btn-primary:hover,
+.qc-room-card:hover .qc-btn-primary {
+    background: var(--qc-primary);
+    color: var(--qc-white);
+}
+
+/* ---------- Pagination ---------- */
+.qc-pagination {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.qc-pagination .page-numbers {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 0 3px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--qc-text);
+    font-weight: 500;
+    transition: all var(--qc-transition);
+}
+
+.qc-pagination .page-numbers.current,
+.qc-pagination .page-numbers:hover {
+    background: var(--qc-primary);
+    color: var(--qc-white);
+}
+
+.qc-no-rooms {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--qc-text-light);
+    font-size: 18px;
+}
+
+/* ==========================================================================
+   Single Room Page
+   ========================================================================== */
+.qc-single-room {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.qc-back-link {
+    margin-bottom: 24px;
+}
+
+.qc-back-link a {
+    color: var(--qc-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 15px;
+    transition: color var(--qc-transition);
+}
+
+.qc-back-link a:hover {
+    color: var(--qc-primary-dark);
+}
+
+/* ---------- Hero ---------- */
+.qc-hero-image {
+    position: relative;
+    border-radius: var(--qc-radius);
+    overflow: hidden;
+    max-height: 500px;
+}
+
+.qc-hero-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    max-height: 500px;
+}
+
+/* ---------- Gallery Strip ---------- */
+.qc-gallery-strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 16px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--qc-primary-light) var(--qc-cream);
+}
+
+.qc-gallery-strip::-webkit-scrollbar {
+    height: 6px;
+}
+
+.qc-gallery-strip::-webkit-scrollbar-track {
+    background: var(--qc-cream);
+    border-radius: 3px;
+}
+
+.qc-gallery-strip::-webkit-scrollbar-thumb {
+    background: var(--qc-primary-light);
+    border-radius: 3px;
+}
+
+.qc-gallery-thumb {
+    flex: 0 0 auto;
+    width: 90px;
+    height: 70px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color var(--qc-transition), transform var(--qc-transition);
+    cursor: pointer;
+}
+
+.qc-gallery-thumb:hover {
+    border-color: var(--qc-primary);
+    transform: scale(1.05);
+}
+
+.qc-gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ---------- Room Info Panel ---------- */
+.qc-room-title {
+    font-size: 30px;
+    color: var(--qc-dark);
+    margin: 0 0 24px;
+    line-height: 1.2;
+}
+
+.qc-room-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.qc-info-item {
+    background: var(--qc-cream);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.qc-info-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--qc-text-light);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.qc-info-value {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--qc-dark);
+}
+
+.qc-info-price {
+    color: var(--qc-primary);
+    font-size: 20px;
+}
+
+.qc-info-price small {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--qc-text-light);
+}
+
+.qc-avail-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.qc-avail-yes {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.qc-avail-booked {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.qc-avail-maint {
+    background: #fce4ec;
+    color: #c62828;
+}
+
+/* ---------- Amenities Section ---------- */
+.qc-amenities-section {
+    margin-bottom: 36px;
+}
+
+.qc-amenities-section h2 {
+    font-size: 22px;
+    color: var(--qc-dark);
+    margin-bottom: 18px;
+}
+
+.qc-amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+}
+
+.qc-amenity-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--qc-cream);
+    border-radius: 10px;
+    transition: background var(--qc-transition);
+}
+
+.qc-amenity-item:hover {
+    background: var(--qc-primary);
+    color: var(--qc-white);
+}
+
+.qc-amenity-item:hover .qc-amenity-icon {
+    background: transparent;
+    color: var(--qc-white);
+}
+
+.qc-amenity-label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ---------- Description ---------- */
+.qc-room-description {
+    margin-bottom: 40px;
+}
+
+.qc-room-description h2 {
+    font-size: 22px;
+    color: var(--qc-dark);
+    margin-bottom: 16px;
+}
+
+.qc-room-description p {
+    color: var(--qc-text);
+    line-height: 1.7;
+    font-size: 16px;
+}
+
+/* ==========================================================================
+   Booking Form
+   ========================================================================== */
+.qc-booking-form-wrap {
+    background: var(--qc-cream);
+    border-radius: var(--qc-radius);
+    padding: 36px 32px;
+    margin-top: 40px;
+}
+
+.qc-booking-heading {
+    font-size: 24px;
+    color: var(--qc-dark);
+    margin: 0 0 24px;
+}
+
+.qc-booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.qc-form-row label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--qc-dark);
+    margin-bottom: 6px;
+}
+
+.qc-form-row label .required {
+    color: var(--qc-error);
+}
+
+.qc-form-row input[type="text"],
+.qc-form-row input[type="email"],
+.qc-form-row input[type="tel"],
+.qc-form-row input[type="date"],
+.qc-form-row input[type="number"],
+.qc-form-row select,
+.qc-form-row textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 2px solid var(--qc-border);
+    border-radius: 8px;
+    background: var(--qc-white);
+    color: var(--qc-dark);
+    transition: border-color var(--qc-transition), box-shadow var(--qc-transition);
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.qc-form-row input:focus,
+.qc-form-row select:focus,
+.qc-form-row textarea:focus {
+    outline: none;
+    border-color: var(--qc-primary);
+    box-shadow: 0 0 0 3px rgba(189, 150, 111, 0.15);
+}
+
+.qc-form-row-half {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 500px) {
+    .qc-form-row-half {
+        grid-template-columns: 1fr;
+    }
+}
+
+.qc-form-submit {
+    margin-top: 8px;
+}
+
+.qc-form-submit .qc-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    background: var(--qc-primary);
+    color: var(--qc-white);
+    border-color: var(--qc-primary);
+}
+
+.qc-form-submit .qc-btn:hover {
+    background: var(--qc-primary-dark);
+    border-color: var(--qc-primary-dark);
+}
+
+/* ---------- Form Notices ---------- */
+.qc-notice {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.qc-notice p {
+    margin: 0;
+}
+
+.qc-notice ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.qc-notice-success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+
+.qc-notice-error {
+    background: #fce4ec;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+
+/* ==========================================================================
+   Lightbox
+   ========================================================================== */
+.qc-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: rgba(0, 0, 0, 0.92);
+    align-items: center;
+    justify-content: center;
+}
+
+.qc-lightbox.qc-lightbox-active {
+    display: flex;
+}
+
+.qc-lightbox-content {
+    max-width: 90vw;
+    max-height: 85vh;
+}
+
+.qc-lightbox-content img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.qc-lightbox-close,
+.qc-lightbox-prev,
+.qc-lightbox-next {
+    position: absolute;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 36px;
+    padding: 10px 18px;
+    transition: opacity 0.2s;
+    z-index: 10;
+    line-height: 1;
+}
+
+.qc-lightbox-close:hover,
+.qc-lightbox-prev:hover,
+.qc-lightbox-next:hover {
+    opacity: 0.7;
+}
+
+.qc-lightbox-close {
+    top: 20px;
+    right: 20px;
+    font-size: 42px;
+}
+
+.qc-lightbox-prev {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 52px;
+}
+
+.qc-lightbox-next {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 52px;
+}

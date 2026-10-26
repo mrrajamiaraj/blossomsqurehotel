@@ -1,0 +1,141 @@
+.card {
+  position: sticky;
+  top: calc(var(--header-h) + 24px);
+  background: var(--ivory);
+  border: 1px solid var(--line);
+  box-shadow: 0 40px 80px -48px rgba(7, 29, 23, 0.4);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 28px 28px 0;
+}
+
+.price {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+}
+.price span {
+  font-family: var(--font-text);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-caps);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pine-800);
+  white-space: nowrap;
+}
+.badgeOff {
+  color: var(--rust);
+}
+
+.form {
+  padding: 22px 28px 0;
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px 28px 0;
+  font-size: 1.05rem;
+}
+.breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.breakdown dt {
+  color: var(--ink-soft);
+}
+.breakdown dd {
+  font-variant-numeric: lining-nums;
+}
+
+.included {
+  font-style: italic;
+  color: var(--pine-800);
+}
+
+.muted {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.total {
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 1.25rem;
+}
+.total dt {
+  color: var(--ink) !important;
+  font-weight: 500;
+}
+.total dd {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+/* A soft flash whenever a figure changes */
+.tick {
+  animation: tick 0.7s var(--ease-out);
+}
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.note {
+  padding: 10px 28px 24px;
+  font-size: 0.95rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.call {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 28px;
+  background: var(--sand);
+  font-size: 1.02rem;
+  color: var(--ink-soft);
+  transition: background-color 0.4s;
+}
+.call svg {
+  color: var(--pine-800);
+  flex-shrink: 0;
+}
+.call strong {
+  font-weight: 500;
+  color: var(--pine-800);
+  white-space: nowrap;
+}
+@media (hover: hover) {
+  .call:hover {
+    background: var(--sand-deep);
+  }
+}
+
+@media (max-width: 1000px) {
+  .card {
+    position: static;
+  }
+}

@@ -1,0 +1,85 @@
+import type { Metadata } from "next";
+import { RoomTile, RoomTypeEditor } from "@/components/admin/RoomsEditors";
+import { requireAdmin } from "@/lib/admin/session";
+import { addDays, hotelToday } from "@/lib/dates";
+
+export const metadata: Metadata = { title: "Rooms & rates" };
+
+export default async function RoomsPage() {
+  const { repo, staff } = await requireAdmin();
+  const today = hotelToday();
+  const [types, rooms, tonight] = await Promise.all([
+    repo.listRoomTypes({ includeUnpublished: true }),
+    repo.listRooms(),
+    repo.bookingsBetween(today, addDays(today, 1)),
+  ]);
+  const manager = staff.role === "manager";
+  const occupant = new Map(
+    tonight.filter((b) => b.room_id && (b.status === "checked_in" || b.status === "confirmed")).map((b) => [b.room_id!, b.guest_name]),
+  );
+  const typeName = new Map(types.map((t) => [t.id, t.name]));
+  const dirty = rooms.filter((r) => r.housekeeping === "dirty" && !r.out_of_service).length;
+  const oos = rooms.filter((r) => r.out_of_service).length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      <header style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
+        <div>
+          <p className="a-eyebrow">Inventory</p>
+          <h1 className="a-title">Rooms &amp; rates</h1>
+        </div>
+        {!manager && <p className="a-hint">Rates and room setup are managed by a manager. You can update housekeeping.</p>}
+      </header>
+
+      <section aria-labelledby="types-h" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div>
+          <h2 id="types-h" className="a-h2">
+            Room types &amp; nightly rates
+          </h2>
+          <p className="a-hint">Changes appear on the website straight away. Existing bookings keep the rate they were made at.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 16 }}>
+          {types.map((t) => (
+            <RoomTypeEditor
+              key={t.id}
+              id={t.id}
+              name={t.name}
+              units={rooms.filter((r) => r.room_type_id === t.id && !r.out_of_service).length}
+              price={t.price_bdt}
+              published={t.is_published}
+              size={t.size_sqft}
+              blurb={t.blurb}
+              canEdit={manager}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="rooms-h" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div>
+          <h2 id="rooms-h" className="a-h2">
+            Rooms<span className="a-count">{rooms.length}</span>
+          </h2>
+          <p className="a-hint">
+            {dirty} to clean · {oos} out of service. Rooms out of service aren&apos;t sold on the website.
+          </p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: 12 }}>
+          {rooms.map((r) => (
+            <RoomTile
+              key={r.id}
+              id={r.id}
+              number={r.number}
+              type={typeName.get(r.room_type_id) ?? ""}
+              housekeeping={r.housekeeping}
+              outOfService={r.out_of_service}
+              note={r.service_note}
+              occupant={occupant.get(r.id) ?? null}
+              canManage={manager}
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

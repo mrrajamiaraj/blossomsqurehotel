@@ -1,76 +1,51 @@
-import { getSupabase } from "./supabase";
+import "server-only";
+import { getPublicRepo } from "./data";
+import { DEFAULT_SETTINGS } from "./data/repo";
+import { PREVIEW_ROOM_TYPES } from "./data/preview-seed";
+import type { HotelSettings, RoomTypeRecord } from "./data/types";
+import { photo, type Photo, type Tone } from "./photos";
 
-export type RoomType = {
-  slug: string;
-  name: string;
-  tag: "SUITE" | "DELUXE";
-  bed: string;
-  size_sqft: number | null;
-  sleeps: number;
-  price_bdt: number;
-  blurb: string;
-  features: string[];
-  photo_ref: string;
-};
+export type Room = Omit<RoomTypeRecord, "gallery"> & { gallery: Photo[] };
 
-// Mirrors the seed rows in supabase/migrations so the site renders before
-// Supabase is connected (and if it's unreachable).
-const SEED_ROOMS: RoomType[] = [
-  {
-    slug: "king-suite",
-    name: "King Suite",
-    tag: "SUITE",
-    bed: "Double bed",
-    size_sqft: null,
-    sleeps: 2,
-    price_bdt: 12500,
-    blurb: "Our largest room on the second floor, with a private balcony looking out to the bay.",
-    features: ["Double bed", "Balcony", "Sea view"],
-    photo_ref: "KING SUITE · DSC5566",
-  },
-  {
-    slug: "business-queen-suite",
-    name: "Business Queen Suite",
-    tag: "SUITE",
-    bed: "Queen bed",
-    size_sqft: null,
-    sleeps: 2,
-    price_bdt: 10500,
-    blurb: "A calm second-floor suite with a work desk, for trips that mix meetings and the beach.",
-    features: ["Queen bed", "Work desk", "Sea view"],
-    photo_ref: "QUEEN SUITE · DSC5579",
-  },
-  {
-    slug: "deluxe-couple",
-    name: "Deluxe Couple",
-    tag: "DELUXE",
-    bed: "Double bed",
-    size_sqft: null,
-    sleeps: 2,
-    price_bdt: 7800,
-    blurb: "Everything you need for two: sea view, balcony, mini bar and breakfast included.",
-    features: ["Double bed", "Balcony", "Sea view"],
-    photo_ref: "DELUXE COUPLE · DSC5550",
-  },
-];
+const TONES: Tone[] = ["forest", "sea", "dusk"];
 
-export async function getRoomTypes(): Promise<RoomType[]> {
-  const supabase = getSupabase();
-  if (!supabase) return SEED_ROOMS;
-
-  const { data, error } = await supabase
-    .from("room_types")
-    .select("slug, name, tag, bed, size_sqft, sleeps, price_bdt, blurb, features, photo_ref")
-    .eq("is_published", true)
-    .order("sort_order");
-
-  if (error || !data?.length) {
-    if (error) console.error("Failed to load room_types:", error.message);
-    return SEED_ROOMS;
-  }
-  return data as RoomType[];
+// Offsetting tones per room keeps placeholder covers distinct from each other.
+function withPhotos(row: RoomTypeRecord, index: number): Room {
+  return {
+    ...row,
+    gallery: row.gallery.map((ref, i) =>
+      photo(ref, i === 0 ? `${row.name} bedroom` : `${row.name}, view ${i + 1}`, TONES[(i + index) % TONES.length]),
+    ),
+  };
 }
 
-export function formatTaka(amount: number): string {
-  return `৳${amount.toLocaleString("en-US")}`;
+/**
+ * Published room types, in the hotel's chosen order. Falls back to the
+ * built-in room list when no database is available, so the site still renders.
+ */
+export async function getRooms(): Promise<Room[]> {
+  const repo = getPublicRepo();
+  let rows: RoomTypeRecord[] = [];
+  if (repo) {
+    try {
+      rows = await repo.listRoomTypes();
+    } catch (err) {
+      console.error("Failed to load room types:", err);
+    }
+  }
+  return (rows.length ? rows : PREVIEW_ROOM_TYPES).map(withPhotos);
+}
+
+export async function getRoom(slug: string): Promise<Room | null> {
+  return (await getRooms()).find((r) => r.slug === slug) ?? null;
+}
+
+export async function getSettings(): Promise<HotelSettings> {
+  const repo = getPublicRepo();
+  if (!repo) return DEFAULT_SETTINGS;
+  try {
+    return await repo.getSettings();
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
 }

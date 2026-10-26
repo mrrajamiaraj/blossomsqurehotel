@@ -1,0 +1,194 @@
+/* Series colours validated with the dataviz palette checker (light surface):
+   sold #0e8660, pending #b8792b. Protan ΔE 6.7 sits in the floor band, so
+   pending also carries a 45° hatch, and segments are split by a 2px gap. */
+.figure {
+  margin: 0;
+  --sold: #0e8660;
+  --pending: #b8792b;
+  --pending-hatch: repeating-linear-gradient(45deg, var(--pending) 0 2px, #e9d3ae 2px 5px);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 14px;
+  font-size: 0.76rem;
+  color: var(--a-ink-2);
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.keySold,
+.keyPending,
+.keyCap {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+.keySold {
+  background: var(--sold);
+}
+.keyPending {
+  background: var(--pending-hatch);
+}
+.keyCap {
+  height: 0;
+  border-top: 1px solid var(--a-ink-2);
+  border-radius: 0;
+}
+
+.plot {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.axis {
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 0.7rem;
+  color: var(--a-muted);
+  font-variant-numeric: tabular-nums;
+  transform: translateY(-0.5em);
+}
+
+.cols {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+/* Overlay matching the plot height, so the capacity line can be placed by %. */
+.capLayer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 160px;
+  pointer-events: none;
+  z-index: 1;
+}
+.capLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px solid var(--a-ink-2);
+  opacity: 0.55;
+}
+
+.col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  outline: none;
+  cursor: default;
+  border-radius: 3px;
+}
+.weekend {
+  background: linear-gradient(var(--a-sunken), var(--a-sunken)) top / 100% 160px no-repeat;
+}
+.col:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--a-focus);
+}
+
+.stack {
+  height: 160px;
+  width: min(24px, 70%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px; /* surface gap between segments */
+  border-bottom: 1px solid var(--a-line-strong);
+}
+.stack > span:first-child {
+  border-radius: 4px 4px 0 0; /* rounded data end, square at the baseline */
+}
+.sold {
+  background: var(--sold);
+  transition: height 0.6s var(--a-ease), opacity 0.2s;
+}
+.pending {
+  background: var(--pending-hatch);
+  transition: height 0.6s var(--a-ease), opacity 0.2s;
+}
+.plot:hover .col:not(.colOn) .stack > span {
+  opacity: 0.45;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.15;
+  font-size: 0.74rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--a-ink-2);
+}
+.day span {
+  font-size: 0.64rem;
+  font-weight: 400;
+  color: var(--a-muted);
+}
+
+.tip {
+  position: absolute;
+  bottom: calc(100% - 20px);
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 170px;
+  padding: 10px 12px;
+  background: var(--a-side);
+  color: #f7f2e8;
+  border-radius: 3px;
+  font-size: 0.76rem;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.tip strong {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.tip span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.tip b {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tipMuted {
+  color: #b9c6bf;
+}
+
+.table {
+  margin-top: 14px;
+  font-size: 0.78rem;
+}
+.table summary {
+  cursor: pointer;
+  color: var(--a-pine);
+  font-weight: 500;
+  width: fit-content;
+}
+.table table {
+  margin-top: 10px;
+}

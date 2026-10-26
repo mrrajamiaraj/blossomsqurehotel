@@ -1,0 +1,233 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--pine-950);
+  color: var(--cream);
+  clip-path: inset(0 0 100% 0);
+  visibility: hidden;
+  transition:
+    clip-path 0.9s var(--ease-in-out),
+    visibility 0s linear 0.9s;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.open {
+  clip-path: inset(0 0 0 0);
+  visibility: visible;
+  transition:
+    clip-path 0.9s var(--ease-in-out),
+    visibility 0s;
+}
+
+.inner {
+  min-height: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: calc(var(--header-h) + 5vh) var(--gutter) 48px;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: clamp(40px, 6vw, 120px);
+  align-items: center;
+}
+
+.list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.list li {
+  border-top: 1px solid var(--line-light);
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    opacity 0.6s var(--ease-out),
+    transform 0.6s var(--ease-out);
+}
+.list li:last-child {
+  border-bottom: 1px solid var(--line-light);
+}
+.open .list li {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 1s var(--ease-out) calc(0.35s + var(--i) * 0.07s),
+    transform 1.2s var(--ease-out) calc(0.35s + var(--i) * 0.07s);
+}
+
+.link {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: clamp(14px, 2.2vh, 22px) 0;
+}
+
+.num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--brass-light);
+}
+
+.label {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.1rem, 4.6vw, 4.2rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  transition:
+    transform 0.7s var(--ease-out),
+    color 0.4s;
+  transform-origin: left;
+}
+
+.note {
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--mist);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity 0.5s,
+    transform 0.6s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .link:hover .label,
+  .link:focus-visible .label {
+    transform: translateX(14px);
+    font-style: italic;
+    color: var(--brass-light);
+  }
+  .link:hover .note,
+  .link:focus-visible .note {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cta {
+  margin-top: 36px;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.open .cta {
+  opacity: 1;
+  transition: opacity 1s var(--ease-out) 0.8s;
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.5s,
+    transform 0.6s var(--ease-out);
+}
+.open .aside {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 1.2s var(--ease-out) 0.55s,
+    transform 1.4s var(--ease-out) 0.55s;
+}
+
+.frames {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  max-height: 52vh;
+  overflow: hidden;
+  background: var(--pine-800);
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.08);
+  transition:
+    opacity 0.9s var(--ease-out),
+    transform 1.6s var(--ease-out);
+}
+.frame img {
+  object-fit: cover;
+}
+.frameOn {
+  opacity: 1;
+  transform: none;
+}
+
+.contact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 32px;
+}
+.contact > div:last-child {
+  grid-column: 1 / -1;
+}
+.contact dt {
+  font-family: var(--font-caps);
+  font-size: 0.64rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass-light);
+  margin-bottom: 8px;
+}
+.contact dd {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 1.05rem;
+  align-items: flex-start;
+}
+
+.directions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: flex-start;
+  transition: color 0.3s;
+}
+.directions svg {
+  flex-shrink: 0;
+  margin-top: 6px;
+  transition: transform 0.5s var(--ease-out);
+}
+@media (hover: hover) {
+  .directions:hover {
+    color: var(--brass-light);
+  }
+  .directions:hover svg {
+    transform: translate(3px, -3px);
+  }
+}
+
+@media (max-width: 960px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    padding-top: calc(var(--header-h) + 16px);
+  }
+  .frames {
+    display: none;
+  }
+  .link {
+    grid-template-columns: 40px 1fr;
+  }
+  .note {
+    display: none;
+  }
+  .cta {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .contact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

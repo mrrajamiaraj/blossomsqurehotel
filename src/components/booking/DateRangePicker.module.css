@@ -1,0 +1,146 @@
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.navBtn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  color: var(--pine-800);
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+.navBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+@media (hover: hover) {
+  .navBtn:not(:disabled):hover {
+    background: var(--pine-800);
+    border-color: var(--pine-800);
+    color: var(--paper);
+  }
+}
+
+.hint {
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.months {
+  display: grid;
+  gap: 36px;
+}
+.months[data-months="2"] {
+  grid-template-columns: 1fr 1fr;
+}
+
+.monthTitle {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--pine-800);
+  text-align: center;
+  margin-bottom: 12px;
+}
+.monthTitle span {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 2px;
+}
+
+.weekday {
+  font-family: var(--font-caps);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  text-align: center;
+  padding: 6px 0 10px;
+}
+
+.day {
+  position: relative;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-text);
+  font-size: 1.05rem;
+  font-variant-numeric: lining-nums;
+  color: var(--ink);
+  isolation: isolate;
+}
+.day span {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: background-color 0.25s, color 0.25s;
+}
+.day:disabled {
+  color: color-mix(in srgb, var(--ink) 25%, transparent);
+  cursor: default;
+}
+@media (hover: hover) {
+  .day:not(:disabled):hover span {
+    background: var(--sand);
+  }
+}
+
+.today span {
+  box-shadow: inset 0 0 0 1px var(--brass);
+}
+
+/* Range band behind the days */
+.inRange::before,
+.hasRange::before,
+.end::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  background: var(--sand);
+}
+.hasRange::before {
+  left: 50%;
+}
+.end::before {
+  right: 50%;
+}
+
+.start span,
+.end span,
+.start:hover span,
+.end:hover span {
+  background: var(--pine-800) !important;
+  color: var(--paper);
+}
+
+@media (max-width: 720px) {
+  .months[data-months="2"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

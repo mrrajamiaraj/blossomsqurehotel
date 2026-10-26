@@ -1,0 +1,56 @@
+/**
+ * QueueCommerce Hotel — Front-end gallery lightbox (no jQuery)
+ */
+(function () {
+    'use strict';
+
+    var lightbox   = document.getElementById('qc-lightbox');
+    var lightboxImg = document.getElementById('qc-lightbox-img');
+
+    if (!lightbox || !lightboxImg) return;
+
+    var thumbs   = document.querySelectorAll('[data-qc-lightbox]');
+    var urls     = [];
+    var current  = 0;
+
+    thumbs.forEach(function (el, i) {
+        urls.push(el.getAttribute('href'));
+        el.addEventListener('click', function (e) {
+            e.preventDefault();
+            current = i;
+            openLightbox(urls[current]);
+        });
+    });
+
+    function openLightbox(src) {
+        lightboxImg.src = src;
+        lightbox.classList.add('qc-lightbox-active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        lightbox.classList.remove('qc-lightbox-active');
+        lightboxImg.src = '';
+        document.body.style.overflow = '';
+    }
+
+    function navigate(dir) {
+        current = (current + dir + urls.length) % urls.length;
+        lightboxImg.src = urls[current];
+    }
+
+    lightbox.querySelector('.qc-lightbox-close').addEventListener('click', closeLightbox);
+    lightbox.querySelector('.qc-lightbox-prev').addEventListener('click', function () { navigate(-1); });
+    lightbox.querySelector('.qc-lightbox-next').addEventListener('click', function () { navigate(1); });
+
+    lightbox.addEventListener('click', function (e) {
+        if (e.target === lightbox) closeLightbox();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (!lightbox.classList.contains('qc-lightbox-active')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') navigate(-1);
+        if (e.key === 'ArrowRight') navigate(1);
+    });
+})();

@@ -1,0 +1,109 @@
+.intro {
+  padding-top: calc(var(--header-h) + clamp(56px, 8vw, 120px));
+  padding-bottom: clamp(40px, 5vw, 72px);
+}
+
+.introGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas:
+    "eyebrow eyebrow"
+    "title lede";
+  gap: 20px clamp(32px, 6vw, 96px);
+  align-items: end;
+}
+.introGrid > :first-child {
+  grid-area: eyebrow;
+}
+
+.title {
+  grid-area: title;
+  color: var(--pine-800);
+}
+.title em {
+  color: var(--bronze);
+}
+
+.lede {
+  grid-area: lede;
+  max-width: 460px;
+  padding-bottom: 0.6em;
+}
+
+.searchBar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 30;
+  transition: top 0.7s var(--ease-out);
+  padding: 14px 0;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+:global(html[data-header="hidden"]) .searchBar {
+  top: 0;
+}
+
+.results {
+  padding-top: clamp(40px, 5vw, 72px);
+  padding-bottom: clamp(40px, 5vw, 72px);
+}
+
+.policies {
+  padding-bottom: var(--section);
+}
+
+.policyCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 40px;
+  padding: clamp(32px, 5vw, 64px);
+  background: var(--sand);
+}
+
+.policyTitle {
+  color: var(--pine-800);
+}
+
+.policyList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+.policyList dt {
+  font-family: var(--font-caps);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 10px;
+}
+.policyList dd {
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .introGrid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "eyebrow"
+      "title"
+      "lede";
+  }
+  .searchBar {
+    position: static;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 0;
+    padding: 0;
+  }
+  .policyCard,
+  .policyList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

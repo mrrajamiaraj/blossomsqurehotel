@@ -1,0 +1,44 @@
+.region {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 250;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  background: var(--pine-900);
+  color: var(--cream);
+  font-family: var(--font-caps);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 18px 40px -18px rgba(7, 29, 23, 0.6);
+  animation: toast 2.6s var(--ease-out) both;
+}
+
+.toast svg {
+  color: var(--brass-light);
+}
+
+@keyframes toast {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  12%,
+  85% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
