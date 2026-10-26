@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PaymentBadge, SOURCE_LABEL, StatusBadge } from "@/components/admin/badges";
-import { IChevronLeft, IChevronRight, IPlus, ISearch } from "@/components/admin/icons";
+import { IChevronLeft, IChevronRight, ISearch } from "@/components/admin/icons";
 import { ago, stayLine } from "@/lib/admin/format";
 import { requireAdmin } from "@/lib/admin/session";
 import type { BookingView } from "@/lib/data/types";
@@ -65,9 +65,6 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           <p className="a-eyebrow">Reservations</p>
           <h1 className="a-title">Bookings</h1>
         </div>
-        <Link href="/admin/bookings/new" className="a-btn a-btn--primary">
-          <IPlus size={16} /> New booking
-        </Link>
       </header>
 
       <nav className={styles.tabs} aria-label="Booking views">

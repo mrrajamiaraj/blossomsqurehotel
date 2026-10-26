@@ -385,4 +385,10 @@
   .newLabel {
     display: none;
   }
+  .previewText {
+    display: none;
+  }
+  .preview {
+    justify-content: space-between;
+  }
 }

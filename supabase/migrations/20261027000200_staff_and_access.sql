@@ -1,7 +1,8 @@
 -- Staff accounts (linked to Supabase Auth users) and row-level security.
 -- Roles:  manager    — everything, including rates, rooms setup, policies and team
 --         front_desk — reservations, guests, housekeeping
--- Rollback: drop the policies below, then drop functions is_manager, is_staff,
+-- Rollback: drop the policies and the rooms_guard_service trigger below, then
+--           drop functions guard_room_service, is_manager, is_staff,
 --           staff_role and table public.staff.
 
 create table public.staff (
@@ -68,6 +69,31 @@ create policy "Staff read rooms"
 create policy "Staff update rooms"
   on public.rooms for update to authenticated
   using (public.is_staff()) with check (public.is_staff());
+
+-- Front desk may change housekeeping, but only managers take rooms in or
+-- out of service (that changes what the website sells). Enforced here so it
+-- holds for direct API calls too. auth.uid() is null for the service role
+-- and the SQL editor, which are trusted.
+create or replace function public.guard_room_service()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null
+     and (new.out_of_service is distinct from old.out_of_service
+          or new.room_type_id is distinct from old.room_type_id
+          or new.number is distinct from old.number)
+     and not public.is_manager() then
+    raise exception 'NOT_MANAGER';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger rooms_guard_service before update on public.rooms
+  for each row execute function public.guard_room_service();
 
 -- Bookings and history: read-only to staff. Every change goes through the
 -- admin_* functions so the lifecycle and audit trail can't be bypassed.
