@@ -10,6 +10,15 @@
   place-items: center;
   background: #03221c; /* the crest's own ground */
   transition: transform 1.1s var(--ease-in-out);
+  /* Failsafe: lifts on its own if the script never runs. */
+  animation: curtain-failsafe 1.1s var(--ease-in-out) 4s forwards;
+}
+
+@keyframes curtain-failsafe {
+  to {
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
 }
 
 .curtain.out {

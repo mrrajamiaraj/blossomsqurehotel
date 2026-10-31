@@ -1,25 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter } from "next/font/google";
 import Script from "next/script";
 import MotionRoot from "@/components/motion/MotionRoot";
 import Toaster from "@/components/ui/Toaster";
 import "./globals.css";
 
-// Type system (per the hotel's spec):
-//   Playfair Display — hero (500–600), section headings and room titles (500)
-//   Inter — body (400), navigation (500), buttons (500–600), the whole admin
-//           (400–600) and dashboard figures (600–700)
-// Both are variable fonts, so every weight comes from one file per style.
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  variable: "--font-playfair",
-  display: "swap",
-});
-
-// Inter is never set in italic, so only the upright style is loaded.
+// Type system: Inter throughout — headings, wordmark, body, navigation,
+// buttons, the whole admin and dashboard figures. It is a variable font, so
+// every weight comes from one file per style; italic is loaded for the
+// accent phrase in headlines.
 const inter = Inter({
   subsets: ["latin"],
+  style: ["normal", "italic"],
   variable: "--font-inter",
   display: "swap",
 });
@@ -50,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${inter.variable}`}
+      className={inter.variable}
       suppressHydrationWarning
     >
       {/* Browser extensions (e.g. Grammarly) add attributes to <body> before hydration. */}

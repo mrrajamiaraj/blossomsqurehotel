@@ -159,18 +159,20 @@
   line-height: 1;
   gap: 5px;
 }
+/* Mirrors the monogram's lockup: spaced capitals over a mixed-case line. */
 .logoName {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: 0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .logoSub {
-  font-family: var(--font-caps);
-  font-size: 0.56rem;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  opacity: 0.75;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
 }
 
 /* Right side */
