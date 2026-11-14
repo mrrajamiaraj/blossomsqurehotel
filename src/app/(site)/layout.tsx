@@ -6,7 +6,7 @@ import { photo } from "@/lib/photos";
 
 // One image per menu entry, shown as each link is hovered.
 const MENU_PHOTOS = [
-  photo("DSC5565", "King Suite", "forest"),
+  photo("DSC5565", "Connecting King Suite", "forest"),
   photo("RESTAURANT", "Restaurant & café", "dusk"),
   photo("BANQUET", "Banquet hall", "forest"),
   photo("DSC5550", "Deluxe Couple room", "sea"),

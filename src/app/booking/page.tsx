@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import BookingFlow from "@/components/booking/BookingFlow";
 import { getAvailability } from "@/lib/availability";
 import { hotelToday } from "@/lib/dates";
-import { getRooms, getSettings } from "@/lib/rooms";
+import { getRooms, getSettings, ratesOf } from "@/lib/rooms";
 import { parseStay } from "@/lib/stay";
 
 export const metadata: Metadata = {
@@ -31,8 +31,8 @@ export default async function BookingPage({ searchParams }: Props) {
         slug: r.slug,
         name: r.name,
         tag: r.tag,
-        meta: [r.bed, r.floor, ...r.features.filter((f) => f !== r.bed)].join(" · "),
-        price: r.price_bdt,
+        meta: [r.bed, `Sleeps ${r.sleeps}`, ...r.features.filter((f) => f.includes("bathroom") || f === "Balcony")].join(" · "),
+        rates: ratesOf(r),
         cover: r.gallery[0],
         available: availability.bySlug[r.slug] ?? 0,
       }))}

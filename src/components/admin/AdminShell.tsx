@@ -6,15 +6,18 @@ import { useEffect, useState, useTransition } from "react";
 import { setPreviewRole, signOut } from "@/app/admin/actions";
 import type { StaffRole } from "@/lib/data/types";
 import { Monogram } from "../icons";
+import CommandPalette, { openCommandPalette } from "./CommandPalette";
 import {
   IBookings,
   ICalendar,
   IClose,
+  ICommand,
   IExternal,
   IGuests,
   ILogout,
   IMenu,
   IPlus,
+  IReports,
   IRooms,
   ISearch,
   ISettings,
@@ -36,6 +39,7 @@ const NAV = [
   { href: "/admin/calendar", label: "Calendar", icon: ICalendar },
   { href: "/admin/rooms", label: "Rooms & rates", icon: IRooms },
   { href: "/admin/guests", label: "Guests", icon: IGuests },
+  { href: "/admin/reports", label: "Reports", icon: IReports },
   { href: "/admin/settings", label: "Settings", icon: ISettings },
 ];
 
@@ -173,6 +177,19 @@ export default function AdminShell({ staff, mode, pending, dirtyRooms, children 
               /
             </kbd>
           </form>
+          <button
+            type="button"
+            className={`a-btn ${styles.cmdBtn}`}
+            onClick={openCommandPalette}
+            aria-label="Open command palette"
+            title="Quick actions (Ctrl+K)"
+          >
+            <ICommand size={16} />
+            <span className={styles.cmdLabel}>Quick actions</span>
+            <kbd className={styles.kbd} aria-hidden="true">
+              Ctrl K
+            </kbd>
+          </button>
           <Link href="/admin/bookings/new" className="a-btn a-btn--primary">
             <IPlus size={16} />
             <span className={styles.newLabel}>New booking</span>
@@ -184,6 +201,7 @@ export default function AdminShell({ staff, mode, pending, dirtyRooms, children 
         </main>
       </div>
       <SlashToSearch />
+      <CommandPalette role={staff.role} />
     </div>
   );
 }

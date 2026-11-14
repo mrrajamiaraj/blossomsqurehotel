@@ -69,7 +69,7 @@ export default async function Footer() {
           <div className={styles.col}>
             <p className={styles.heading}>Follow</p>
             {HOTEL.social.map((s) => (
-              <a key={s.label} href={s.href} className={styles.link}>
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className={styles.link}>
                 {s.label}
               </a>
             ))}
@@ -86,6 +86,9 @@ export default async function Footer() {
           <Monogram size={22} className={styles.mono} />© {new Date().getFullYear()} {HOTEL.fullName}
         </span>
         <span className={styles.legal}>No pets · Cancellation: {settings.cancellation_policy}</span>
+        <Link href="/admin/login" className={styles.staff} prefetch={false}>
+          Staff login
+        </Link>
         <BackToTop className={styles.backTop} />
       </div>
     </footer>

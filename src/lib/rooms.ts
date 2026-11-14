@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from "./data/repo";
 import { PREVIEW_ROOM_TYPES } from "./data/preview-seed";
 import type { HotelSettings, RoomTypeRecord } from "./data/types";
 import { photo, type Photo, type Tone } from "./photos";
+import type { RoomRates } from "./pricing";
 
 export type Room = Omit<RoomTypeRecord, "gallery"> & { gallery: Photo[] };
 
@@ -34,6 +35,11 @@ export async function getRooms(): Promise<Room[]> {
     }
   }
   return (rows.length ? rows : PREVIEW_ROOM_TYPES).map(withPhotos);
+}
+
+/** Just the price fields, for passing to client components. */
+export function ratesOf(r: RoomRates): RoomRates {
+  return { price_bdt: r.price_bdt, weekend_price_bdt: r.weekend_price_bdt, rack_price_bdt: r.rack_price_bdt ?? null };
 }
 
 export async function getRoom(slug: string): Promise<Room | null> {

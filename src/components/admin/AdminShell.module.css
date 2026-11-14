@@ -312,6 +312,16 @@
   color: var(--a-muted);
 }
 
+.cmdBtn {
+  color: var(--a-ink-2);
+}
+
+@media (max-width: 1180px) {
+  .cmdLabel {
+    display: none;
+  }
+}
+
 .content {
   padding: 28px 28px 56px;
   max-width: 1440px;

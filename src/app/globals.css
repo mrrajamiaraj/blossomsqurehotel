@@ -480,6 +480,25 @@ em {
   }
 }
 
+/* Published rate, crossed out next to the discounted price */
+.price-was {
+  font-size: 0.72em;
+  font-weight: 400;
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  margin-right: 0.4em;
+  white-space: nowrap;
+}
+
+/* "৳3,500 Thu & Fri" note under a nightly price */
+.price-weekend {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
 /* ---------- Form controls ---------- */
 
 .field {

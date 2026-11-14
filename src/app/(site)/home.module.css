@@ -511,6 +511,24 @@
   align-self: flex-start;
 }
 
+.whatsapp a {
+  align-self: flex-start;
+}
+.qr {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+/* A phone can't scan its own screen; the link is enough there. */
+@media (max-width: 700px), (pointer: coarse) {
+  .qr {
+    display: none;
+  }
+}
+
 .copy {
   flex-shrink: 0;
   width: 40px;

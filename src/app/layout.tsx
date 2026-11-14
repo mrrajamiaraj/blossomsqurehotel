@@ -17,6 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://blossomsquare.online"),
   title: {
     default: "Blossom Square Hotel & Suites · Cox's Bazar",
     template: "%s · Blossom Square, Cox's Bazar",

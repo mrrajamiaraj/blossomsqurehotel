@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import type { HotelSettings } from "@/lib/data/types";
-import { nightsBetween } from "@/lib/dates";
-import { formatTaka, plural } from "@/lib/format";
+import { formatTaka } from "@/lib/format";
 import { RESERVATIONS } from "@/lib/hotel";
-import { priceBreakdown } from "@/lib/pricing";
+import { nightsLabel, priceBreakdown, stayCost, type RoomRates } from "@/lib/pricing";
 import type { Stay } from "@/lib/stay";
 import StaySearch from "../booking/StaySearch";
 import { Check, Phone } from "../icons";
+import { WasPrice, WeekendNote } from "../ui/Rate";
 import styles from "./RoomBookingCard.module.css";
 
 type Props = {
@@ -16,7 +16,7 @@ type Props = {
   initial: Stay;
   slug: string;
   name: string;
-  price: number;
+  price: RoomRates;
   /** Units free for the initial dates, or null when availability isn't live. */
   available: number | null;
   rates: Pick<HotelSettings, "vat_percent" | "service_charge_percent">;
@@ -25,8 +25,8 @@ type Props = {
 /** Sticky reservation card; the price breakdown follows the chosen dates. */
 export default function RoomBookingCard({ today, initial, slug, name, price, available, rates }: Props) {
   const [stay, setStay] = useState(initial);
-  const nights = nightsBetween(stay.checkIn, stay.checkOut);
-  const subtotal = price * nights * stay.rooms;
+  const cost = stayCost(price, stay.checkIn, stay.checkOut, stay.rooms);
+  const subtotal = cost.total;
   const bill = priceBreakdown(subtotal, rates);
   const datesChanged = stay.checkIn !== initial.checkIn || stay.checkOut !== initial.checkOut || stay.rooms !== initial.rooms;
   const soldOut = available !== null && !datesChanged && available < stay.rooms;
@@ -35,7 +35,9 @@ export default function RoomBookingCard({ today, initial, slug, name, price, ava
     <aside className={styles.card} aria-label={`Reserve the ${name}`}>
       <div className={styles.head}>
         <span className={styles.price}>
-          {formatTaka(price)} <span>/ night</span>
+          <WasPrice rates={price} />
+          {formatTaka(price.price_bdt)} <span>/ night</span>
+          <WeekendNote rates={price} />
         </span>
         {available !== null && !datesChanged && (
           <span className={`${styles.badge} ${soldOut ? styles.badgeOff : ""}`}>
@@ -64,15 +66,17 @@ export default function RoomBookingCard({ today, initial, slug, name, price, ava
       </div>
 
       <dl className={styles.breakdown}>
-        <div>
-          <dt>
-            {formatTaka(price)} × {plural(nights, "night")}
-            {stay.rooms > 1 ? ` × ${stay.rooms} rooms` : ""}
-          </dt>
-          <dd key={subtotal} className={styles.tick}>
-            {formatTaka(subtotal)}
-          </dd>
-        </div>
+        {cost.lines.map((l) => (
+          <div key={l.kind}>
+            <dt>
+              {formatTaka(l.rate)} × {nightsLabel(l)}
+              {stay.rooms > 1 ? ` × ${stay.rooms} rooms` : ""}
+            </dt>
+            <dd key={l.rate * l.nights * stay.rooms} className={styles.tick}>
+              {formatTaka(l.rate * l.nights * stay.rooms)}
+            </dd>
+          </div>
+        ))}
         <div>
           <dt>Breakfast for {stay.adults + stay.children}</dt>
           <dd className={styles.included}>Included</dd>
@@ -102,7 +106,7 @@ export default function RoomBookingCard({ today, initial, slug, name, price, ava
           </dd>
         </div>
       </dl>
-      <p className={styles.note}>Nothing is charged online. You pay at the hotel.</p>
+      <p className={styles.note}>Nothing is charged online. Pay at the hotel, or send an advance by bKash, Nagad or bank transfer.</p>
 
       <a href={RESERVATIONS.href} className={styles.call}>
         <Phone size={18} />

@@ -155,6 +155,24 @@
   color: var(--brass-light);
 }
 
+.staff {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-caps);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mist);
+  opacity: 0.8;
+  transition: opacity 0.3s, color 0.3s;
+}
+.staff:hover,
+.staff:focus-visible {
+  opacity: 1;
+  color: var(--brass-light);
+}
+
 .backTop {
   display: inline-flex;
   align-items: center;

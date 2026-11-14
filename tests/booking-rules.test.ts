@@ -1,19 +1,25 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { addDays, hotelToday } from "@/lib/dates";
+import { addDays, hotelToday, toDate } from "@/lib/dates";
 import { PreviewRepo } from "@/lib/data/preview-repo";
+import { PREVIEW_ROOM_TYPES } from "@/lib/data/preview-seed";
 import { canTransition, guestsFit, overlaps } from "@/lib/data/rules";
 import type { WebsiteBookingInput } from "@/lib/data/types";
+import { stayCost } from "@/lib/pricing";
 
 const today = hotelToday();
+const type = (slug: string) => PREVIEW_ROOM_TYPES.find((t) => t.slug === slug)!;
+/** The first Sunday on or after `from`, so a 3-night stay is all weekday nights. */
+const sunday = (from: string) => addDays(from, (7 - toDate(from).getUTCDay()) % 7);
+const farSunday = sunday(addDays(today, 40));
 const desk = () => new PreviewRepo({ name: "Test Desk", role: "front_desk" });
 const manager = () => new PreviewRepo({ name: "Test Manager", role: "manager" });
 const guest = () => new PreviewRepo();
 
 function request(overrides: Partial<WebsiteBookingInput> = {}): WebsiteBookingInput {
   return {
-    room: "king-suite",
-    checkIn: addDays(today, 40),
-    checkOut: addDays(today, 43),
+    room: "connecting-king-suite",
+    checkIn: farSunday,
+    checkOut: addDays(farSunday, 3),
     rooms: 1,
     adults: 2,
     children: 0,
@@ -55,18 +61,26 @@ describe("pure rules", () => {
 
 describe("booking integrity (preview store, same rules as the database)", () => {
   it("prices from the room type, not the caller, and starts pending", async () => {
-    const ref = await guest().createWebsiteBooking(request());
+    const ref = await guest().createWebsiteBooking(request()); // Sun–Tue: weekday nights only
     const b = await desk().getBooking(ref);
-    expect(b).toMatchObject({ status: "pending", nightly_rate_bdt: 12500, total_bdt: 37500, payment_status: "unpaid" });
+    expect(b).toMatchObject({ status: "pending", nightly_rate_bdt: 6000, total_bdt: 18000, payment_status: "unpaid" });
+  });
+
+  it("charges Thursday and Friday nights at the weekend rate", async () => {
+    // Wed → Sat: Wednesday (weekday), Thursday and Friday (weekend).
+    const wed = addDays(farSunday, 3);
+    const ref = await guest().createWebsiteBooking(request({ checkIn: wed, checkOut: addDays(wed, 3), rooms: 2 }));
+    const b = await desk().getBooking(ref);
+    expect(b).toMatchObject({ total_bdt: (6000 + 8500 * 2) * 2, nightly_rate_bdt: Math.round((6000 + 8500 * 2) / 3) });
   });
 
   it("refuses to oversell a room type", async () => {
-    // Two King Suites exist; a third overlapping request must fail.
+    // Two Connecting King Suites exist; a third overlapping request must fail.
     await guest().createWebsiteBooking(request());
     await guest().createWebsiteBooking(request());
     await expect(guest().createWebsiteBooking(request())).rejects.toMatchObject({ code: "SOLD_OUT" });
     // Back-to-back is fine.
-    await expect(guest().createWebsiteBooking(request({ checkIn: addDays(today, 43), checkOut: addDays(today, 45) }))).resolves.toMatch(/^BSQ-/);
+    await expect(guest().createWebsiteBooking(request({ checkIn: addDays(farSunday, 3), checkOut: addDays(farSunday, 5) }))).resolves.toMatch(/^BSQ-/);
   });
 
   it("frees the units of a cancelled booking", async () => {
@@ -78,7 +92,8 @@ describe("booking integrity (preview store, same rules as the database)", () => 
   });
 
   it("rejects parties the rooms can't sleep", async () => {
-    await expect(guest().createWebsiteBooking(request({ adults: 3 }))).rejects.toMatchObject({ code: "TOO_MANY_GUESTS" });
+    await expect(guest().createWebsiteBooking(request({ adults: 5 }))).rejects.toMatchObject({ code: "TOO_MANY_GUESTS" });
+    await expect(guest().createWebsiteBooking(request({ room: "standard-couple", adults: 3 }))).rejects.toMatchObject({ code: "TOO_MANY_GUESTS" });
   });
 
   it("rejects past dates and long stays", async () => {
@@ -100,7 +115,7 @@ describe("booking integrity (preview store, same rules as the database)", () => 
 
   it("restricts rates and settings to managers", async () => {
     await expect(desk().updateRoomType("rt-king", { price_bdt: 1 })).rejects.toMatchObject({ code: "NOT_MANAGER" });
-    await expect(manager().updateRoomType("rt-king", { price_bdt: 13000 })).resolves.toBeUndefined();
+    await expect(manager().updateRoomType("rt-king", { price_bdt: 6500, weekend_price_bdt: 9000 })).resolves.toBeUndefined();
   });
 });
 
@@ -151,7 +166,7 @@ describe("front-desk lifecycle", () => {
   });
 
   it("tracks payments against the total", async () => {
-    const b = await arrivingToday(); // 2 nights × 7,800
+    const b = await arrivingToday(); // 2 Deluxe Couple nights: ৳7,000–9,000
     await desk().recordPayment(b.id, 5000, "cash", "");
     expect((await desk().getBooking(b.reference))?.payment_status).toBe("partial");
     await desk().recordPayment(b.id, 10600, "bkash", "TrxID 123");
@@ -161,10 +176,19 @@ describe("front-desk lifecycle", () => {
 
   it("re-prices modifications and re-checks availability", async () => {
     const b = await arrivingToday();
+    // New dates are re-priced night by night.
     await desk().modifyBooking(b.id, { room: "deluxe-couple", checkIn: today, checkOut: addDays(today, 3), rooms: 1, adults: 2, children: 0 });
-    expect((await desk().getBooking(b.reference))?.total_bdt).toBe(3 * 7800);
-    // Switching type takes the new type's rate.
-    await desk().modifyBooking(b.id, { room: "business-queen-suite", checkIn: addDays(today, 20), checkOut: addDays(today, 22), rooms: 1, adults: 2, children: 0 });
-    expect((await desk().getBooking(b.reference))).toMatchObject({ nightly_rate_bdt: 10500, total_bdt: 21000, room_id: null });
+    expect((await desk().getBooking(b.reference))?.total_bdt).toBe(stayCost(type("deluxe-couple"), today, addDays(today, 3)).total);
+    // Switching type takes the new type's rates.
+    const sun = sunday(addDays(today, 20));
+    await desk().modifyBooking(b.id, { room: "connecting-queen-suite", checkIn: sun, checkOut: addDays(sun, 2), rooms: 1, adults: 2, children: 0 });
+    expect(await desk().getBooking(b.reference)).toMatchObject({ nightly_rate_bdt: 5500, total_bdt: 11000, room_id: null });
+  });
+
+  it("keeps the agreed rate when only the party or room count changes", async () => {
+    const b = (await desk().getBooking(await guest().createWebsiteBooking(request())))!;
+    await manager().updateRoomType("rt-king", { price_bdt: 9000 }); // a later rate change doesn't touch it
+    await desk().modifyBooking(b.id, { room: "connecting-king-suite", checkIn: b.check_in, checkOut: b.check_out, rooms: 2, adults: 5, children: 0 });
+    expect(await desk().getBooking(b.reference)).toMatchObject({ nightly_rate_bdt: 6000, total_bdt: 36000 });
   });
 });

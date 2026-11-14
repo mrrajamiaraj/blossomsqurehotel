@@ -690,6 +690,18 @@
   font-size: 1.08rem;
 }
 
+.donePay {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+  animation: rise 1.2s var(--ease-out) 1.1s backwards;
+}
+.donePay .payTitle {
+  margin: 24px 0 0;
+}
+
 .doneActions {
   margin-top: 12px;
   display: flex;

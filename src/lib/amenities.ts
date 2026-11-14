@@ -13,7 +13,27 @@ export const ICONS = {
   airport: "M2 16l20-6-2-3-6 2-6-5-2 1 4 5-5 2-2-2-1 1z",
   ac: "M12 2v20M4.9 6.5l14.2 11M4.9 17.5l14.2-11",
   tv: "M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5zM8 21h8",
+  bed: "M3 18V6M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 11.5a1.5 1.5 0 1 0 0-.01",
+  bath: "M3 12h18v2a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zM6 12V5a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2",
+  desk: "M3 9h18M5 9v11M19 9v11M13 9v6h6M9 5h6",
+  hotWater: "M12 3s5 5.5 5 9.5a5 5 0 0 1-10 0C7 8.5 12 3 12 3zM10 14a2 2 0 0 0 2 2",
 };
+
+/** Icon for one of a room type's feature lines (e.g. "Two queen-size beds"). */
+export function featureIcon(feature: string): string {
+  const f = feature.toLowerCase();
+  if (f.includes("bed")) return ICONS.bed;
+  if (f.includes("bathroom")) return ICONS.bath;
+  if (f.includes("balcony")) return ICONS.balcony;
+  if (f.includes("wi-fi")) return ICONS.wifi;
+  if (f.includes("tv")) return ICONS.tv;
+  if (f.includes("air") || f === "ac") return ICONS.ac;
+  if (f.includes("geyser") || f.includes("hot water")) return ICONS.hotWater;
+  if (f.includes("desk")) return ICONS.desk;
+  if (f.includes("sea")) return ICONS.seaView;
+  if (f.includes("mini")) return ICONS.minibar;
+  return ICONS.roomService;
+}
 
 export const HOTEL_AMENITIES: Amenity[] = [
   { name: "Sea view", note: "From every room", icon: ICONS.seaView },
@@ -22,17 +42,6 @@ export const HOTEL_AMENITIES: Amenity[] = [
   { name: "Room service", note: "Twenty-four hours", icon: ICONS.roomService },
   { name: "Wi-Fi", note: "High-speed, free", icon: ICONS.wifi },
   { name: "Parking", note: "Free, on site", icon: ICONS.parking },
-  { name: "Private balcony", note: "In every room", icon: ICONS.balcony },
+  { name: "Private balcony", note: "In our suites", icon: ICONS.balcony },
   { name: "Airport transfers", note: "On request, extra charge", icon: ICONS.airport },
-];
-
-export const ROOM_AMENITIES: Amenity[] = [
-  { name: "Sea view", note: "", icon: ICONS.seaView },
-  { name: "Private balcony", note: "", icon: ICONS.balcony },
-  { name: "Breakfast included", note: "", icon: ICONS.breakfast },
-  { name: "Pool access", note: "", icon: ICONS.pool },
-  { name: "Mini bar", note: "", icon: ICONS.minibar },
-  { name: "Air conditioning", note: "", icon: ICONS.ac },
-  { name: "Smart TV", note: "", icon: ICONS.tv },
-  { name: "High-speed Wi-Fi", note: "", icon: ICONS.wifi },
 ];

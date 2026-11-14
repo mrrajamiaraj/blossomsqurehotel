@@ -1,5 +1,6 @@
 import "server-only";
 import { hotelToday, nightsBetween } from "../dates";
+import { stayCost } from "../pricing";
 import { RepoError } from "./errors";
 import { buildPreviewBookings, PREVIEW_ROOM_TYPES, PREVIEW_ROOMS, PREVIEW_STAFF } from "./preview-seed";
 import { DEFAULT_SETTINGS, type AdminRepo } from "./repo";
@@ -141,6 +142,7 @@ export class PreviewRepo implements AdminRepo {
     do reference = `BSQ-${String(Math.floor(Math.random() * 100000)).padStart(5, "0")}`;
     while (s.bookings.some((b) => b.reference === reference));
 
+    const cost = stayCost(type, input.checkIn, input.checkOut, input.rooms);
     const now = new Date().toISOString();
     const booking: Booking = {
       id: crypto.randomUUID(),
@@ -161,8 +163,8 @@ export class PreviewRepo implements AdminRepo {
       internal_notes: input.notes?.trim() || null,
       airport_pickup: input.airportPickup,
       source: input.source,
-      nightly_rate_bdt: type.price_bdt,
-      total_bdt: type.price_bdt * nights * input.rooms,
+      nightly_rate_bdt: cost.average,
+      total_bdt: cost.total,
       amount_paid_bdt: 0,
       payment_status: "unpaid",
       status: input.status,
@@ -395,7 +397,11 @@ export class PreviewRepo implements AdminRepo {
     if (!guestsFit(type.sleeps, c.rooms, c.adults, c.children)) throw new RepoError("TOO_MANY_GUESTS");
     if (this.freeUnits(type.id, c.checkIn, c.checkOut, b.id) < c.rooms) throw new RepoError("SOLD_OUT");
 
-    const rate = type.id === b.room_type_id ? b.nightly_rate_bdt : type.price_bdt;
+    // Same room type and dates: keep the agreed rate. Otherwise re-price night by night.
+    const keepRate = type.id === b.room_type_id && c.checkIn === b.check_in && c.checkOut === b.check_out;
+    const cost = stayCost(type, c.checkIn, c.checkOut, c.rooms);
+    const rate = keepRate ? b.nightly_rate_bdt : cost.average;
+    const total = keepRate ? Math.round((b.total_bdt / b.rooms) * c.rooms) : cost.total;
     const roomId = type.id === b.room_type_id && c.rooms === 1 ? b.room_id : null;
     if (roomId && this.roomClash(roomId, c.checkIn, c.checkOut, b.id)) throw new RepoError("ROOM_TAKEN");
 
@@ -409,7 +415,7 @@ export class PreviewRepo implements AdminRepo {
       adults: c.adults,
       children: c.children,
       nightly_rate_bdt: rate,
-      total_bdt: rate * nights * c.rooms,
+      total_bdt: total,
     });
     b.payment_status = paymentStatus(b.amount_paid_bdt, b.total_bdt);
     this.touch(b);

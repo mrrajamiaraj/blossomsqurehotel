@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import StaySearch from "@/components/booking/StaySearch";
 import MapEmbed from "@/components/home/MapEmbed";
@@ -11,7 +12,7 @@ import CopyButton from "@/components/ui/CopyButton";
 import PhotoFrame from "@/components/ui/PhotoFrame";
 import { HOTEL_AMENITIES } from "@/lib/amenities";
 import { hotelToday } from "@/lib/dates";
-import { HOTEL, RESERVATIONS } from "@/lib/hotel";
+import { HOTEL, RESERVATIONS, WHATSAPP } from "@/lib/hotel";
 import { photo } from "@/lib/photos";
 import { getRooms } from "@/lib/rooms";
 import { defaultStay } from "@/lib/stay";
@@ -67,10 +68,10 @@ export default async function HomePage() {
   const today = hotelToday();
   const fromPrice = Math.min(...rooms.map((r) => r.price_bdt));
 
-  const hero = photo("DSC5566", "The King Suite in the evening, lamps lit above the bed", "dusk");
+  const hero = photo("DSC5566", "The Connecting King Suite in the evening, lamps lit above the bed", "dusk");
   const lobby = photo("DSC5562", "The upstairs corridor, with original artwork on the walls", "sand");
   const pool = photo("DSC5552", "Turn-down in a Deluxe Couple room", "sea");
-  const bay = photo("DSC5579", "The Business Queen Suite, curtains drawn", "sea");
+  const bay = photo("DSC5579", "A Standard Couple room, curtains drawn", "sea");
 
   return (
     <>
@@ -166,7 +167,7 @@ export default async function HomePage() {
                 Rooms &amp; Suites
               </p>
               <h2 id="rooms-h" className={`h2 ${styles.headTitle}`} data-reveal="words">
-                <SplitWords text="Every room *faces the sea.*" />
+                <SplitWords text="A room *for every trip.*" />
               </h2>
             </div>
             <Link href="/rooms" className="link-line" data-reveal="fade">
@@ -181,7 +182,7 @@ export default async function HomePage() {
                 name: r.name,
                 tag: r.tag,
                 blurb: r.blurb,
-                features: r.features,
+                features: r.features.filter((f) => f.toLowerCase().includes("bed") || f.includes("bathroom") || f === "Balcony"),
                 price: r.price_bdt,
                 cover: r.gallery[0],
               }))}
@@ -286,6 +287,21 @@ export default async function HomePage() {
                       {p.display}
                     </a>
                   ))}
+                </dd>
+              </div>
+              <div className={styles.detail} data-reveal="up" style={d(120)}>
+                <dt>WhatsApp</dt>
+                <dd className={styles.whatsapp}>
+                  <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className="text-link">
+                    {WHATSAPP.display}
+                  </a>
+                  <Image
+                    src={WHATSAPP.qr}
+                    alt="QR code: scan to chat with Blossom Square on WhatsApp"
+                    width={120}
+                    height={120}
+                    className={styles.qr}
+                  />
                 </dd>
               </div>
               <div className={styles.detail} data-reveal="up" style={d(160)}>

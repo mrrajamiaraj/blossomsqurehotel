@@ -1,7 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { cancellationFigures, nightlyLoad, periodFigures, todayFigures } from "@/lib/admin/metrics";
 import type { Booking, BookingStatus } from "@/lib/data/types";
-import { priceBreakdown, taxNote } from "@/lib/pricing";
+import { isWeekendNight, nightsLabel, priceBreakdown, stayCost, taxNote } from "@/lib/pricing";
+
+describe("weekday / weekend rates", () => {
+  const standard = { price_bdt: 2500, weekend_price_bdt: 3500 };
+
+  it("treats Thursday and Friday nights as the weekend", () => {
+    // 15 Nov 2026 is a Sunday.
+    expect(["2026-11-15", "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"].map(isWeekendNight)).toEqual([
+      false, false, false, false, true, true, false,
+    ]);
+  });
+
+  it("prices each night at its own rate", () => {
+    // Wed, Thu, Fri nights.
+    const c = stayCost(standard, "2026-11-18", "2026-11-21");
+    expect(c.total).toBe(2500 + 3500 + 3500);
+    expect(c.average).toBe(3167);
+    expect(c.lines.map(nightsLabel)).toEqual(["1 weekday night", "2 weekend nights"]);
+    expect(stayCost(standard, "2026-11-18", "2026-11-21", 2).total).toBe(19000);
+  });
+
+  it("uses one line when every night costs the same", () => {
+    expect(stayCost(standard, "2026-11-15", "2026-11-17").lines.map(nightsLabel)).toEqual(["2 nights"]);
+    // No weekend rate: weekday rate every night.
+    expect(stayCost({ price_bdt: 5000, weekend_price_bdt: null }, "2026-11-19", "2026-11-21").total).toBe(10000);
+  });
+});
 
 function booking(id: string, status: BookingStatus, checkIn: string, checkOut: string, rate = 10000, rooms = 1, created = "2026-11-01T08:00:00Z"): Booking {
   return {

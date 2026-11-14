@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { RoomTile, RoomTypeEditor } from "@/components/admin/RoomsEditors";
 import { requireAdmin } from "@/lib/admin/session";
 import { addDays, hotelToday } from "@/lib/dates";
+import { WEEKEND_LABEL } from "@/lib/pricing";
 
 export const metadata: Metadata = { title: "Rooms & rates" };
 
@@ -36,7 +37,10 @@ export default async function RoomsPage() {
           <h2 id="types-h" className="a-h2">
             Room types &amp; nightly rates
           </h2>
-          <p className="a-hint">Changes appear on the website straight away. Existing bookings keep the rate they were made at.</p>
+          <p className="a-hint">
+            Changes appear on the website straight away. Weekend rates apply to {WEEKEND_LABEL.toLowerCase()}. Existing bookings keep
+            the rate they were made at.
+          </p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(300px, 100%), 1fr))", gap: 16 }}>
           {types.map((t) => (
@@ -46,6 +50,8 @@ export default async function RoomsPage() {
               name={t.name}
               units={rooms.filter((r) => r.room_type_id === t.id && !r.out_of_service).length}
               price={t.price_bdt}
+              weekendPrice={t.weekend_price_bdt}
+              rackPrice={t.rack_price_bdt}
               published={t.is_published}
               size={t.size_sqft}
               blurb={t.blurb}

@@ -6,13 +6,15 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createBooking } from "@/app/booking/actions";
 import type { HotelSettings } from "@/lib/data/types";
 import { dayOrdinal, formatLong, formatRange, nightsBetween } from "@/lib/dates";
-import { formatTaka, plural } from "@/lib/format";
-import { HOTEL, RESERVATIONS } from "@/lib/hotel";
+import { formatTaka, plural, roomKind } from "@/lib/format";
+import { HOTEL, RESERVATIONS, WHATSAPP } from "@/lib/hotel";
 import { downloadStayEvent } from "@/lib/ics";
 import type { Photo } from "@/lib/photos";
-import { priceBreakdown, taxNote } from "@/lib/pricing";
+import { nightsLabel, priceBreakdown, stayCost, taxNote, type RoomRates } from "@/lib/pricing";
 import { guestsLabel, type Stay } from "@/lib/stay";
 import { ArrowLeft, ArrowRight, Calendar, Check, ChevronDown, Info, Print } from "../icons";
+import { WasPrice, WeekendNote } from "../ui/Rate";
+import PaymentDetails from "./PaymentDetails";
 import StaySearch from "./StaySearch";
 import styles from "./BookingFlow.module.css";
 
@@ -21,7 +23,7 @@ export type BookRoom = {
   name: string;
   tag: string;
   meta: string;
-  price: number;
+  rates: RoomRates;
   cover: Photo;
   available: number;
 };
@@ -45,21 +47,14 @@ const COUNTRIES = [
   "United Arab Emirates", "Saudi Arabia", "Qatar", "United Kingdom", "United States", "Other",
 ];
 
-const ARRIVALS = ["Before 2 PM (early check-in)", "2 PM – 4 PM", "4 PM – 6 PM", "6 PM – 9 PM", "After 9 PM"];
-
-const PAYMENTS = [
-  { id: "hotel", name: "Pay at the hotel", note: "Reserve now, pay at check-in. Nothing is charged online.", ready: true },
-  { id: "bkash", name: "bKash", note: "Pay an advance to confirm instantly.", ready: false },
-  { id: "nagad", name: "Nagad", note: "Pay an advance to confirm instantly.", ready: false },
-  { id: "card", name: "Visa / Mastercard", note: "Secure card payment.", ready: false },
-];
+const ARRIVALS = ["Before 1 PM (early check-in)", "1 PM – 4 PM", "4 PM – 6 PM", "6 PM – 9 PM", "After 9 PM"];
 
 const EMPTY_GUEST: Guest = {
   name: "",
   email: "",
   phone: "",
   country: "Bangladesh",
-  arrival: "2 PM – 4 PM",
+  arrival: "1 PM – 4 PM",
   requests: "",
   airportPickup: false,
 };
@@ -111,7 +106,8 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
 
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
   const room = rooms.find((r) => r.slug === roomSlug) ?? null;
-  const total = room ? room.price * nights * stay.rooms : 0;
+  const cost = room ? stayCost(room.rates, stay.checkIn, stay.checkOut, stay.rooms) : null;
+  const total = cost?.total ?? 0;
   const bill = priceBreakdown(total, settings);
   const canBook = (r: BookRoom) => !live || r.available >= stay.rooms;
 
@@ -270,6 +266,18 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
             </dd>
           </div>
         </dl>
+        <section className={styles.donePay} aria-labelledby="pay-adv">
+          <h2 id="pay-adv" className={`h3 ${styles.payTitle}`}>
+            Want to confirm faster? <em>Send an advance.</em>
+          </h2>
+          <PaymentDetails reference={result.reference} />
+          <p className={styles.small}>
+            Or simply pay at the hotel when you arrive. Questions?{" "}
+            <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className="text-link">
+              WhatsApp {WHATSAPP.display}
+            </a>
+          </p>
+        </section>
         <div className={styles.doneActions}>
           <button
             type="button"
@@ -312,13 +320,15 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
             <dt>Guests</dt>
             <dd>{guestsLabel(stay)}</dd>
           </div>
-          <div className={styles.sep}>
-            <dt>
-              {formatTaka(room.price)} × {plural(nights, "night")}
-              {stay.rooms > 1 ? ` × ${stay.rooms}` : ""}
-            </dt>
-            <dd>{formatTaka(total)}</dd>
-          </div>
+          {cost!.lines.map((l, i) => (
+            <div key={l.kind} className={i === 0 ? styles.sep : undefined}>
+              <dt>
+                {formatTaka(l.rate)} × {nightsLabel(l)}
+                {stay.rooms > 1 ? ` × ${stay.rooms}` : ""}
+              </dt>
+              <dd>{formatTaka(l.rate * l.nights * stay.rooms)}</dd>
+            </div>
+          ))}
           <div>
             <dt>Breakfast</dt>
             <dd className={styles.included}>Included</dd>
@@ -443,17 +453,21 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                           <Cover photo={r.cover} sizes="220px" />
                         </span>
                         <span className={styles.roomInfo}>
-                          <span className={styles.roomTag}>{r.tag === "SUITE" ? "Suite" : "Deluxe"}</span>
+                          <span className={styles.roomTag}>{roomKind(r.tag)}</span>
                           <span className={styles.roomName}>{r.name}</span>
                           <span className={styles.roomMeta}>{r.meta}</span>
                           {live && ok && r.available === 1 && <span className={styles.few}>Only one left for these dates</span>}
                           {!ok && <span className={styles.few}>Fully booked for these dates</span>}
                         </span>
                         <span className={styles.roomPrice}>
-                          <span className={styles.roomRate}>{formatTaka(r.price)}</span>
+                          <span className={styles.roomRate}>
+                            <WasPrice rates={r.rates} />
+                            {formatTaka(r.rates.price_bdt)}
+                          </span>
                           <span className={styles.roomPer}>per night</span>
+                          <WeekendNote rates={r.rates} />
                           <span className={styles.roomTotal}>
-                            {formatTaka(r.price * nights * stay.rooms)} total
+                            {formatTaka(stayCost(r.rates, stay.checkIn, stay.checkOut, stay.rooms).total)} total
                           </span>
                         </span>
                         <span className={styles.radio} aria-hidden="true" />
@@ -651,36 +665,16 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                   </div>
                 </div>
 
-                <h2 className={`h3 ${styles.payTitle}`}>How would you like to pay?</h2>
-                <div role="radiogroup" aria-label="Payment method" className={styles.pays}>
-                  {PAYMENTS.map((p) => (
-                    <div
-                      key={p.id}
-                      role="radio"
-                      aria-checked={p.id === "hotel"}
-                      aria-disabled={!p.ready}
-                      tabIndex={p.id === "hotel" ? 0 : -1}
-                      className={`${styles.pay} ${p.id === "hotel" ? styles.payOn : ""} ${p.ready ? "" : styles.payOff}`}
-                    >
-                      <span className={styles.radio} aria-hidden="true" />
-                      <span className={styles.payText}>
-                        <span className={styles.payName}>
-                          {p.name}
-                          {!p.ready && <span className={styles.soon}>Coming soon</span>}
-                        </span>
-                        <span className={styles.payNote}>{p.note}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
+                <h2 className={`h3 ${styles.payTitle}`}>Paying for your stay</h2>
                 <p className={styles.notice}>
                   <Info />
                   <span>
                     Your room is held and our front desk will call you within {settings.confirm_call_within} to
-                    confirm. No payment is taken now. {taxNote(settings)}
+                    confirm. Nothing is charged online: pay at the hotel, or send an advance by bKash, Nagad or bank
+                    transfer using the details below. {taxNote(settings)}
                   </span>
                 </p>
+                <PaymentDetails />
 
                 <label className="check">
                   <input

@@ -116,6 +116,31 @@ export const IPrint = (p: P) => (
     <rect x="6" y="14" width="12" height="7" />
   </I>
 );
+export const IReports = (p: P) => (
+  <I {...p}>
+    <path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-6M20 16V6" />
+  </I>
+);
+export const IDownload = (p: P) => (
+  <I {...p}>
+    <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+  </I>
+);
+export const ICommand = (p: P) => (
+  <I {...p}>
+    <path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z" />
+  </I>
+);
+export const IUp = (p: P) => (
+  <I {...p}>
+    <path d="M7 14l5-5 5 5" />
+  </I>
+);
+export const IDown = (p: P) => (
+  <I {...p}>
+    <path d="M7 10l5 5 5-5" />
+  </I>
+);
 export const IKey = (p: P) => (
   <I {...p}>
     <circle cx="8" cy="15" r="4" />

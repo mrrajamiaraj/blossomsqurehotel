@@ -7,13 +7,14 @@ import RoomBookingCard from "@/components/rooms/RoomBookingCard";
 import RoomGallery from "@/components/rooms/RoomGallery";
 import Accordion from "@/components/ui/Accordion";
 import PhotoFrame from "@/components/ui/PhotoFrame";
-import { ROOM_AMENITIES } from "@/lib/amenities";
+import { featureIcon } from "@/lib/amenities";
 import { getAvailability } from "@/lib/availability";
 import { hotelToday } from "@/lib/dates";
-import { formatTaka } from "@/lib/format";
+import { formatTaka, roomKind } from "@/lib/format";
 import { HOTEL } from "@/lib/hotel";
-import { taxNote } from "@/lib/pricing";
-import { getRoom, getRooms, getSettings } from "@/lib/rooms";
+import { taxNote, WEEKEND_LABEL } from "@/lib/pricing";
+import { getRoom, getRooms, getSettings, ratesOf } from "@/lib/rooms";
+import { WasPrice } from "@/components/ui/Rate";
 import { parseStay, stayQuery } from "@/lib/stay";
 import styles from "./room.module.css";
 
@@ -44,11 +45,11 @@ export default async function RoomPage({ params, searchParams }: Props) {
   const others = rooms.filter((r) => r.slug !== room.slug);
 
   const specs = [
-    ["Bed", room.bed.replace(" bed", "")],
-    ["Size", room.size_sqft ? `${room.size_sqft} sq ft` : "[SIZE] sq ft"],
+    ["Beds", room.bed],
+    room.size_sqft ? ["Size", `${room.size_sqft} sq ft`] : null,
     ["Sleeps", `${room.sleeps} guests`],
-    ["View", room.view],
-  ];
+    room.view ? ["View", room.view] : null,
+  ].filter((s): s is string[] => s !== null);
 
   return (
     <>
@@ -67,7 +68,7 @@ export default async function RoomPage({ params, searchParams }: Props) {
         <div className={styles.main}>
           <header className={styles.intro}>
             <p className="caps eyebrow" data-reveal="up">
-              {room.tag === "SUITE" ? "Suite" : "Deluxe"} · {room.floor}
+              {[roomKind(room.tag), room.floor].filter(Boolean).join(" · ")}
             </p>
             <h1 className={`h1 ${styles.name}`} data-reveal="words">
               <SplitWords text={room.name} />
@@ -91,12 +92,12 @@ export default async function RoomPage({ params, searchParams }: Props) {
               In the room
             </h2>
             <ul role="list" className={styles.amenities}>
-              {ROOM_AMENITIES.map((a, i) => (
-                <li key={a.name} data-reveal="up" style={{ "--d": `${i * 50}ms` } as React.CSSProperties}>
+              {room.features.map((f, i) => (
+                <li key={f} data-reveal="up" style={{ "--d": `${i * 50}ms` } as React.CSSProperties}>
                   <span className={styles.amenIcon}>
-                    <PathIcon d={a.icon} size={22} />
+                    <PathIcon d={featureIcon(f)} size={22} />
                   </span>
-                  {a.name}
+                  {f}
                 </li>
               ))}
             </ul>
@@ -113,6 +114,13 @@ export default async function RoomPage({ params, searchParams }: Props) {
                   { title: "Check-out", body: `Until ${HOTEL.checkOut}. Late check-out on request.` },
                   { title: "Cancellation", body: settings.cancellation_policy },
                   { title: "Children & extra beds", body: settings.children_policy },
+                  {
+                    title: "Rates",
+                    body:
+                      room.weekend_price_bdt && room.weekend_price_bdt !== room.price_bdt
+                        ? `${formatTaka(room.price_bdt)} a night Sunday to Wednesday, ${formatTaka(room.weekend_price_bdt)} on ${WEEKEND_LABEL.toLowerCase()}.${room.rack_price_bdt ? ` Published rate ${formatTaka(room.rack_price_bdt)}.` : ""}`
+                        : `${formatTaka(room.price_bdt)} a night.`,
+                  },
                   { title: "Taxes", body: taxNote(settings) },
                   { title: "Pets", body: "We're unable to accommodate pets." },
                 ]}
@@ -127,7 +135,7 @@ export default async function RoomPage({ params, searchParams }: Props) {
             initial={stay}
             slug={room.slug}
             name={room.name}
-            price={room.price_bdt}
+            price={ratesOf(room)}
             available={availability.live ? (availability.bySlug[room.slug] ?? 0) : null}
             rates={{ vat_percent: settings.vat_percent, service_charge_percent: settings.service_charge_percent }}
           />
@@ -150,9 +158,12 @@ export default async function RoomPage({ params, searchParams }: Props) {
               >
                 <PhotoFrame photo={r.gallery[0]} zoom className={styles.otherPhoto} sizes="(max-width: 900px) 100vw, 25vw" />
                 <span className={styles.otherBody}>
-                  <span className="caps">{r.tag === "SUITE" ? "Suite" : "Deluxe"}</span>
+                  <span className="caps">{roomKind(r.tag)}</span>
                   <span className={styles.otherName}>{r.name}</span>
-                  <span className={styles.otherPrice}>From {formatTaka(r.price_bdt)} / night</span>
+                  <span className={styles.otherPrice}>
+                    <WasPrice rates={r} />
+                    From {formatTaka(r.price_bdt)} / night
+                  </span>
                   <span className={styles.otherCta}>
                     View room <ArrowRight />
                   </span>

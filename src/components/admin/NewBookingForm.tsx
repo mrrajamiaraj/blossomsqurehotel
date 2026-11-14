@@ -5,9 +5,10 @@ import { useEffect, useState, useTransition } from "react";
 import { checkAvailability, createStaffBooking } from "@/app/admin/actions";
 import { addDays, nightsBetween } from "@/lib/dates";
 import { formatTaka } from "@/lib/format";
+import { stayCost } from "@/lib/pricing";
 import { toast } from "../ui/Toaster";
 
-type TypeOption = { slug: string; name: string; price: number; sleeps: number; published: boolean };
+type TypeOption = { slug: string; name: string; price: number; weekend: number | null; sleeps: number; published: boolean };
 
 export default function NewBookingForm({ today, types }: { today: string; types: TypeOption[] }) {
   const router = useRouter();
@@ -133,7 +134,8 @@ export default function NewBookingForm({ today, types }: { today: string; types:
                   <input type="radio" name="room" value={t.slug} checked={on} disabled={full} onChange={() => set("room", t.slug)} className="sr-only" />
                   <strong style={{ fontWeight: 600 }}>{t.name}</strong>
                   <span className="a-muted" style={{ fontSize: "0.78rem" }}>
-                    {formatTaka(t.price)} / night
+                    {formatTaka(t.price)}
+                    {t.weekend && t.weekend !== t.price ? ` · ${formatTaka(t.weekend)} Thu/Fri` : ""} / night
                     {!t.published && " · hidden online"}
                   </span>
                   <span style={{ fontSize: "0.76rem", color: full ? "var(--s-cancel-fg)" : "var(--a-ink-2)" }}>
@@ -168,7 +170,7 @@ export default function NewBookingForm({ today, types }: { today: string; types:
         </div>
         {type && nights > 0 && (
           <p className="a-span-2 a-hint" aria-live="polite">
-            Room total <strong style={{ color: "var(--a-ink)" }}>{formatTaka(type.price * nights * form.rooms)}</strong> ·{" "}
+            Room total <strong style={{ color: "var(--a-ink)" }}>{formatTaka(stayCost({ price_bdt: type.price, weekend_price_bdt: type.weekend }, form.checkIn, form.checkOut, form.rooms).total)}</strong> ·{" "}
             {left !== undefined ? `${left} of this type free` : ""}
           </p>
         )}

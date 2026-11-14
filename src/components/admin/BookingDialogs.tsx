@@ -5,10 +5,11 @@ import { modifyBooking, recordPayment, updateGuestDetails } from "@/app/admin/ac
 import type { PaymentMethod } from "@/lib/data/types";
 import { nightsBetween } from "@/lib/dates";
 import { formatTaka } from "@/lib/format";
+import { stayCost } from "@/lib/pricing";
 import { toast } from "../ui/Toaster";
 import Dialog from "./Dialog";
 
-type TypeOption = { slug: string; id: string; name: string; price: number; sleeps: number };
+type TypeOption = { slug: string; id: string; name: string; price: number; weekend: number | null; sleeps: number };
 
 /* ---------------------------------------------------------- Change stay */
 
@@ -16,7 +17,7 @@ export function ChangeStay(props: {
   id: string;
   locked: boolean;
   inHouse: boolean;
-  current: { typeId: string; rate: number; checkIn: string; checkOut: string; rooms: number; adults: number; children: number };
+  current: { typeId: string; rate: number; total: number; checkIn: string; checkOut: string; rooms: number; adults: number; children: number };
   types: TypeOption[];
 }) {
   const { id, current, types, inHouse } = props;
@@ -27,10 +28,14 @@ export function ChangeStay(props: {
   const [form, setForm] = useState({ ...current, room: initialSlug });
 
   const type = types.find((t) => t.slug === form.room);
-  const sameType = type?.id === current.typeId;
-  const rate = sameType ? current.rate : (type?.price ?? 0);
+  // Mirrors admin_modify_booking: same type and dates keep the agreed rate.
+  const keep = type?.id === current.typeId && form.checkIn === current.checkIn && form.checkOut === current.checkOut;
   const nights = form.checkOut > form.checkIn ? nightsBetween(form.checkIn, form.checkOut) : 0;
-  const total = rate * nights * form.rooms;
+  const total = keep
+    ? Math.round((current.total / current.rooms) * form.rooms)
+    : type && nights
+      ? stayCost({ price_bdt: type.price, weekend_price_bdt: type.weekend }, form.checkIn, form.checkOut, form.rooms).total
+      : 0;
 
   const save = () =>
     start(async () => {
@@ -63,7 +68,7 @@ export function ChangeStay(props: {
         description={
           inHouse
             ? "The guest is in house: only the departure date and party can change."
-            : "Availability is re-checked when you save. The agreed rate is kept unless the room type changes."
+            : "Availability is re-checked when you save. The agreed price is kept unless the dates or room type change; then it's re-priced at current weekday and weekend rates."
         }
         onSubmit={save}
         footer={
@@ -115,9 +120,10 @@ export function ChangeStay(props: {
         <p className="a-hint" aria-live="polite">
           {nights ? (
             <>
-              New room total <strong style={{ color: "var(--a-ink)" }}>{formatTaka(total)}</strong> · {formatTaka(rate)} × {nights}{" "}
+              New room total <strong style={{ color: "var(--a-ink)" }}>{formatTaka(total)}</strong> · {nights}{" "}
               {nights === 1 ? "night" : "nights"}
               {form.rooms > 1 ? ` × ${form.rooms} rooms` : ""}
+              {keep ? " at the agreed rate" : ""}
             </>
           ) : (
             "Departure must be after arrival."

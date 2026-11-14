@@ -1,0 +1,98 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.method {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 22px;
+  background: var(--ivory);
+  border: 1px solid var(--line);
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.note {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.fields {
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fields > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fields dt {
+  font-family: var(--font-caps);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bronze);
+}
+.fields dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.value {
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.copy {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: -6px 0;
+  color: var(--pine-800);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.copy:hover {
+  color: var(--brass);
+}
+
+.foot {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 900px) {
+  .list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

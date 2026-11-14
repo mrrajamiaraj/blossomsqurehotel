@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { formatTaka } from "@/lib/format";
+import { formatTaka, roomKind } from "@/lib/format";
 import type { Photo } from "@/lib/photos";
 import { ArrowLeft, ArrowRight } from "../icons";
 import styles from "./RoomShowcase.module.css";
@@ -18,7 +18,7 @@ export type ShowcaseRoom = {
   cover: Photo;
 };
 
-const NUMERALS = ["I", "II", "III", "IV", "V"];
+const NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
 
 function Cover({ photo, sizes }: { photo: Photo; sizes: string }) {
   return photo.src ? (
@@ -89,7 +89,7 @@ export default function RoomShowcase({ rooms }: { rooms: ShowcaseRoom[] }) {
               </div>
             ))}
             <span key={room.slug} className={styles.tag}>
-              {room.tag}
+              {roomKind(room.tag)}
             </span>
           </div>
           <div className={styles.detail} key={room.slug}>
@@ -100,7 +100,6 @@ export default function RoomShowcase({ rooms }: { rooms: ShowcaseRoom[] }) {
               {room.features.map((f) => (
                 <li key={f}>{f}</li>
               ))}
-              <li>Breakfast for two</li>
             </ul>
             <div className={styles.actions}>
               <Link href={`/rooms/${room.slug}`} className="link-line">
@@ -122,7 +121,7 @@ export default function RoomShowcase({ rooms }: { rooms: ShowcaseRoom[] }) {
             <Link key={r.slug} href={`/rooms/${r.slug}`} className={`${styles.card} hover-zoom`}>
               <div className={`photo photo--zoom ${styles.cardPhoto}`}>
                 <Cover photo={r.cover} sizes="85vw" />
-                <span className={styles.tag}>{r.tag}</span>
+                <span className={styles.tag}>{roomKind(r.tag)}</span>
               </div>
               <div className={styles.cardBody}>
                 <span className={styles.cardNum}>{NUMERALS[i]}.</span>

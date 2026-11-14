@@ -270,9 +270,9 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
               <h2 id="mtd-h" className="a-h2">
                 Month to date
               </h2>
-              <span className="a-muted" style={{ fontSize: "0.76rem" }}>
-                {mtd.nights} nights
-              </span>
+              <Link href="/admin/reports?period=mtd" className="a-link">
+                Full report
+              </Link>
             </div>
             <dl className={styles.ledger}>
               <div>

@@ -92,13 +92,14 @@ export default async function BookingPage({ params }: Props) {
                 current={{
                   typeId: b.room_type_id,
                   rate: b.nightly_rate_bdt,
+                  total: b.total_bdt,
                   checkIn: b.check_in,
                   checkOut: b.check_out,
                   rooms: b.rooms,
                   adults: b.adults,
                   children: b.children,
                 }}
-                types={types.map((t) => ({ slug: t.slug, id: t.id, name: t.name, price: t.price_bdt, sleeps: t.sleeps }))}
+                types={types.map((t) => ({ slug: t.slug, id: t.id, name: t.name, price: t.price_bdt, weekend: t.weekend_price_bdt, sleeps: t.sleeps }))}
               />
             </div>
             <div className={`a-panel-body ${styles.stay}`}>
@@ -207,8 +208,8 @@ export default async function BookingPage({ params }: Props) {
               <dl className={styles.folio}>
                 <div>
                   <dt>
-                    Room · {formatTaka(b.nightly_rate_bdt)} × {nights} {nights === 1 ? "night" : "nights"}
-                    {b.rooms > 1 ? ` × ${b.rooms}` : ""}
+                    Room · {nights} {nights === 1 ? "night" : "nights"}
+                    {b.rooms > 1 ? ` × ${b.rooms} rooms` : ""} · avg {formatTaka(b.nightly_rate_bdt)} / night
                   </dt>
                   <dd>{formatTaka(b.total_bdt)}</dd>
                 </div>

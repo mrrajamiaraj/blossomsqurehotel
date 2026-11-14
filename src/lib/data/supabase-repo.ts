@@ -24,7 +24,7 @@ import type {
 } from "./types";
 
 const ROOM_TYPE_COLUMNS =
-  "id, slug, name, tag, bed, size_sqft, sleeps, floor, view, price_bdt, blurb, description, features, gallery, sort_order, is_published";
+  "id, slug, name, tag, bed, size_sqft, sleeps, floor, view, price_bdt, weekend_price_bdt, rack_price_bdt, blurb, description, features, gallery, sort_order, is_published";
 
 /** Throws a RepoError carrying the database's error code, if any. */
 function check<T>(res: { data: T; error: { message: string } | null }): T {

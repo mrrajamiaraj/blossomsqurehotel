@@ -3,10 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatTaka, plural } from "@/lib/format";
+import { formatTaka, plural, roomKind } from "@/lib/format";
 import type { Photo } from "@/lib/photos";
+import { stayCost, type RoomRates } from "@/lib/pricing";
 import { stayQuery, type Stay } from "@/lib/stay";
 import { ArrowRight } from "../icons";
+import { WasPrice, WeekendNote } from "../ui/Rate";
 import styles from "./RoomsList.module.css";
 
 export type ListRoom = {
@@ -18,7 +20,8 @@ export type ListRoom = {
   size: string;
   sleeps: number;
   blurb: string;
-  price: number;
+  features: string[];
+  rates: RoomRates;
   gallery: Photo[];
   available: number;
 };
@@ -30,8 +33,6 @@ const SORTS: { id: Sort; label: string }[] = [
   { id: "price-asc", label: "Price, low to high" },
   { id: "price-desc", label: "Price, high to low" },
 ];
-
-const CHIPS = ["Sea view", "Balcony", "Breakfast included", "Pool access", "Mini bar", "AC · TV · Wi-Fi"];
 
 function Shot({ photo, sizes, priority }: { photo: Photo; sizes: string; priority?: boolean }) {
   return photo.src ? (
@@ -54,7 +55,7 @@ function Gallery({ room, priority }: { room: ListRoom; priority?: boolean }) {
             <Shot photo={p} sizes="(max-width: 900px) 100vw, 55vw" priority={priority && i === 0} />
           </div>
         ))}
-        <span className={styles.tag}>{room.tag}</span>
+        <span className={styles.tag}>{roomKind(room.tag)}</span>
         <span className={styles.counter} aria-hidden="true">
           {shown + 1} / {room.gallery.length}
         </span>
@@ -89,10 +90,11 @@ export default function RoomsList({ rooms, stay, nights, live, rangeLabel }: Pro
 
   const sorted = useMemo(() => {
     const list = [...rooms];
-    if (sort === "price-asc") list.sort((a, b) => a.price - b.price);
-    if (sort === "price-desc") list.sort((a, b) => b.price - a.price);
+    const total = (r: ListRoom) => stayCost(r.rates, stay.checkIn, stay.checkOut).total;
+    if (sort === "price-asc") list.sort((a, b) => total(a) - total(b));
+    if (sort === "price-desc") list.sort((a, b) => total(b) - total(a));
     return list;
-  }, [rooms, sort]);
+  }, [rooms, sort, stay.checkIn, stay.checkOut]);
 
   const open = rooms.filter((r) => r.available >= stay.rooms).length;
 
@@ -130,24 +132,24 @@ export default function RoomsList({ rooms, stay, nights, live, rangeLabel }: Pro
         {sorted.map((room, i) => {
           const soldOut = live && room.available < stay.rooms;
           const fewLeft = live && !soldOut && room.available <= 1;
-          const total = room.price * nights * stay.rooms;
+          const total = stayCost(room.rates, stay.checkIn, stay.checkOut, stay.rooms).total;
           const query = stayQuery(stay, { room: room.slug });
           return (
             <article key={room.slug} className={`${styles.card} ${soldOut ? styles.soldOut : ""}`} data-reveal="up">
               <Gallery room={room} priority={i === 0} />
               <div className={styles.body}>
                 <p className={styles.index}>
-                  <span>{String(i + 1).padStart(2, "0")}</span> {room.tag === "SUITE" ? "Suite" : "Deluxe room"}
+                  <span>{String(i + 1).padStart(2, "0")}</span> {roomKind(room.tag)}
                 </p>
                 <h2 className={styles.name}>
                   <Link href={`/rooms/${room.slug}?${stayQuery(stay)}`}>{room.name}</Link>
                 </h2>
                 <p className={styles.meta}>
-                  {[room.bed, room.floor, room.size, `Sleeps ${room.sleeps}`].join("  ·  ")}
+                  {[room.bed, room.floor, room.size, `Sleeps ${room.sleeps}`].filter(Boolean).join("  ·  ")}
                 </p>
                 <p className={styles.blurb}>{room.blurb}</p>
                 <ul role="list" className={styles.chips}>
-                  {CHIPS.map((c) => (
+                  {room.features.filter((f) => !f.toLowerCase().includes("bed")).map((c) => (
                     <li key={c}>{c}</li>
                   ))}
                 </ul>
@@ -155,8 +157,10 @@ export default function RoomsList({ rooms, stay, nights, live, rangeLabel }: Pro
                 <div className={styles.foot}>
                   <div className={styles.priceBlock}>
                     <span className={styles.price}>
-                      {formatTaka(room.price)} <span>/ night</span>
+                      <WasPrice rates={room.rates} />
+                      {formatTaka(room.rates.price_bdt)} <span>/ night</span>
                     </span>
+                    <WeekendNote rates={room.rates} />
                     <span className={styles.total}>
                       {formatTaka(total)} for {plural(nights, "night")}
                       {stay.rooms > 1 ? `, ${stay.rooms} rooms` : ""} · plus VAT &amp; service

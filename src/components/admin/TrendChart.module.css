@@ -1,0 +1,238 @@
+/* One series hue (the validated "sold" green from NightLoadChart). The
+   previous period is told apart by a dashed stroke in muted ink, plus the
+   legend and tooltip labels, never by colour alone. */
+.figure {
+  margin: 0;
+  --cur: #0e8660;
+  --prev: #6b756f;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+.controls :global(.a-seg) {
+  flex-wrap: wrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 12px;
+  font-size: 0.76rem;
+  color: var(--a-ink-2);
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.keyCur,
+.keyPrev {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid var(--cur);
+}
+.keyPrev {
+  border-top: 2px dashed var(--prev);
+}
+
+.plotWrap {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  grid-template-rows: 240px auto;
+  column-gap: 10px;
+}
+
+.yAxis {
+  position: relative;
+  font-size: 0.7rem;
+  color: var(--a-muted);
+  font-variant-numeric: tabular-nums;
+}
+.yAxis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.plot {
+  position: relative;
+  outline: none;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.plot:focus-visible {
+  box-shadow: 0 0 0 2px var(--a-focus);
+  border-radius: 2px;
+}
+
+.svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.svg path,
+.svg line {
+  vector-effect: non-scaling-stroke;
+}
+.grid {
+  stroke: var(--a-line);
+  stroke-width: 1;
+}
+.base {
+  stroke: var(--a-line-strong);
+  stroke-width: 1;
+}
+.area {
+  fill: var(--cur);
+  opacity: 0.08;
+}
+.cur {
+  fill: none;
+  stroke: var(--cur);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.prev {
+  fill: none;
+  stroke: var(--prev);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  stroke-linejoin: round;
+}
+
+.weekend {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--a-sunken);
+  pointer-events: none;
+}
+
+.cross {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--a-ink-2);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--cur);
+  box-shadow: 0 0 0 2px var(--a-surface); /* surface ring over the line */
+  pointer-events: none;
+}
+.dotPrev {
+  background: var(--a-surface);
+  box-shadow: inset 0 0 0 2px var(--prev);
+}
+
+.tip {
+  position: absolute;
+  top: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  padding: 10px 12px;
+  background: var(--a-side);
+  color: #f7f2e8;
+  border-radius: 3px;
+  font-size: 0.76rem;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.tip strong {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.tip span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.tip .keyCur {
+  border-top-color: #5fd1a5;
+}
+.tip .keyPrev {
+  border-top-color: #b9c6bf;
+}
+.tipMuted {
+  color: #b9c6bf;
+}
+
+.xAxis {
+  grid-column: 2;
+  position: relative;
+  height: 26px;
+  font-size: 0.7rem;
+  color: var(--a-muted);
+  font-variant-numeric: tabular-nums;
+}
+.xAxis span {
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.xAxis span:first-child {
+  transform: none;
+}
+.xAxis .xLast {
+  transform: translateX(-100%);
+}
+
+.summary {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.summary span {
+  font-weight: 400;
+  color: var(--a-muted);
+}
+
+.table {
+  margin-top: 14px;
+  font-size: 0.78rem;
+}
+.table summary {
+  cursor: pointer;
+  color: var(--a-pine);
+  font-weight: 500;
+  width: fit-content;
+}
+.table :global(.a-table-wrap) {
+  margin-top: 10px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+@media (max-width: 600px) {
+  .plotWrap {
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: 200px auto;
+  }
+}

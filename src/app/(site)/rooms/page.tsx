@@ -5,13 +5,14 @@ import RoomsList from "@/components/rooms/RoomsList";
 import { getAvailability } from "@/lib/availability";
 import { formatRange, hotelToday, nightsBetween } from "@/lib/dates";
 import { HOTEL } from "@/lib/hotel";
-import { getRooms, getSettings } from "@/lib/rooms";
+import { getRooms, getSettings, ratesOf } from "@/lib/rooms";
 import { parseStay } from "@/lib/stay";
 import styles from "./rooms.module.css";
 
 export const metadata: Metadata = {
   title: "Rooms & Suites",
-  description: "Three ways to stay at Blossom Square, all with a sea view, a private balcony, pool access and breakfast for two.",
+  description:
+    "Seven ways to stay at Blossom Square in Kolatoli, Cox's Bazar, from a couple's room to a family suite, with weekday rates from ৳2,500.",
 };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -34,7 +35,9 @@ export default async function RoomsPage({ searchParams }: Props) {
             <SplitWords text="Rooms *& Suites*" />
           </h1>
           <p className={`lede ${styles.lede}`} data-reveal="up" style={{ "--d": "300ms" } as React.CSSProperties}>
-            Three ways to stay, all with a sea view, a private balcony, pool access and breakfast for two.
+            {rooms.length} ways to stay, from a room for two to a family suite. Every room has a private bathroom, AC, TV,
+            Wi-Fi and hot water. Weekday rates run Sunday to Wednesday nights; Thursday and Friday nights are charged at the
+            weekend rate.
           </p>
         </div>
       </section>
@@ -64,10 +67,11 @@ export default async function RoomsPage({ searchParams }: Props) {
             tag: r.tag,
             bed: r.bed,
             floor: r.floor,
-            size: r.size_sqft ? `${r.size_sqft} sq ft` : "[SIZE] sq ft",
+            size: r.size_sqft ? `${r.size_sqft} sq ft` : "",
             sleeps: r.sleeps,
             blurb: r.blurb,
-            price: r.price_bdt,
+            features: r.features,
+            rates: ratesOf(r),
             gallery: r.gallery,
             available: availability.bySlug[r.slug] ?? 0,
           }))}

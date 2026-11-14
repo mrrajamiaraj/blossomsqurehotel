@@ -16,7 +16,7 @@ import type {
   StaffBookingInput,
   StaffRole,
 } from "@/lib/data/types";
-import { isISODate } from "@/lib/dates";
+import { hotelToday, isISODate } from "@/lib/dates";
 import { allow } from "@/lib/rate-limit";
 import { getServiceClient, getSessionClient, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -133,15 +133,34 @@ export async function checkAvailability(checkIn: string, checkOut: string): Prom
 
 export async function updateRoomType(
   id: string,
-  patch: { price_bdt?: number; is_published?: boolean; size_sqft?: number | null; blurb?: string; description?: string },
+  patch: {
+    price_bdt?: number;
+    weekend_price_bdt?: number | null;
+    rack_price_bdt?: number | null;
+    is_published?: boolean;
+    size_sqft?: number | null;
+    blurb?: string;
+    description?: string;
+  },
 ): Promise<ActionResult> {
   const { repo } = await requireManager();
   const clean: typeof patch = {};
+  const validRate = (n: number) => Number.isInteger(n) && n >= 500 && n <= 1_000_000;
   if (patch.price_bdt !== undefined) {
-    if (!Number.isInteger(patch.price_bdt) || patch.price_bdt < 500 || patch.price_bdt > 1_000_000) {
-      return { ok: false, message: "Enter a nightly rate between ৳500 and ৳1,000,000." };
-    }
+    if (!validRate(patch.price_bdt)) return { ok: false, message: "Enter a weekday rate between ৳500 and ৳1,000,000." };
     clean.price_bdt = patch.price_bdt;
+  }
+  if (patch.weekend_price_bdt !== undefined) {
+    if (patch.weekend_price_bdt !== null && !validRate(patch.weekend_price_bdt)) {
+      return { ok: false, message: "Enter a weekend rate between ৳500 and ৳1,000,000, or leave it empty." };
+    }
+    clean.weekend_price_bdt = patch.weekend_price_bdt;
+  }
+  if (patch.rack_price_bdt !== undefined) {
+    if (patch.rack_price_bdt !== null && !validRate(patch.rack_price_bdt)) {
+      return { ok: false, message: "Enter a published rate between ৳500 and ৳1,000,000, or leave it empty." };
+    }
+    clean.rack_price_bdt = patch.rack_price_bdt;
   }
   if (patch.is_published !== undefined) clean.is_published = Boolean(patch.is_published);
   if (patch.size_sqft !== undefined) {
@@ -288,6 +307,31 @@ export async function signOut(): Promise<void> {
     await db.auth.signOut();
   }
   redirect(isSupabaseConfigured() ? "/admin/login" : "/");
+}
+
+export type QuickResult = {
+  reference: string;
+  guest: string;
+  phone: string;
+  status: BookingStatus;
+  checkIn: string;
+  checkOut: string;
+};
+
+/** Command palette: the best few booking matches for a name, phone, email or reference. */
+export async function quickSearch(q: string): Promise<QuickResult[]> {
+  const { repo } = await requireAdmin();
+  const term = text(q, 60);
+  if (term.length < 2) return [];
+  const { rows } = await repo.listBookings({ view: "all", q: term, page: 1, pageSize: 6, today: hotelToday() });
+  return rows.map((b) => ({
+    reference: b.reference,
+    guest: b.guest_name,
+    phone: b.phone,
+    status: b.status,
+    checkIn: b.check_in,
+    checkOut: b.check_out,
+  }));
 }
 
 /** Preview only: look at the desk as a manager or as front-desk staff. */

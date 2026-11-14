@@ -17,7 +17,12 @@ export type RoomTypeRecord = {
   sleeps: number;
   floor: string;
   view: string;
+  /** Weekday (Sun–Wed night) rate. */
   price_bdt: number;
+  /** Thursday and Friday night rate; null means the weekday rate applies every night. */
+  weekend_price_bdt: number | null;
+  /** Published ("rack") rate, shown crossed out next to the discounted price. */
+  rack_price_bdt: number | null;
   blurb: string;
   description: string;
   features: string[];
@@ -162,5 +167,7 @@ export type BookingFilter = {
 
 export type BookingView = "active" | "requests" | "arrivals" | "in_house" | "departures" | "upcoming" | "past" | "cancelled" | "all";
 
-export type RoomTypePatch = Partial<Pick<RoomTypeRecord, "price_bdt" | "is_published" | "blurb" | "description" | "size_sqft">>;
+export type RoomTypePatch = Partial<
+  Pick<RoomTypeRecord, "price_bdt" | "weekend_price_bdt" | "rack_price_bdt" | "is_published" | "blurb" | "description" | "size_sqft">
+>;
 export type RoomPatch = Partial<Pick<RoomUnit, "housekeeping" | "out_of_service" | "service_note">>;

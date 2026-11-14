@@ -3,30 +3,59 @@
 export const HOTEL = {
   name: "Blossom Square",
   fullName: "Blossom Square Hotel & Suites",
-  address: "House 85, Block A, Light House Road, Kolatoli, Cox's Bazar",
+  address: "House 85, Block A, Light House Road, PWD R/A (Hotel Motel Zone), Kolatoli, Cox's Bazar",
   shortAddress: "Light House Road, Kolatoli, Cox's Bazar",
-  checkIn: "2:00 PM",
-  checkOut: "12:00 PM",
+  checkIn: "1:00 PM",
+  checkOut: "11:00 AM",
   phones: [
-    { display: "+880 1792-450562", href: "tel:+8801792450562" },
-    { display: "+880 1818-116387", href: "tel:+8801818116387" },
+    { display: "+880 1805-006900", href: "tel:+8801805006900" },
+    { display: "+880 1805-006902", href: "tel:+8801805006902" },
   ],
-  email: "helalibabu87@gmail.com",
-  mapQuery: "Blossom Square Hotel, Light House Road, Kolatoli, Cox's Bazar",
+  email: "blossomsquare0@gmail.com",
+  mapQuery: "Blossom Square Hotel & Suites, Light House Road, Kolatoli Rd, Cox's Bazar 4700",
+  // The hotel's own Google Maps listing.
+  mapUrl: "https://maps.app.goo.gl/HMQz4T5vC9o5hy1A7",
   social: [
-    { label: "Facebook", href: "#" },
-    { label: "Instagram", href: "#" },
-    { label: "WhatsApp", href: "#" },
+    { label: "Facebook", href: "https://www.facebook.com/share/1KuAPqa9NA/" },
+    { label: "WhatsApp", href: "https://wa.me/8801805006900" },
   ],
 } as const;
 
 export const RESERVATIONS = HOTEL.phones[0];
 
-export const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(HOTEL.mapQuery)}`;
+export const WHATSAPP = { display: "+880 1805-006900", href: "https://wa.me/8801805006900", qr: "/brand/whatsapp-qr.png" };
+
+/** Ways a guest can send an advance. Shown on the booking pages. */
+export const PAYMENT_METHODS = [
+  {
+    id: "bkash",
+    name: "bKash or any bank app",
+    note: "Scan our Bangla QR at the desk, or pay this number from your app.",
+    fields: [{ label: "Number", value: "01805-006900", copy: "01805006900" }],
+  },
+  {
+    id: "nagad",
+    name: "Nagad",
+    note: "Pay to our Nagad merchant number.",
+    fields: [{ label: "Number", value: "01805-006909", copy: "01805006909" }],
+  },
+  {
+    id: "bank",
+    name: "Bank transfer",
+    note: "Eastern Bank PLC · payable at any branch in Bangladesh.",
+    fields: [
+      { label: "Account name", value: "Blossom Square Hotel and Suites", copy: "BLOSSOM SQUARE HOTEL AND SUITES" },
+      { label: "Account no.", value: "0091350000386", copy: "0091350000386" },
+      { label: "Routing no.", value: "095220253", copy: "095220253" },
+    ],
+  },
+] as const;
+
+export const directionsUrl = HOTEL.mapUrl;
 export const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(HOTEL.mapQuery)}&z=16&output=embed`;
 
 export const NAV_LINKS = [
-  { label: "Rooms & Suites", href: "/rooms", note: "Three ways to stay" },
+  { label: "Rooms & Suites", href: "/rooms", note: "Seven ways to stay" },
   { label: "Dining", href: "/#dining", note: "Seafood & breakfast" },
   { label: "Meetings & Events", href: "/#events", note: "Banquet & conference" },
   { label: "Amenities", href: "/#amenities", note: "Included with every stay" },

@@ -25,7 +25,7 @@ export default async function NewBookingPage() {
       </header>
       <NewBookingForm
         today={hotelToday()}
-        types={types.map((t) => ({ slug: t.slug, name: t.name, price: t.price_bdt, sleeps: t.sleeps, published: t.is_published }))}
+        types={types.map((t) => ({ slug: t.slug, name: t.name, price: t.price_bdt, weekend: t.weekend_price_bdt, sleeps: t.sleeps, published: t.is_published }))}
       />
     </div>
   );
