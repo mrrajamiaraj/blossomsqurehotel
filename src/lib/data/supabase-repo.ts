@@ -18,6 +18,7 @@ import type {
   RoomTypePatch,
   RoomTypeRecord,
   RoomUnit,
+  RoomUnitInput,
   StaffBookingInput,
   StaffMember,
   WebsiteBookingInput,
@@ -274,6 +275,29 @@ export class SupabaseRepo implements AdminRepo {
   async updateRoom(id: string, patch: RoomPatch): Promise<void> {
     const res = await this.db.from("rooms").update(patch).eq("id", id).select("id");
     if (!check(res)?.length) throw new RepoError("NOT_STAFF");
+  }
+
+  async addRoom(input: RoomUnitInput): Promise<string> {
+    return String(
+      check(
+        await this.db.rpc("admin_add_room", { p_number: input.number, p_room_type: input.room_type_id, p_floor: input.floor }),
+      ),
+    );
+  }
+
+  async editRoom(id: string, input: RoomUnitInput): Promise<void> {
+    check(
+      await this.db.rpc("admin_update_room_unit", {
+        p_room: id,
+        p_number: input.number,
+        p_room_type: input.room_type_id,
+        p_floor: input.floor,
+      }),
+    );
+  }
+
+  async deleteRoom(id: string): Promise<void> {
+    check(await this.db.rpc("admin_delete_room", { p_room: id }));
   }
 
   async updateSettings(patch: Partial<HotelSettings>): Promise<void> {

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { PREVIEW_ROLE_COOKIE, requireAdmin, requireManager } from "@/lib/admin/session";
 import { previewEnabled } from "@/lib/data";
 import { errorCode, errorMessage } from "@/lib/data/errors";
+import type { AdminRepo } from "@/lib/data/repo";
 import type {
   BookingChange,
   BookingStatus,
@@ -190,6 +191,100 @@ export async function updateRoom(
       ...(patch.service_note !== undefined ? { service_note: text(patch.service_note, 300) || null } : {}),
     }),
   );
+}
+
+/* ---------------------------------------------------------- Room setup (managers) */
+
+const unitInput = (input: { number: string; room_type_id: string; floor: string | null }) => ({
+  number: text(input.number, 10),
+  room_type_id: text(input.room_type_id, 64),
+  floor: text(input.floor, 20) || null,
+});
+
+export async function addRoom(input: { number: string; room_type_id: string; floor: string | null }): Promise<ActionResult> {
+  const { repo } = await requireManager();
+  const clean = unitInput(input);
+  return run(() => repo.addRoom(clean).then(() => undefined), `Room ${clean.number.toUpperCase()} added — it's on sale now`);
+}
+
+export async function editRoom(
+  id: string,
+  input: { number: string; room_type_id: string; floor: string | null },
+): Promise<ActionResult> {
+  const { repo } = await requireManager();
+  const clean = unitInput(input);
+  return run(() => repo.editRoom(id, clean), `Room ${clean.number.toUpperCase()} saved`);
+}
+
+export async function deleteRoom(id: string): Promise<ActionResult> {
+  const { repo } = await requireManager();
+  return run(() => repo.deleteRoom(id), "Room removed");
+}
+
+/* ---------------------------------------------------------- Room photos (managers) */
+
+const PHOTO_BUCKET = "room-photos";
+const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const MAX_PHOTOS = 12;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Public URL prefix of the photo bucket; uploaded gallery entries start with it. */
+function photoUrlPrefix(): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${PHOTO_BUCKET}/`;
+}
+
+async function findRoomType(repo: AdminRepo, id: string) {
+  return (await repo.listRoomTypes({ includeUnpublished: true })).find((t) => t.id === id) ?? null;
+}
+
+export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promise<ActionResult> {
+  const { mode, repo } = await requireManager();
+  if (mode === "preview") return { ok: false, message: "Photo uploads need Supabase. Connect it to add real photos." };
+  if (!UUID_RE.test(roomTypeId)) return { ok: false, message: errorMessage("NO_ROOM") };
+  const file = form.get("photo");
+  if (!(file instanceof File) || !PHOTO_TYPES[file.type] || file.size === 0 || file.size > MAX_PHOTO_BYTES) {
+    return { ok: false, message: errorMessage("BAD_PHOTO") };
+  }
+  const type = await findRoomType(repo, roomTypeId);
+  if (!type) return { ok: false, message: errorMessage("NO_ROOM") };
+  if (type.gallery.length >= MAX_PHOTOS) return { ok: false, message: errorMessage("PHOTO_LIMIT") };
+
+  const db = await getSessionClient();
+  const path = `${roomTypeId}/${crypto.randomUUID()}.${PHOTO_TYPES[file.type]}`;
+  const bucket = db.storage.from(PHOTO_BUCKET);
+  const { error } = await bucket.upload(path, file, { contentType: file.type, cacheControl: "31536000", upsert: false });
+  if (error) {
+    console.error("Photo upload:", error.message);
+    return { ok: false, message: "The photo couldn't be uploaded. Try again." };
+  }
+  const url = bucket.getPublicUrl(path).data.publicUrl;
+  const result = await run(() => repo.updateRoomType(roomTypeId, { gallery: [...type.gallery, url] }), "Photo added");
+  if (!result.ok) await bucket.remove([path]);
+  return result;
+}
+
+/**
+ * Reorders or removes photos (the first is the cover). Only photos already in
+ * the gallery are accepted; removed uploads are deleted from storage.
+ */
+export async function setRoomGallery(roomTypeId: string, gallery: string[]): Promise<ActionResult> {
+  const { mode, repo } = await requireManager();
+  const type = await findRoomType(repo, roomTypeId);
+  if (!type) return { ok: false, message: errorMessage("NO_ROOM") };
+  const next = [...new Set(gallery.map((g) => String(g)))];
+  if (!next.every((g) => type.gallery.includes(g))) return { ok: false, message: "Refresh the page and try again." };
+
+  const result = await run(() => repo.updateRoomType(roomTypeId, { gallery: next }), "Photos saved");
+  if (result.ok && mode === "live") {
+    const prefix = photoUrlPrefix();
+    const removed = type.gallery.filter((g) => !next.includes(g) && g.startsWith(prefix)).map((g) => g.slice(prefix.length));
+    if (removed.length) {
+      const { error } = await (await getSessionClient()).storage.from(PHOTO_BUCKET).remove(removed);
+      if (error) console.error("Photo cleanup:", error.message);
+    }
+  }
+  return result;
 }
 
 /* ---------------------------------------------------------- Settings & team */

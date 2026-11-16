@@ -123,7 +123,7 @@ export default async function RoomPage({ params, searchParams }: Props) {
                   },
                   { title: "Taxes", body: taxNote(settings) },
                   { title: "Pets", body: "We're unable to accommodate pets." },
-                ]}
+                ].filter((item) => item.body)}
               />
             </div>
           </section>

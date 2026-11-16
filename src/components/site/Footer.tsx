@@ -85,7 +85,9 @@ export default async function Footer() {
         <span className={styles.legal}>
           <Monogram size={22} className={styles.mono} />© {new Date().getFullYear()} {HOTEL.fullName}
         </span>
-        <span className={styles.legal}>No pets · Cancellation: {settings.cancellation_policy}</span>
+        <span className={styles.legal}>
+          No pets{settings.cancellation_policy ? ` · Cancellation: ${settings.cancellation_policy}` : ""}
+        </span>
         <Link href="/admin/login" className={styles.staff} prefetch={false}>
           Staff login
         </Link>

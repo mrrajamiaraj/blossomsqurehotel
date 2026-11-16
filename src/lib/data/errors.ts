@@ -26,6 +26,12 @@ const MESSAGES: Record<string, string> = {
   BAD_AMOUNT: "Enter a payment amount greater than zero and choose a method.",
   LOCKED: "This booking can no longer be changed.",
   OFFLINE: "Online booking is unavailable right now. Please call us and we'll reserve your room.",
+  BAD_ROOM_NUMBER: "Use 1–10 letters, numbers or dashes for the room number, e.g. 101 or A-12.",
+  ROOM_EXISTS: "There's already a room with that number.",
+  ROOM_IN_USE: "That room has bookings. Take it out of service instead, or move its bookings first.",
+  ROOM_NEEDED: "Existing bookings need every room of this type. Move or cancel some of them first.",
+  BAD_PHOTO: "Upload a JPEG, PNG or WebP photo under 5 MB.",
+  PHOTO_LIMIT: "A room can have up to 12 photos. Remove one first.",
 };
 
 export function errorMessage(code: string): string {

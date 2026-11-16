@@ -1,5 +1,5 @@
 import "server-only";
-import { hotelToday, nightsBetween } from "../dates";
+import { addDays, hotelToday, nightsBetween } from "../dates";
 import { stayCost } from "../pricing";
 import { RepoError } from "./errors";
 import { buildPreviewBookings, PREVIEW_ROOM_TYPES, PREVIEW_ROOMS, PREVIEW_STAFF } from "./preview-seed";
@@ -20,6 +20,7 @@ import type {
   RoomTypePatch,
   RoomTypeRecord,
   RoomUnit,
+  RoomUnitInput,
   StaffBookingInput,
   StaffMember,
   WebsiteBookingInput,
@@ -464,6 +465,70 @@ export class PreviewRepo implements AdminRepo {
     const r = store().rooms.find((x) => x.id === id);
     if (!r) throw new RepoError("NOT_FOUND");
     Object.assign(r, patch);
+  }
+
+  /** Mirrors _clean_room_number in SQL. */
+  private cleanNumber(n: string): string {
+    const v = n.trim().toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9-]{0,9}$/.test(v)) throw new RepoError("BAD_ROOM_NUMBER");
+    return v;
+  }
+
+  /** Mirrors _type_still_fits: every future night keeps enough rooms. */
+  private typeStillFits(typeId: string, fewer: number): boolean {
+    const s = store();
+    const today = hotelToday();
+    const live = s.bookings.filter((b) => b.room_type_id === typeId && isLive(b.status));
+    const last = live.map((b) => b.check_out).sort().at(-1);
+    if (!last) return true;
+    for (let d = today; d < last; d = addDays(d, 1)) {
+      if (this.freeUnits(typeId, d, addDays(d, 1)) - fewer < 0) return false;
+    }
+    return true;
+  }
+
+  async addRoom(input: RoomUnitInput) {
+    this.requireManager();
+    const s = store();
+    if (!s.roomTypes.some((t) => t.id === input.room_type_id)) throw new RepoError("NO_ROOM");
+    const number = this.cleanNumber(input.number);
+    if (s.rooms.some((r) => r.number === number)) throw new RepoError("ROOM_EXISTS");
+    const id = crypto.randomUUID();
+    s.rooms.push({
+      id,
+      number,
+      room_type_id: input.room_type_id,
+      floor: input.floor?.trim().slice(0, 20) || null,
+      housekeeping: "clean",
+      out_of_service: false,
+      service_note: null,
+    });
+    return id;
+  }
+
+  async editRoom(id: string, input: RoomUnitInput) {
+    this.requireManager();
+    const s = store();
+    const r = s.rooms.find((x) => x.id === id);
+    if (!r) throw new RepoError("NOT_FOUND");
+    if (!s.roomTypes.some((t) => t.id === input.room_type_id)) throw new RepoError("NO_ROOM");
+    const number = this.cleanNumber(input.number);
+    if (s.rooms.some((x) => x.number === number && x.id !== id)) throw new RepoError("ROOM_EXISTS");
+    if (input.room_type_id !== r.room_type_id) {
+      if (s.bookings.some((b) => b.room_id === id && isLive(b.status))) throw new RepoError("ROOM_IN_USE");
+      if (!r.out_of_service && !this.typeStillFits(r.room_type_id, 1)) throw new RepoError("ROOM_NEEDED");
+    }
+    Object.assign(r, { number, room_type_id: input.room_type_id, floor: input.floor?.trim().slice(0, 20) || null });
+  }
+
+  async deleteRoom(id: string) {
+    this.requireManager();
+    const s = store();
+    const r = s.rooms.find((x) => x.id === id);
+    if (!r) throw new RepoError("NOT_FOUND");
+    if (s.bookings.some((b) => b.room_id === id)) throw new RepoError("ROOM_IN_USE");
+    if (!r.out_of_service && !this.typeStillFits(r.room_type_id, 1)) throw new RepoError("ROOM_NEEDED");
+    s.rooms = s.rooms.filter((x) => x.id !== id);
   }
 
   async updateSettings(patch: Partial<HotelSettings>) {

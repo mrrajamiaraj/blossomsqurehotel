@@ -90,10 +90,12 @@ export default async function RoomsPage({ searchParams }: Props) {
                 From {HOTEL.checkIn} / until {HOTEL.checkOut}. Early or late on request.
               </dd>
             </div>
-            <div>
-              <dt>Cancellation</dt>
-              <dd>{settings.cancellation_policy}</dd>
-            </div>
+            {settings.cancellation_policy && (
+              <div>
+                <dt>Cancellation</dt>
+                <dd>{settings.cancellation_policy}</dd>
+              </div>
+            )}
             <div>
               <dt>House rules</dt>
               <dd>No pets. Airport transfers on request, at an extra charge.</dd>

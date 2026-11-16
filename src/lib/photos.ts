@@ -27,9 +27,10 @@ function findFile(ref: string): string | null {
 }
 
 /**
- * Drop the hotel's photos into public/photos named by their reference
- * (e.g. public/photos/DSC5562.jpg) and they replace the placeholders.
+ * A gallery entry is either a full URL (a photo uploaded from Admin → Rooms,
+ * kept in Supabase Storage) or a reference to a file in public/photos
+ * (e.g. "DSC5562" for public/photos/DSC5562.jpg).
  */
 export function photo(ref: string, alt: string, tone: Tone = "forest"): Photo {
-  return { ref, alt, src: findFile(ref), tone };
+  return { ref, alt, src: ref.startsWith("https://") ? ref : findFile(ref), tone };
 }

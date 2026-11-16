@@ -44,16 +44,18 @@ export function PoliciesForm({ initial }: { initial: HotelSettings }) {
       <fieldset disabled={pending} className="a-panel-body a-grid-2" style={{ border: 0, margin: 0 }}>
         <label className="a-field a-span-2">
           <span className="a-label">Cancellation policy</span>
-          <textarea className="a-input" maxLength={600} value={s.cancellation_policy} onChange={(e) => setS({ ...s, cancellation_policy: e.target.value })} required />
+          <textarea className="a-input" maxLength={600} value={s.cancellation_policy} onChange={(e) => setS({ ...s, cancellation_policy: e.target.value })} placeholder="e.g. Free cancellation up to 48 hours before arrival; after that, the first night is charged." />
+          <span className="a-hint">Leave blank to hide it on the website.</span>
         </label>
         <label className="a-field a-span-2">
           <span className="a-label">Children &amp; extra beds</span>
-          <textarea className="a-input" maxLength={600} value={s.children_policy} onChange={(e) => setS({ ...s, children_policy: e.target.value })} required />
+          <textarea className="a-input" maxLength={600} value={s.children_policy} onChange={(e) => setS({ ...s, children_policy: e.target.value })} placeholder="e.g. Children under 6 stay free in the parents' bed. Extra bed ৳1,000 a night." />
+          <span className="a-hint">Leave blank to hide it on the website.</span>
         </label>
         <label className="a-field">
           <span className="a-label">We call to confirm within</span>
-          <input className="a-input" maxLength={40} value={s.confirm_call_within} onChange={(e) => setS({ ...s, confirm_call_within: e.target.value })} placeholder="e.g. 2 hours" required />
-          <span className="a-hint">Shown after a guest books: “…will call you within ___”</span>
+          <input className="a-input" maxLength={40} value={s.confirm_call_within} onChange={(e) => setS({ ...s, confirm_call_within: e.target.value })} placeholder="e.g. 2 hours" />
+          <span className="a-hint">Shown after a guest books: “…will call you within ___”. Blank shows “shortly”.</span>
         </label>
         <div className="a-grid-2" style={{ gap: 12 }}>
           <label className="a-field">

@@ -232,8 +232,9 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
           )}
         </h1>
         <p className={`lede ${styles.doneLede}`}>
-          Your room is held. Our front desk will call you on {guest.phone} within {settings.confirm_call_within} to
-          confirm — no payment has been taken.
+          Your room is held. Our front desk will call you on {guest.phone}{" "}
+          {settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm — no payment has been
+          taken.
         </p>
         {result.preview && (
           <p className={styles.demo}>
@@ -669,8 +670,8 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                 <p className={styles.notice}>
                   <Info />
                   <span>
-                    Your room is held and our front desk will call you within {settings.confirm_call_within} to
-                    confirm. Nothing is charged online: pay at the hotel, or send an advance by bKash, Nagad or bank
+                    Your room is held and our front desk will call you{" "}
+                    {settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm. Nothing is charged online: pay at the hotel, or send an advance by bKash, Nagad or bank
                     transfer using the details below. {taxNote(settings)}
                   </span>
                 </p>
@@ -687,7 +688,9 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                     }}
                   />
                   <span>
-                    I agree to the hotel&apos;s cancellation policy ({settings.cancellation_policy}) and house rules.
+                    {settings.cancellation_policy
+                      ? `I agree to the hotel's cancellation policy (${settings.cancellation_policy}) and house rules.`
+                      : "I agree to the hotel's cancellation policy and house rules."}
                   </span>
                 </label>
                 {err("agree")}

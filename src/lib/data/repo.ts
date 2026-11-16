@@ -14,6 +14,7 @@ import type {
   RoomTypePatch,
   RoomTypeRecord,
   RoomUnit,
+  RoomUnitInput,
   StaffBookingInput,
   StaffMember,
   WebsiteBookingInput,
@@ -54,14 +55,22 @@ export interface AdminRepo extends PublicRepo {
 
   updateRoomType(id: string, patch: RoomTypePatch): Promise<void>;
   updateRoom(id: string, patch: RoomPatch): Promise<void>;
+  /** Manager only. Returns the new room's id. */
+  addRoom(input: RoomUnitInput): Promise<string>;
+  /** Manager only. Renames, re-types or re-floors a room. */
+  editRoom(id: string, input: RoomUnitInput): Promise<void>;
+  /** Manager only. Removes a room that has never been booked. */
+  deleteRoom(id: string): Promise<void>;
   updateSettings(patch: Partial<HotelSettings>): Promise<void>;
   listStaff(): Promise<StaffMember[]>;
 }
 
 export const DEFAULT_SETTINGS: HotelSettings = {
-  cancellation_policy: "[YOUR CANCELLATION POLICY]",
-  children_policy: "[YOUR POLICY & CHARGES]",
-  confirm_call_within: "[X] hours",
+  // Blank until a manager fills them in under Admin → Settings; the website
+  // hides anything blank.
+  cancellation_policy: "",
+  children_policy: "",
+  confirm_call_within: "",
   vat_percent: null,
   service_charge_percent: null,
 };

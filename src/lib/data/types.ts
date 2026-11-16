@@ -168,6 +168,11 @@ export type BookingFilter = {
 export type BookingView = "active" | "requests" | "arrivals" | "in_house" | "departures" | "upcoming" | "past" | "cancelled" | "all";
 
 export type RoomTypePatch = Partial<
-  Pick<RoomTypeRecord, "price_bdt" | "weekend_price_bdt" | "rack_price_bdt" | "is_published" | "blurb" | "description" | "size_sqft">
+  Pick<
+    RoomTypeRecord,
+    "price_bdt" | "weekend_price_bdt" | "rack_price_bdt" | "is_published" | "blurb" | "description" | "size_sqft" | "gallery"
+  >
 >;
+/** A room's identity: its number, type and floor. */
+export type RoomUnitInput = { number: string; room_type_id: string; floor: string | null };
 export type RoomPatch = Partial<Pick<RoomUnit, "housekeeping" | "out_of_service" | "service_note">>;

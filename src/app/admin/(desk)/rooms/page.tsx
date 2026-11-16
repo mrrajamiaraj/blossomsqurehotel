@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { RoomTile, RoomTypeEditor } from "@/components/admin/RoomsEditors";
+import { AddRoomForm, RoomPhotos, RoomTile, RoomTypeEditor } from "@/components/admin/RoomsEditors";
 import { requireAdmin } from "@/lib/admin/session";
 import { addDays, hotelToday } from "@/lib/dates";
+import { photo } from "@/lib/photos";
 import { WEEKEND_LABEL } from "@/lib/pricing";
 
 export const metadata: Metadata = { title: "Rooms & rates" };
@@ -19,6 +20,7 @@ export default async function RoomsPage() {
     tonight.filter((b) => b.room_id && (b.status === "checked_in" || b.status === "confirmed")).map((b) => [b.room_id!, b.guest_name]),
   );
   const typeName = new Map(types.map((t) => [t.id, t.name]));
+  const typeOptions = types.map((t) => ({ id: t.id, name: t.name }));
   const dirty = rooms.filter((r) => r.housekeeping === "dirty" && !r.out_of_service).length;
   const oos = rooms.filter((r) => r.out_of_service).length;
 
@@ -56,7 +58,14 @@ export default async function RoomsPage() {
               size={t.size_sqft}
               blurb={t.blurb}
               canEdit={manager}
-            />
+            >
+              <RoomPhotos
+                typeId={t.id}
+                name={t.name}
+                photos={t.gallery.map((ref) => ({ ref, src: photo(ref, "").src }))}
+                canEdit={manager}
+              />
+            </RoomTypeEditor>
           ))}
         </div>
       </section>
@@ -68,8 +77,10 @@ export default async function RoomsPage() {
           </h2>
           <p className="a-hint">
             {dirty} to clean · {oos} out of service. Rooms out of service aren&apos;t sold on the website.
+            {manager && " Each room you add here is sold online straight away."}
           </p>
         </div>
+        {manager && <AddRoomForm types={typeOptions} />}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: 12 }}>
           {rooms.map((r) => (
             <RoomTile
@@ -77,6 +88,9 @@ export default async function RoomsPage() {
               id={r.id}
               number={r.number}
               type={typeName.get(r.room_type_id) ?? ""}
+              typeId={r.room_type_id}
+              floor={r.floor}
+              types={typeOptions}
               housekeeping={r.housekeeping}
               outOfService={r.out_of_service}
               note={r.service_note}
