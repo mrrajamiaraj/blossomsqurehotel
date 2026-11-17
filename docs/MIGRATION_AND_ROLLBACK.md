@@ -130,3 +130,74 @@ Destructive ones (drop/rename) go *after* the code no longer needs them.
 Deploy to staging (`npx supabase functions deploy <name> --project-ref <STAGING_REF>`),
 test, then to production. Secrets via `npx supabase secrets set` per project.
 Roll back by redeploying the previous version from Git.
+
+## C. Access-architecture release
+
+The release is five migrations, `20261118100000` to `20261118100400`. They add:
+- roles and permissions, and MFA for privileged roles;
+- guests, the payments ledger, refunds, room blocks and housekeeping tasks;
+- the catalogue, content, reviews and notifications;
+- the audit log and storage policies.
+
+**Status:** tested in development only. **Not applied to production.**
+
+### C.1 What changes for people using the system
+- **Staff roles:** `manager` stays `manager`, and `front_desk` becomes `receptionist`. Production has no staff rows yet.
+- **Managers, owners, super admins and finance** must enrol an authenticator app at their next sign-in (`/admin/mfa`). Until they do, the database gives them no access.
+- **Payments:** recording a payment still works the same. The booking's paid amount is now derived from the payments ledger.
+- **Availability:** room maintenance blocks now reduce what the website sells.
+- **Prices:** none change. Rate plans, seasons and promotions don't affect totals yet.
+
+### C.2 Review checklist (before production)
+- [ ] Read the five migration files and the rollback script.
+- [ ] `npm run db:dev:check` replays every migration from scratch.
+- [ ] `npm test` passes, including `tests/db/*`: RLS by role, and the rollback restores the exact schema.
+- [ ] Apply to a **staging** Supabase project or branch first. Then sign in there as an owner, a receptionist and a manager (with and without MFA) and run through:
+  - a website booking;
+  - confirming it and taking a payment;
+  - a refund request, approved by finance;
+  - blocking a room and checking it disappears from availability;
+  - the audit log.
+- [ ] Run Supabase's security advisor on staging. Expect only the documented findings: the public RPCs, and `booking_lookup_attempts` having no policy.
+- [ ] Enrol MFA for the first owner, then create the owner row (`docs/DATABASE.md` §3).
+
+### C.3 Apply (production, after the review)
+1. Back up: Supabase dashboard → Database → Backups (or `pg_dump`).
+2. Push in order with the CLI: `npm run db:push:dry` and check the plan lists exactly the five files, then `npx supabase db push --linked`.
+3. `npm run db:types` (it should be identical to the committed `database.types.ts`).
+4. Deploy the app built from the same commit. Older app builds call `staff.role` values that no longer exist, so ship them together.
+5. Smoke test with the C.2 flows on production.
+
+### C.4 Roll back
+1. Download anything needed from the `site-media` and `guest-documents` buckets, then empty them. The script refuses to run otherwise.
+2. `psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f supabase/rollbacks/20261118100000_access_architecture.down.sql` (one transaction: all or nothing).
+3. Delete the five versions from `supabase_migrations.schema_migrations`.
+4. Redeploy the previous app build.
+
+**Data dropped by the rollback:**
+- the new tables (guests, payments ledger, refunds, blocks, tasks, reviews, content, notifications, audit log);
+- staff roles collapse to `manager` or `front_desk`.
+
+`bookings.amount_paid_bdt` keeps its latest value. `tests/db/rollback.test.ts` proves the resulting schema is identical to the pre-release one.
+
+### C.5 Staging run: 18 Nov 2026
+
+- **Project:** `blossomsquare-staging` (ref `eayihyxelygfljulmmjp`, ap-southeast-1, free plan).
+- **Migrations:** all 18 applied in order, plus one staging-only patch that matches two later fixes in the files:
+  - `audit.refuse_change` now pins `search_path`;
+  - `_guest_document_path_ok` now answers only for staff who can upload documents.
+- **Test data:** test users (owner, manager, finance, receptionist, housekeeping, guest), 4 extra rooms and two website bookings. Staging only.
+- **Results on real Supabase (Postgres 17, real Storage):** all role checks passed.
+  - Anonymous visitors can read only the public catalogue.
+  - A signed-in guest sees no booking or payment rows.
+  - A receptionist can't edit totals or payments directly.
+  - Housekeeping sees no guests or bookings.
+  - Manager, finance and owner sessions without MFA are refused; with MFA they work.
+  - Rank and self-change rules hold, and the audit log is unreachable.
+  - Guest documents upload only into a real booking's folder.
+- **Money and inventory flow:** payment ৳2,000, then a ৳500 refund (requested by reception, approved and paid out by finance), leaves ৳1,500 paid (partial). A maintenance block reduced availability from 1 to 0. Audit entries and refund notifications were written.
+- **Supabase security advisor:** only the expected findings remain:
+  - public RPCs callable without signing in, and staff RPCs callable when signed in (each checks permission internally);
+  - tables in `private` and `audit` with RLS on but no policies (deliberate: no direct access);
+  - "leaked password protection" off. This is an Auth dashboard setting; turn it on in production if your plan includes it.
+- **Not yet tested:** a real browser sign-in with authenticator-app enrolment. The checks above used Supabase's own role and JWT mechanism directly. To try it, point a local or preview build at the staging keys.

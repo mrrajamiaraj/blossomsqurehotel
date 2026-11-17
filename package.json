@@ -19,7 +19,10 @@
     "db:migrations": "supabase migration list --linked",
     "db:push:dry": "supabase db push --linked --dry-run",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts",
-    "db:types:local": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts"
+    "db:types:local": "supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
+    "db:dev:check": "tsx scripts/db-dev-check.mts",
+    "db:types:dev": "tsx scripts/gen-db-types.mts",
+    "test:db": "vitest run tests/db"
   },
   "repository": {
     "type": "git",
@@ -51,6 +54,7 @@
     "jsdom": "^29.1.1",
     "supabase": "^3.2.0",
     "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
   }

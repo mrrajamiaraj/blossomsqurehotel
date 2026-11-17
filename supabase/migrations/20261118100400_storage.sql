@@ -53,7 +53,8 @@ create policy "site media: editors delete" on storage.objects for delete to auth
 
 /* ---------- guest-documents (private) ---------- */
 
--- bookings/<uuid>/<file>, and the booking must exist.
+-- bookings/<uuid>/<file>, and the booking must exist. Answers only for staff
+-- who may upload documents, so it can't be used to probe booking ids.
 create or replace function public._guest_document_path_ok(p_name text)
 returns boolean
 language sql
@@ -61,7 +62,8 @@ stable
 security definer
 set search_path = public
 as $$
-  select p_name ~ '^bookings/[0-9a-f-]{36}/[A-Za-z0-9._-]{1,120}$'
+  select public.has_permission('documents.write')
+     and p_name ~ '^bookings/[0-9a-f-]{36}/[A-Za-z0-9._-]{1,120}$'
      and exists (select 1 from bookings where id::text = (storage.foldername(p_name))[2]);
 $$;
 revoke all on function public._guest_document_path_ok(text) from public, anon;

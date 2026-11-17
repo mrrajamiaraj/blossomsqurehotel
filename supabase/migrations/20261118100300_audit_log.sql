@@ -59,6 +59,7 @@ $$;
 create or replace function audit.refuse_change()
 returns trigger
 language plpgsql
+set search_path = audit
 as $$
 begin
   raise exception 'AUDIT_IMMUTABLE';
