@@ -170,7 +170,9 @@ export const PREVIEW_ROOMS: RoomUnit[] = [
 
 export const PREVIEW_STAFF: StaffMember[] = [
   { user_id: "preview-manager", full_name: "Preview Manager", role: "manager", active: true, email: "manager@preview.local" },
-  { user_id: "preview-desk", full_name: "Front Desk (preview)", role: "front_desk", active: true, email: "desk@preview.local" },
+  { user_id: "preview-desk", full_name: "Front Desk (preview)", role: "receptionist", active: true, email: "desk@preview.local" },
+  { user_id: "preview-owner", full_name: "Owner (preview)", role: "owner", active: true, email: "owner@preview.local" },
+  { user_id: "preview-hk", full_name: "Housekeeping (preview)", role: "housekeeping", active: true, email: "hk@preview.local" },
 ];
 
 type SeedRow = {

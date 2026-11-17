@@ -3,7 +3,8 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { PREVIEW_ROLE_COOKIE, requireAdmin, requireManager } from "@/lib/admin/session";
+import { PREVIEW_ROLE_COOKIE, requireAdmin, requirePermission } from "@/lib/admin/session";
+import { assignableRoles, isStaffRole } from "@/lib/access";
 import { previewEnabled } from "@/lib/data";
 import { errorCode, errorMessage } from "@/lib/data/errors";
 import type { AdminRepo } from "@/lib/data/repo";
@@ -155,7 +156,7 @@ export async function updateRoomType(
     description?: string;
   },
 ): Promise<ActionResult> {
-  const { repo } = await requireManager();
+  const { repo } = await requirePermission("rates.manage");
   const clean: typeof patch = {};
   const validRate = (n: number) => Number.isInteger(n) && n >= 500 && n <= 1_000_000;
   if (patch.price_bdt !== undefined) {
@@ -190,10 +191,10 @@ export async function updateRoom(
   id: string,
   patch: { housekeeping?: Housekeeping; out_of_service?: boolean; service_note?: string | null },
 ): Promise<ActionResult> {
-  const { repo, staff } = await requireAdmin();
+  const { repo, access } = await requireAdmin();
   if (patch.housekeeping && !HOUSEKEEPING.includes(patch.housekeeping)) return { ok: false, message: "Unknown status." };
-  if (patch.out_of_service !== undefined && staff.role !== "manager") {
-    return { ok: false, message: errorMessage("NOT_MANAGER") };
+  if (patch.out_of_service !== undefined && !access.permissions.includes("maintenance.manage")) {
+    return { ok: false, message: errorMessage("NOT_ALLOWED") };
   }
   return run(() =>
     repo.updateRoom(id, {
@@ -213,7 +214,7 @@ const unitInput = (input: { number: string; room_type_id: string; floor: string 
 });
 
 export async function addRoom(input: { number: string; room_type_id: string; floor: string | null }): Promise<ActionResult> {
-  const { repo } = await requireManager();
+  const { repo } = await requirePermission("rooms.manage");
   const clean = unitInput(input);
   return run(() => repo.addRoom(clean).then(() => undefined), `Room ${clean.number.toUpperCase()} added — it's on sale now`);
 }
@@ -222,13 +223,13 @@ export async function editRoom(
   id: string,
   input: { number: string; room_type_id: string; floor: string | null },
 ): Promise<ActionResult> {
-  const { repo } = await requireManager();
+  const { repo } = await requirePermission("rooms.manage");
   const clean = unitInput(input);
   return run(() => repo.editRoom(id, clean), `Room ${clean.number.toUpperCase()} saved`);
 }
 
 export async function deleteRoom(id: string): Promise<ActionResult> {
-  const { repo } = await requireManager();
+  const { repo } = await requirePermission("rooms.manage");
   return run(() => repo.deleteRoom(id), "Room removed");
 }
 
@@ -250,7 +251,7 @@ async function findRoomType(repo: AdminRepo, id: string) {
 }
 
 export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promise<ActionResult> {
-  const { mode, repo } = await requireManager();
+  const { mode, repo } = await requirePermission("rooms.manage");
   if (mode === "preview") return { ok: false, message: "Photo uploads need Supabase. Connect it to add real photos." };
   if (!UUID_RE.test(roomTypeId)) return { ok: false, message: errorMessage("NO_ROOM") };
   const file = form.get("photo");
@@ -280,7 +281,7 @@ export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promi
  * the gallery are accepted; removed uploads are deleted from storage.
  */
 export async function setRoomGallery(roomTypeId: string, gallery: string[]): Promise<ActionResult> {
-  const { mode, repo } = await requireManager();
+  const { mode, repo } = await requirePermission("rooms.manage");
   const type = await findRoomType(repo, roomTypeId);
   if (!type) return { ok: false, message: errorMessage("NO_ROOM") };
   const next = [...new Set(gallery.map((g) => String(g)))];
@@ -301,7 +302,7 @@ export async function setRoomGallery(roomTypeId: string, gallery: string[]): Pro
 /* ---------------------------------------------------------- Settings & team */
 
 export async function updateSettings(patch: Partial<HotelSettings>): Promise<ActionResult> {
-  const { repo } = await requireManager();
+  const { repo } = await requirePermission("settings.manage");
   const pct = (v: unknown) => {
     if (v === null || v === "" || v === undefined) return null;
     const n = Number(v);
@@ -323,40 +324,57 @@ export async function updateSettings(patch: Partial<HotelSettings>): Promise<Act
   );
 }
 
+/**
+ * Invites a colleague. The secret key is used only to create the Auth user
+ * and send the email; the staff row is written by admin_upsert_staff() as the
+ * signed-in manager, so the database applies the rank rules (you can only
+ * appoint below yourself) and the audit log records who did it.
+ */
 export async function inviteStaff(email: string, fullName: string, role: StaffRole): Promise<ActionResult> {
-  const { mode } = await requireManager();
+  const { mode, staff } = await requirePermission("staff.manage");
   if (mode === "preview") return { ok: false, message: "Invitations need Supabase. Connect it to add real staff." };
-  const service = getServiceClient();
-  if (!service) return { ok: false, message: "Add SUPABASE_SECRET_KEY on the server to invite staff." };
   const addr = text(email, 160).toLowerCase();
   const name = text(fullName, 80);
-  if (!EMAIL_RE.test(addr) || name.length < 2 || !["manager", "front_desk"].includes(role)) {
+  if (!EMAIL_RE.test(addr) || name.length < 2 || !isStaffRole(role)) {
     return { ok: false, message: "Enter a name, a valid email and a role." };
   }
+  if (!assignableRoles(staff.role).includes(role)) return { ok: false, message: errorMessage("RANK") };
+  const service = getServiceClient();
+  if (!service) return { ok: false, message: "Add SUPABASE_SECRET_KEY on the server to invite staff." };
+
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const { data, error } = await service.auth.admin.inviteUserByEmail(addr, {
     redirectTo: `${site}/admin/auth/confirm?next=/admin/account`,
   });
   if (error || !data.user) return { ok: false, message: error?.message ?? "The invitation couldn't be sent." };
-  const { error: insertError } = await service
-    .from("staff")
-    .upsert({ user_id: data.user.id, full_name: name, role, active: true });
-  if (insertError) return { ok: false, message: "Invited, but the staff record couldn't be saved. Try again." };
+
+  const db = await getSessionClient();
+  const { error: staffError } = await db.rpc("admin_upsert_staff", { p_user: data.user.id, p_full_name: name, p_role: role });
+  if (staffError) {
+    // Don't leave a half-made account behind.
+    await service.auth.admin.deleteUser(data.user.id).catch(() => undefined);
+    return { ok: false, message: errorMessage(errorCode(new Error(staffError.message))) };
+  }
   revalidatePath("/admin/settings");
   return { ok: true, message: `Invitation sent to ${addr}` };
 }
 
+/** Role and access changes run as the signed-in manager; the database enforces rank, self-change and last-owner rules. */
 export async function updateStaffMember(userId: string, patch: { role?: StaffRole; active?: boolean }): Promise<ActionResult> {
-  const { mode, staff } = await requireManager();
+  const { mode, staff } = await requirePermission("staff.manage");
   if (mode === "preview") return { ok: false, message: "Team changes need Supabase." };
-  if (userId === staff.id) return { ok: false, message: "You can't change your own role or access." };
-  const service = getServiceClient();
-  if (!service) return { ok: false, message: "Add SUPABASE_SECRET_KEY on the server to manage staff." };
-  const update: { role?: StaffRole; active?: boolean } = {};
-  if (patch.role && ["manager", "front_desk"].includes(patch.role)) update.role = patch.role;
-  if (patch.active !== undefined) update.active = Boolean(patch.active);
-  const { error } = await service.from("staff").update(update).eq("user_id", userId);
-  if (error) return { ok: false, message: "That change couldn't be saved." };
+  if (userId === staff.id) return { ok: false, message: errorMessage("SELF_CHANGE") };
+  if (!UUID_RE.test(userId)) return { ok: false, message: errorMessage("NOT_FOUND") };
+  const db = await getSessionClient();
+  if (patch.role !== undefined) {
+    if (!isStaffRole(patch.role)) return { ok: false, message: errorMessage("BAD_ROLE") };
+    const { error } = await db.rpc("admin_set_staff_role", { p_user: userId, p_role: patch.role });
+    if (error) return { ok: false, message: errorMessage(errorCode(new Error(error.message))) };
+  }
+  if (patch.active !== undefined) {
+    const { error } = await db.rpc("admin_set_staff_active", { p_user: userId, p_active: Boolean(patch.active) });
+    if (error) return { ok: false, message: errorMessage(errorCode(new Error(error.message))) };
+  }
   revalidatePath("/admin/settings");
   return { ok: true, message: "Team updated" };
 }
@@ -443,7 +461,7 @@ export async function quickSearch(q: string): Promise<QuickResult[]> {
 /** Preview only: look at the desk as a manager or as front-desk staff. */
 export async function setPreviewRole(role: StaffRole): Promise<void> {
   if (!previewEnabled()) return;
-  (await cookies()).set(PREVIEW_ROLE_COOKIE, role === "front_desk" ? "front_desk" : "manager", {
+  (await cookies()).set(PREVIEW_ROLE_COOKIE, isStaffRole(role) ? role : "manager", {
     httpOnly: true,
     sameSite: "lax",
     path: "/admin",

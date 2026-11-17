@@ -4,7 +4,8 @@ export type BookingStatus = "pending" | "confirmed" | "checked_in" | "checked_ou
 export type PaymentStatus = "unpaid" | "partial" | "paid";
 export type BookingSource = "website" | "phone" | "walk_in" | "other";
 export type Housekeeping = "clean" | "dirty" | "inspected";
-export type StaffRole = "manager" | "front_desk";
+export type { StaffRole } from "../access";
+import type { StaffRole } from "../access";
 export type PaymentMethod = "cash" | "bkash" | "nagad" | "card" | "bank" | "other";
 
 export type RoomTypeRecord = {

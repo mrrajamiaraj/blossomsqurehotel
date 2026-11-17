@@ -35,6 +35,7 @@ alter default privileges in schema public grant execute on functions to anon, au
 create table auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique,
+  email_confirmed_at timestamptz,
   raw_app_meta_data jsonb not null default '{}',
   raw_user_meta_data jsonb not null default '{}',
   created_at timestamptz not null default now()
@@ -122,6 +123,26 @@ export type Actor =
   | { kind: "service" };
 
 /**
+ * Each query runs in its own savepoint, so an expected failure (a refused
+ * permission) doesn't abort the rest of the test's transaction.
+ */
+function guarded(db: Db): Db["query"] {
+  let n = 0;
+  return (async (sql: string, params?: unknown[]) => {
+    const sp = `q${++n}`;
+    await db.exec(`savepoint ${sp}`);
+    try {
+      const res = await db.query(sql, params);
+      await db.exec(`release savepoint ${sp}`);
+      return res;
+    } catch (err) {
+      await db.exec(`rollback to savepoint ${sp}`);
+      throw err;
+    }
+  }) as Db["query"];
+}
+
+/**
  * Runs `fn` as an API caller, inside a transaction that is always rolled
  * back (so tests never leak state into each other). Mirrors what PostgREST
  * does: SET ROLE plus request.jwt.claims.
@@ -136,7 +157,7 @@ export async function as<T>(db: Db, actor: Actor, fn: (q: Db["query"]) => Promis
   try {
     await db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claims)]);
     await db.exec(`set local role ${role}`);
-    return await fn(db.query.bind(db));
+    return await fn(guarded(db));
   } finally {
     await db.exec("rollback");
   }

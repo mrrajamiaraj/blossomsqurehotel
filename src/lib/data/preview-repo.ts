@@ -1,6 +1,7 @@
 import "server-only";
 import { addDays, hotelToday, nightsBetween } from "../dates";
 import { stayCost } from "../pricing";
+import { ROLE_PERMISSIONS, type Permission, type StaffRole } from "../access";
 import { RepoError } from "./errors";
 import { buildPreviewBookings, PREVIEW_ROOM_TYPES, PREVIEW_ROOMS, PREVIEW_STAFF } from "./preview-seed";
 import { DEFAULT_SETTINGS, type AdminRepo } from "./repo";
@@ -72,7 +73,7 @@ function store(): Store {
   return g.__bsqPreview;
 }
 
-export type PreviewActor = { name: string; role: "manager" | "front_desk" | "guest" };
+export type PreviewActor = { name: string; role: StaffRole | "guest" };
 
 export class PreviewRepo implements AdminRepo {
   readonly mode = "preview" as const;
@@ -83,8 +84,10 @@ export class PreviewRepo implements AdminRepo {
     if (this.actor.role === "guest") throw new RepoError("NOT_STAFF");
   }
 
-  private requireManager() {
-    if (this.actor.role !== "manager") throw new RepoError("NOT_MANAGER");
+  /** Mirrors the database: staff, then the specific permission (writes). */
+  private requirePermission(p: Permission) {
+    this.requireStaff();
+    if (this.actor.role === "guest" || !ROLE_PERMISSIONS[this.actor.role].includes(p)) throw new RepoError("NOT_ALLOWED");
   }
 
   private log(bookingId: string, kind: BookingEvent["kind"], detail: Record<string, unknown>) {
@@ -285,7 +288,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async setInquiryStatus(id: string, status: InquiryStatus): Promise<void> {
-    this.requireStaff();
+    this.requirePermission("inquiries.manage");
     const q = (store().inquiries ?? []).find((x) => x.id === id);
     if (!q) throw new RepoError("NOT_FOUND");
     q.status = status;
@@ -409,12 +412,12 @@ export class PreviewRepo implements AdminRepo {
   /* ---------- Writes ---------- */
 
   async createStaffBooking(input: StaffBookingInput) {
-    this.requireStaff();
+    this.requirePermission("bookings.write");
     return this.insert({ ...input, arrival: null });
   }
 
   async setStatus(id: string, status: BookingStatus, reason?: string) {
-    this.requireStaff();
+    this.requirePermission("bookings.write");
     const b = this.find(id);
     const today = hotelToday();
     if (!canTransition(b.status, status)) throw new RepoError("BAD_TRANSITION");
@@ -443,7 +446,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async assignRoom(id: string, roomId: string | null) {
-    this.requireStaff();
+    this.requirePermission("bookings.write");
     const b = this.find(id);
     if (!isLive(b.status) || b.rooms !== 1) throw new RepoError("LOCKED");
     const rooms = store().rooms;
@@ -461,7 +464,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async modifyBooking(id: string, c: BookingChange) {
-    this.requireStaff();
+    this.requirePermission("bookings.write");
     const s = store();
     const b = this.find(id);
     if (!isLive(b.status)) throw new RepoError("LOCKED");
@@ -503,7 +506,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async recordPayment(id: string, amount: number, method: PaymentMethod, note: string) {
-    this.requireStaff();
+    this.requirePermission("payments.record");
     const b = this.find(id);
     if (b.status === "cancelled" || b.status === "no_show") throw new RepoError("LOCKED");
     if (!Number.isInteger(amount) || amount <= 0 || amount > 10_000_000) throw new RepoError("BAD_AMOUNT");
@@ -514,7 +517,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async updateGuestDetails(id: string, d: GuestDetails) {
-    this.requireStaff();
+    this.requirePermission("guests.write");
     const b = this.find(id);
     Object.assign(b, {
       guest_name: d.name.trim(),
@@ -530,13 +533,15 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async updateRoomType(id: string, patch: RoomTypePatch) {
-    this.requireManager();
+    this.requirePermission("rates.manage");
     const t = store().roomTypes.find((x) => x.id === id);
     if (!t) throw new RepoError("NOT_FOUND");
     Object.assign(t, patch);
   }
 
   async updateRoom(id: string, patch: RoomPatch) {
+    if (patch.out_of_service !== undefined) this.requirePermission("maintenance.manage");
+    if (patch.housekeeping !== undefined) this.requirePermission("housekeeping.write");
     this.requireStaff();
     const r = store().rooms.find((x) => x.id === id);
     if (!r) throw new RepoError("NOT_FOUND");
@@ -564,7 +569,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async addRoom(input: RoomUnitInput) {
-    this.requireManager();
+    this.requirePermission("rooms.manage");
     const s = store();
     if (!s.roomTypes.some((t) => t.id === input.room_type_id)) throw new RepoError("NO_ROOM");
     const number = this.cleanNumber(input.number);
@@ -583,7 +588,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async editRoom(id: string, input: RoomUnitInput) {
-    this.requireManager();
+    this.requirePermission("rooms.manage");
     const s = store();
     const r = s.rooms.find((x) => x.id === id);
     if (!r) throw new RepoError("NOT_FOUND");
@@ -598,7 +603,7 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async deleteRoom(id: string) {
-    this.requireManager();
+    this.requirePermission("rooms.manage");
     const s = store();
     const r = s.rooms.find((x) => x.id === id);
     if (!r) throw new RepoError("NOT_FOUND");
@@ -608,12 +613,12 @@ export class PreviewRepo implements AdminRepo {
   }
 
   async updateSettings(patch: Partial<HotelSettings>) {
-    this.requireManager();
+    this.requirePermission("settings.manage");
     Object.assign(store().settings, patch);
   }
 
   async listStaff(): Promise<StaffMember[]> {
-    this.requireManager();
+    this.requirePermission("staff.read");
     return PREVIEW_STAFF;
   }
 }
