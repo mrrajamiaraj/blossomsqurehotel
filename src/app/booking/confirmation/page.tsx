@@ -116,7 +116,12 @@ export default async function ConfirmationPage() {
         <p className="lede mt-6 max-w-[48ch]">
           {confirmed
             ? "Your booking is confirmed."
-            : `Your room is held. Our front desk will call you on ${receipt.phone} ${settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm.`}{" "}
+            : (
+              <>
+                Your room is held. Our front desk will call you on <span className="whitespace-nowrap">{receipt.phone}</span>{" "}
+                {settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm.
+              </>
+            )}{" "}
           No payment has been taken.
         </p>
         {receipt.preview && (

@@ -55,7 +55,7 @@ create table if not exists public.booking_lookup_attempts (
 create index if not exists booking_lookup_attempts_ref_idx
   on public.booking_lookup_attempts (reference, created_at desc);
 
--- No policies and no grants: only the SECURITY DEFINER function below touches it.
+-- No policies and no grants: only lookup_booking() below (definer rights) touches it.
 alter table public.booking_lookup_attempts enable row level security;
 revoke all on public.booking_lookup_attempts from anon, authenticated;
 

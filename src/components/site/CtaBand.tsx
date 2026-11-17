@@ -5,7 +5,8 @@ import ContactActions from "./ContactActions";
 
 /**
  * Closing call to action for inner pages: book online, or speak to the
- * front desk. Sits on the always-dark sea-pine surface.
+ * front desk. Light sand surface, so it reads apart from the dark footer
+ * (which carries its own reservation invite) directly below it.
  */
 export default function CtaBand({
   eyebrow = "Reservations",
@@ -27,27 +28,27 @@ export default function CtaBand({
   message?: string;
 }) {
   return (
-    <section className="on-dark bg-pine py-[clamp(72px,9vw,128px)]" data-surface="dark" aria-labelledby="cta-title">
+    <section className="border-t border-line bg-sand py-[clamp(72px,9vw,128px)]" aria-labelledby="cta-title">
       <div className="wrap grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end">
         <div>
           <p className="caps eyebrow" data-reveal="up">
             {eyebrow}
           </p>
-          <h2 id="cta-title" className="h2 mt-5 max-w-[18ch] [&_em]:text-champagne" data-reveal="up">
+          <h2 id="cta-title" className="h2 mt-5 max-w-[18ch] text-primary [&_em]:text-bronze" data-reveal="up">
             {title}
           </h2>
         </div>
         <div className="flex flex-col gap-7" data-reveal="up">
-          <p className="max-w-[46ch] text-[1.05rem] leading-relaxed text-[var(--mist)]">{body}</p>
+          <p className="max-w-[46ch] text-[1.05rem] leading-relaxed text-ink-soft">{body}</p>
           <div className="flex flex-wrap gap-3">
-            <Button asChild variant="gold" size="lg">
+            <Button asChild size="lg">
               <Link href={bookHref}>
                 {bookLabel}
                 <ArrowRight />
               </Link>
             </Button>
           </div>
-          <ContactActions onDark size="sm" email={false} message={message} />
+          <ContactActions size="sm" email={false} message={message} />
         </div>
       </div>
     </section>

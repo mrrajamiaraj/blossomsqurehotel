@@ -77,7 +77,7 @@ export default async function OffersPage() {
       <section className="bg-sand/60 py-[clamp(64px,8vw,120px)]" aria-labelledby="rates-h">
         <div className="wrap">
           <SectionHeading eyebrow="Rates at a glance" title={<span id="rates-h">Every room, <em>every rate.</em></span>} lede={`Weekday rates apply Sunday to Wednesday nights; ${WEEKEND_LABEL.toLowerCase()} are charged at the weekend rate. VAT and service charge are added at check-in.`} />
-          <div className="mt-12 overflow-x-auto border border-line bg-ivory">
+          <div className="relative mt-12 overflow-x-auto border border-line bg-ivory" role="region" aria-label="Rates table" tabIndex={0}>
             <table className="w-full min-w-[640px] border-collapse text-left">
               <caption className="sr-only">Nightly rates by room type, in taka</caption>
               <thead>

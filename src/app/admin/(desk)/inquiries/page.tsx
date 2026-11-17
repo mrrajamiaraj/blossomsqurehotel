@@ -49,7 +49,7 @@ export default async function InquiriesPage({ searchParams }: { searchParams: Pr
       <Panel flush>
         {unavailable ? (
           <AdminEmptyState title="Enquiries aren't connected yet">
-            Apply the migration supabase/migrations/20261118090000_guest_services.sql to start receiving website messages here. Until then the website offers guests WhatsApp and email instead.
+            Apply the migration supabase/migrations/20261117194739_guest_services.sql to start receiving website messages here. Until then the website offers guests WhatsApp and email instead.
           </AdminEmptyState>
         ) : rows.length === 0 ? (
           <AdminEmptyState title={view === "new" ? "No new enquiries" : "Nothing here"}>{view === "new" ? "New messages from the website appear here." : undefined}</AdminEmptyState>

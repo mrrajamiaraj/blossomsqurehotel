@@ -15,7 +15,7 @@ npm test           # unit tests (booking rules, KPIs, dates, pricing, security g
 npm run verify     # typecheck + tests + production build
 ```
 
-Docs: [Architecture](docs/ARCHITECTURE.md) · [UI system](docs/DESIGN_SYSTEM.md) (live at `/design-system` in dev) · [Audit](docs/AUDIT.md) ·
+Docs: [Architecture](docs/ARCHITECTURE.md) · [Public site](docs/PUBLIC_SITE.md) · [UI system](docs/DESIGN_SYSTEM.md) (live at `/design-system` in dev) · [Audit](docs/AUDIT.md) ·
 [Checklist](docs/IMPLEMENTATION_CHECKLIST.md) · [Migrations & rollback](docs/MIGRATION_AND_ROLLBACK.md)
 
 Database scripts (Supabase CLI is a dev dependency):

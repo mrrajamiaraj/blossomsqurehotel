@@ -17,7 +17,7 @@ export default function PhotoFrame({ photo, className = "", sizes = "100vw", pri
   return (
     <div className={`photo ${zoom ? "photo--zoom" : ""} ${className}`} style={style}>
       {photo.src ? (
-        <Image src={photo.src} alt={photo.alt} fill sizes={sizes} priority={priority} />
+        <Image src={photo.src} alt={photo.alt} fill sizes={sizes} preload={priority} loading={priority ? "eager" : undefined} />
       ) : (
         <>
           {/* data-ref tells the hotel which file to add: public/photos/<ref>.jpg */}

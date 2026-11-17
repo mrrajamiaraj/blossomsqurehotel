@@ -14,6 +14,7 @@ import {
   ICommand,
   IExternal,
   IGuests,
+  IInbox,
   ILogout,
   IMenu,
   IPlus,
@@ -39,7 +40,7 @@ const NAV = [
   { href: "/admin/calendar", label: "Calendar", icon: ICalendar },
   { href: "/admin/rooms", label: "Rooms & rates", icon: IRooms },
   { href: "/admin/guests", label: "Guests", icon: IGuests },
-  { href: "/admin/inquiries", label: "Enquiries", icon: IGuests },
+  { href: "/admin/inquiries", label: "Enquiries", icon: IInbox },
   { href: "/admin/reports", label: "Reports", icon: IReports },
   { href: "/admin/settings", label: "Settings", icon: ISettings },
 ];

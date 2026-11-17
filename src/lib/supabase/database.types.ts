@@ -336,7 +336,6 @@ export type Database = {
         }
         Relationships: []
       }
-      // Added by 20261118090000_guest_services.sql (hand-written until `npm run db:types` is re-run).
       inquiries: {
         Row: {
           created_at: string

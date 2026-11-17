@@ -79,7 +79,7 @@ function Cover({ photo, sizes }: { photo: Photo; sizes: string }) {
   ) : (
     <>
       <div className="photo-plate" data-tone={photo.tone} role="img" aria-label={photo.alt} />
-      <span className="photo-ref">{photo.ref}</span>
+      <span className="photo-ref">Photograph to come</span>
     </>
   );
 }

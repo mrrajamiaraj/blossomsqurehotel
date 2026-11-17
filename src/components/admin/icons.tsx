@@ -42,6 +42,11 @@ export const IRooms = (p: P) => (
     <path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5" />
   </I>
 );
+export const IInbox = (p: P) => (
+  <I {...p}>
+    <path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1.5 2.5h5L16 13h5" />
+  </I>
+);
 export const IGuests = (p: P) => (
   <I {...p}>
     <circle cx="9" cy="8" r="3.2" />

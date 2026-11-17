@@ -93,7 +93,7 @@ export default function StoryTabs({ stories }: { stories: Story[] }) {
               ) : (
                 <>
                   <div className="photo-plate" data-tone={s.photo.tone} role="img" aria-label={s.photo.alt} />
-                  <span className="photo-ref">{s.photo.ref}</span>
+                  <span className="photo-ref">Photograph to come</span>
                 </>
               )}
             </div>

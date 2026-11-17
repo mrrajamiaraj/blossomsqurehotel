@@ -8,7 +8,7 @@ import FaqList from "./FaqList";
 export default function FaqTabs({ groups }: { groups: FaqGroup[] }) {
   return (
     <Tabs defaultValue={groups[0]?.id} className="w-full">
-      <TabsList aria-label="Question topics">
+      <TabsList aria-label="Question topics" className="flex-wrap gap-x-7 gap-y-0">
         {groups.map((g) => (
           <TabsTrigger key={g.id} value={g.id}>
             {g.title}
