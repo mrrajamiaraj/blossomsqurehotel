@@ -11,7 +11,7 @@ const type = (slug: string) => PREVIEW_ROOM_TYPES.find((t) => t.slug === slug)!;
 /** The first Sunday on or after `from`, so a 3-night stay is all weekday nights. */
 const sunday = (from: string) => addDays(from, (7 - toDate(from).getUTCDay()) % 7);
 const farSunday = sunday(addDays(today, 40));
-const desk = () => new PreviewRepo({ name: "Test Desk", role: "front_desk" });
+const desk = () => new PreviewRepo({ name: "Test Desk", role: "receptionist" });
 const manager = () => new PreviewRepo({ name: "Test Manager", role: "manager" });
 const guest = () => new PreviewRepo();
 
@@ -114,7 +114,7 @@ describe("booking integrity (preview store, same rules as the database)", () => 
   });
 
   it("restricts rates and settings to managers", async () => {
-    await expect(desk().updateRoomType("rt-king", { price_bdt: 1 })).rejects.toMatchObject({ code: "NOT_MANAGER" });
+    await expect(desk().updateRoomType("rt-king", { price_bdt: 1 })).rejects.toMatchObject({ code: "NOT_ALLOWED" });
     await expect(manager().updateRoomType("rt-king", { price_bdt: 6500, weekend_price_bdt: 9000 })).resolves.toBeUndefined();
   });
 });

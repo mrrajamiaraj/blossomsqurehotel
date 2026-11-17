@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { quickSearch, type QuickResult } from "@/app/admin/actions";
 import { stayLine } from "@/lib/admin/format";
-import type { StaffRole } from "@/lib/data/types";
+import type { Permission } from "@/lib/access";
 import { StatusBadge } from "./badges";
 import {
   IArrowRight,
@@ -31,7 +31,8 @@ type Command = {
   icon: (p: { size?: number }) => React.ReactNode;
   keys?: string;
   words?: string;
-  managerOnly?: boolean;
+  /** Shown only to staff holding this permission. */
+  perm?: Permission;
   external?: boolean;
 };
 
@@ -42,7 +43,7 @@ const COMMANDS: Command[] = [
   { id: "rooms", label: "Rooms & rates", group: "Go to", href: "/admin/rooms", icon: IRooms, keys: "G R", words: "housekeeping prices clean dirty" },
   { id: "guests", label: "Guests", group: "Go to", href: "/admin/guests", icon: IGuests, keys: "G G", words: "customers people" },
   { id: "reports", label: "Reports", group: "Go to", href: "/admin/reports", icon: IReports, keys: "G P", words: "analytics revenue occupancy adr revpar performance" },
-  { id: "settings", label: "Settings", group: "Go to", href: "/admin/settings", icon: ISettings, words: "team staff policies vat", managerOnly: true },
+  { id: "settings", label: "Settings", group: "Go to", href: "/admin/settings", icon: ISettings, words: "team staff policies vat", perm: "settings.manage" },
   { id: "account", label: "My account", group: "Go to", href: "/admin/account", icon: IKey, words: "password profile" },
 
   { id: "v-requests", label: "To confirm", group: "Bookings", href: "/admin/bookings?view=requests", icon: IBookings, words: "pending requests" },
@@ -76,7 +77,7 @@ type Item =
   | { kind: "booking"; key: string; booking: QuickResult }
   | { kind: "search"; key: string; q: string };
 
-export default function CommandPalette({ role }: { role: StaffRole }) {
+export default function CommandPalette({ permissions }: { permissions: Permission[] }) {
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -116,7 +117,7 @@ export default function CommandPalette({ role }: { role: StaffRole }) {
       if (Date.now() - pendingG < 1200) {
         pendingG = 0;
         const target = COMMANDS.find((c) => c.keys === `G ${k.toUpperCase()}`);
-        if (target && (!target.managerOnly || role === "manager")) {
+        if (target && (!target.perm || permissions.includes(target.perm))) {
           e.preventDefault();
           router.push(target.href);
         }
@@ -138,7 +139,7 @@ export default function CommandPalette({ role }: { role: StaffRole }) {
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("bsq:palette", onOpen);
     };
-  }, [open, close, router, role]);
+  }, [open, close, router, permissions]);
 
   // Live booking search, debounced; stale answers are dropped.
   useEffect(() => {
@@ -163,7 +164,7 @@ export default function CommandPalette({ role }: { role: StaffRole }) {
 
   const items = useMemo<Item[]>(() => {
     const term = q.trim();
-    const cmds = COMMANDS.filter((c) => !c.managerOnly || role === "manager")
+    const cmds = COMMANDS.filter((c) => !c.perm || permissions.includes(c.perm))
       .map((c) => ({ c, s: score(c, term) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => (term ? b.s - a.s : 0))
@@ -172,7 +173,7 @@ export default function CommandPalette({ role }: { role: StaffRole }) {
     const bookings = results.map((b): Item => ({ kind: "booking", key: b.reference, booking: b }));
     const search: Item[] = term.length >= 2 ? [{ kind: "search", key: "search", q: term }] : [];
     return term ? [...bookings, ...cmds, ...search] : cmds;
-  }, [q, results, role]);
+  }, [q, results, permissions]);
 
   useEffect(() => setActive(0), [q, results]);
   useEffect(() => {

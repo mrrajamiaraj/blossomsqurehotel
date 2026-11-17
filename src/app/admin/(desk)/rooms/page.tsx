@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AddRoomForm, RoomPhotos, RoomTile, RoomTypeEditor } from "@/components/admin/RoomsEditors";
+import { can } from "@/lib/access";
 import { requireAdmin } from "@/lib/admin/session";
 import { addDays, hotelToday } from "@/lib/dates";
 import { photo } from "@/lib/photos";
@@ -8,14 +9,15 @@ import { WEEKEND_LABEL } from "@/lib/pricing";
 export const metadata: Metadata = { title: "Rooms & rates" };
 
 export default async function RoomsPage() {
-  const { repo, staff } = await requireAdmin();
+  const { repo, access } = await requireAdmin();
   const today = hotelToday();
   const [types, rooms, tonight] = await Promise.all([
     repo.listRoomTypes({ includeUnpublished: true }),
     repo.listRooms(),
     repo.bookingsBetween(today, addDays(today, 1)),
   ]);
-  const manager = staff.role === "manager";
+  const canRates = can(access, "rates.manage");
+  const manager = can(access, "rooms.manage");
   const occupant = new Map(
     tonight.filter((b) => b.room_id && (b.status === "checked_in" || b.status === "confirmed")).map((b) => [b.room_id!, b.guest_name]),
   );
@@ -57,7 +59,7 @@ export default async function RoomsPage() {
               published={t.is_published}
               size={t.size_sqft}
               blurb={t.blurb}
-              canEdit={manager}
+              canEdit={canRates}
             >
               <RoomPhotos
                 typeId={t.id}

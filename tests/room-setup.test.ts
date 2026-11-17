@@ -10,7 +10,7 @@ const sunday = (from: string) => addDays(from, (7 - toDate(from).getUTCDay()) % 
 const far = sunday(addDays(today, 60));
 const typeId = (slug: string) => PREVIEW_ROOM_TYPES.find((t) => t.slug === slug)!.id;
 const manager = () => new PreviewRepo({ name: "Test Manager", role: "manager" });
-const desk = () => new PreviewRepo({ name: "Test Desk", role: "front_desk" });
+const desk = () => new PreviewRepo({ name: "Test Desk", role: "receptionist" });
 const guest = () => new PreviewRepo();
 
 async function unitsOf(slug: string) {
@@ -62,7 +62,7 @@ describe("room setup", () => {
 
   it("only lets managers change room setup", async () => {
     await expect(desk().addRoom({ number: "999", room_type_id: typeId("deluxe-couple"), floor: null })).rejects.toThrow(
-      "NOT_MANAGER",
+      "NOT_ALLOWED",
     );
   });
 

@@ -144,7 +144,7 @@ describe("enquiries in the preview store", () => {
     for (let i = 0; i < 3; i++) expect(await repo.submitInquiry(input)).toMatch(/^ENQ-\d{6}$/);
     await expect(repo.submitInquiry(input)).rejects.toThrow("RATE_LIMITED");
     await expect(repo.listInquiries({})).rejects.toThrow("NOT_STAFF");
-    const staff = new PreviewRepo({ name: "Desk", role: "front_desk" });
+    const staff = new PreviewRepo({ name: "Desk", role: "receptionist" });
     const list = await staff.listInquiries({ status: "new" });
     expect(list.some((q) => q.email === "throttle@example.com")).toBe(true);
   });

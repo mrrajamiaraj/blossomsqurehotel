@@ -11,7 +11,7 @@
 --   housekeeping_tasks  cleaning / inspection work; created on check-out
 --
 -- Nothing here is writable through the API. Totals, paid amounts, payment
--- status and inventory change only inside SECURITY DEFINER functions that
+-- status and inventory change only inside definer-rights functions that
 -- check a permission first.
 --
 -- Error codes: NOT_STAFF, NOT_ALLOWED, MFA_REQUIRED, NOT_FOUND, BAD_AMOUNT, LOCKED,

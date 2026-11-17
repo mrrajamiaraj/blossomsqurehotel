@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { inviteStaff, updatePassword, updateSettings, updateStaffMember } from "@/app/admin/actions";
+import { assignableRoles, canManage, ROLES } from "@/lib/access";
 import type { HotelSettings, StaffMember, StaffRole } from "@/lib/data/types";
 import { priceBreakdown } from "@/lib/pricing";
 import { formatTaka } from "@/lib/format";
@@ -85,10 +86,11 @@ export function PoliciesForm({ initial }: { initial: HotelSettings }) {
 
 /* ---------------------------------------------------------- Team */
 
-export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfId: string; live: boolean }) {
+export function TeamPanel({ staff, selfId, live, myRole }: { staff: StaffMember[]; selfId: string; live: boolean; myRole: StaffRole }) {
+  const assignable = assignableRoles(myRole);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<StaffRole>("front_desk");
+  const [role, setRole] = useState<StaffRole>(assignable.includes("receptionist") ? "receptionist" : assignable[assignable.length - 1]);
   const [pending, start] = useTransition();
 
   const invite = (e: React.FormEvent) => {
@@ -115,7 +117,7 @@ export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfI
         <h2 className="a-h2">
           Team<span className="a-count">{staff.length}</span>
         </h2>
-        <span className="a-hint">Managers change rates, rooms and policies. Front desk handles bookings and housekeeping.</span>
+        <span className="a-hint">You can appoint and change people below your own role. Owners, managers and finance sign in with an authenticator app.</span>
       </div>
       <div className="a-table-wrap">
         <table className="a-table a-table--stack">
@@ -129,6 +131,7 @@ export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfI
           <tbody>
             {staff.map((m) => {
               const self = m.user_id === selfId;
+              const editable = !self && canManage(myRole, m.role);
               return (
                 <tr key={m.user_id}>
                   <td data-label="">
@@ -145,17 +148,20 @@ export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfI
                       className="a-input"
                       style={{ minHeight: 32, width: "auto" }}
                       value={m.role}
-                      disabled={self || pending || !live}
+                      disabled={!editable || pending || !live}
                       onChange={(e) => change(m.user_id, { role: e.target.value as StaffRole })}
                       aria-label={`Role for ${m.full_name}`}
                     >
-                      <option value="manager">Manager</option>
-                      <option value="front_desk">Front desk</option>
+                      {ROLES.filter((r) => r.code === m.role || assignable.includes(r.code)).map((r) => (
+                        <option key={r.code} value={r.code}>
+                          {r.name}
+                        </option>
+                      ))}
                     </select>
                   </td>
                   <td data-label="Access">
-                    {self ? (
-                      <span className="a-muted">Active</span>
+                    {!editable ? (
+                      <span className="a-muted">{m.active ? "Active" : "No access"}</span>
                     ) : (
                       <button
                         type="button"
@@ -186,8 +192,11 @@ export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfI
           <label className="a-field">
             <span className="a-label">Role</span>
             <select className="a-input" value={role} onChange={(e) => setRole(e.target.value as StaffRole)}>
-              <option value="front_desk">Front desk</option>
-              <option value="manager">Manager</option>
+              {ROLES.filter((r) => assignable.includes(r.code)).map((r) => (
+                <option key={r.code} value={r.code}>
+                  {r.name}
+                </option>
+              ))}
             </select>
           </label>
           <button type="submit" className="a-btn a-btn--primary">

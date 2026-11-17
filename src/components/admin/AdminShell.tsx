@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { setPreviewRole, signOut } from "@/app/admin/actions";
-import type { StaffRole } from "@/lib/data/types";
+import { ROLES, roleName, type Permission, type StaffRole } from "@/lib/access";
 import { Monogram } from "../icons";
 import CommandPalette, { openCommandPalette } from "./CommandPalette";
 import {
@@ -28,21 +28,22 @@ import styles from "./AdminShell.module.css";
 
 type Props = {
   staff: { name: string; role: StaffRole };
+  permissions: Permission[];
   mode: "live" | "preview";
   pending: number;
   dirtyRooms: number;
   children: React.ReactNode;
 };
 
-const NAV = [
+const NAV: { href: string; label: string; icon: (p: { size?: number }) => React.ReactNode; exact?: boolean; perm?: Permission }[] = [
   { href: "/admin", label: "Today", icon: IToday, exact: true },
-  { href: "/admin/bookings", label: "Bookings", icon: IBookings },
-  { href: "/admin/calendar", label: "Calendar", icon: ICalendar },
+  { href: "/admin/bookings", label: "Bookings", icon: IBookings, perm: "bookings.read" },
+  { href: "/admin/calendar", label: "Calendar", icon: ICalendar, perm: "bookings.read" },
   { href: "/admin/rooms", label: "Rooms & rates", icon: IRooms },
-  { href: "/admin/guests", label: "Guests", icon: IGuests },
-  { href: "/admin/inquiries", label: "Enquiries", icon: IInbox },
-  { href: "/admin/reports", label: "Reports", icon: IReports },
-  { href: "/admin/settings", label: "Settings", icon: ISettings },
+  { href: "/admin/guests", label: "Guests", icon: IGuests, perm: "guests.read" },
+  { href: "/admin/inquiries", label: "Enquiries", icon: IInbox, perm: "inquiries.read" },
+  { href: "/admin/reports", label: "Reports", icon: IReports, perm: "reports.read" },
+  { href: "/admin/settings", label: "Settings", icon: ISettings, perm: "settings.manage" },
 ];
 
 const initials = (name: string) =>
@@ -53,7 +54,7 @@ const initials = (name: string) =>
     .map((w) => w[0]!.toUpperCase())
     .join("");
 
-export default function AdminShell({ staff, mode, pending, dirtyRooms, children }: Props) {
+export default function AdminShell({ staff, permissions, mode, pending, dirtyRooms, children }: Props) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [switching, startSwitch] = useTransition();
@@ -85,7 +86,7 @@ export default function AdminShell({ staff, mode, pending, dirtyRooms, children 
         </div>
 
         <nav className={styles.nav} aria-label="Sections">
-          {NAV.filter((n) => n.href !== "/admin/settings" || staff.role === "manager").map(({ href, label, icon: Icon, exact }) => {
+          {NAV.filter((n) => !n.perm || permissions.includes(n.perm)).map(({ href, label, icon: Icon, exact }) => {
             const active = isActive(href, exact);
             const badge = href === "/admin/bookings" ? pending : href === "/admin/rooms" ? dirtyRooms : 0;
             return (
@@ -117,7 +118,7 @@ export default function AdminShell({ staff, mode, pending, dirtyRooms, children 
               <Link href="/admin/account" className={styles.userName}>
                 {staff.name}
               </Link>
-              <span className={styles.userRole}>{staff.role === "manager" ? "Manager" : "Front desk"}</span>
+              <span className={styles.userRole}>{roleName(staff.role)}</span>
             </span>
             <form action={signOut}>
               <button type="submit" className={styles.signOut} aria-label="Sign out" title="Sign out">
@@ -140,19 +141,20 @@ export default function AdminShell({ staff, mode, pending, dirtyRooms, children 
             </span>
             <span className={styles.previewRole}>
               Viewing as
-              <span className="a-seg">
-                {(["manager", "front_desk"] as StaffRole[]).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    aria-pressed={staff.role === r}
-                    disabled={switching}
-                    onClick={() => startSwitch(() => setPreviewRole(r))}
-                  >
-                    {r === "manager" ? "Manager" : "Front desk"}
-                  </button>
+              <select
+                className="a-input"
+                style={{ minHeight: 32, width: "auto" }}
+                value={staff.role}
+                disabled={switching}
+                aria-label="Preview as role"
+                onChange={(e) => startSwitch(() => setPreviewRole(e.target.value as StaffRole))}
+              >
+                {ROLES.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.name}
+                  </option>
                 ))}
-              </span>
+              </select>
             </span>
           </div>
         )}
@@ -203,7 +205,7 @@ export default function AdminShell({ staff, mode, pending, dirtyRooms, children 
         </main>
       </div>
       <SlashToSearch />
-      <CommandPalette role={staff.role} />
+      <CommandPalette permissions={permissions} />
     </div>
   );
 }
