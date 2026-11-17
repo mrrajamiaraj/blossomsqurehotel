@@ -1,4 +1,4 @@
-// Staff roles and permissions, mirrored from supabase/migrations/20261118100000_rbac.sql.
+// Staff roles and permissions, mirrored from supabase/migrations/20261117203948_rbac.sql.
 // The database is the authority (every policy and admin_* function checks
 // it); this copy drives menus, labels and early, friendly refusals in the UI.
 // tests/db/access-parity.test.ts fails if the two ever differ.

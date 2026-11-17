@@ -1,11 +1,11 @@
 -- ROLLBACK for the access-architecture migrations:
---   20261118100000_rbac · 20261118100100_reservations · 20261118100200_catalogue_and_content
---   20261118100300_audit_log · 20261118100400_storage
+--   20261117203948_rbac · 20261117204108_reservations · 20261117204211_catalogue_and_content
+--   20261117204238_audit_log · 20261117204245_storage
 --
 -- Returns the schema to exactly the state after 20261117194819 (proved by
 -- tests/db/rollback.test.ts, which compares tables, columns, functions,
 -- policies, grants and triggers). Run as one transaction:
---   psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f supabase/rollbacks/20261118100000_access_architecture.down.sql
+--   psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f supabase/rollbacks/20261117203948_access_architecture.down.sql
 -- then delete the five rows from supabase_migrations.schema_migrations.
 --
 -- DATA LOSS: rows in the new tables (guests, payments ledger, refunds, room

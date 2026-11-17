@@ -133,7 +133,7 @@ Roll back by redeploying the previous version from Git.
 
 ## C. Access-architecture release
 
-The release is five migrations, `20261118100000` to `20261118100400`. They add:
+The release is five migrations, `20261117203948` to `20261117204245`. They add:
 - roles and permissions, and MFA for privileged roles;
 - guests, the payments ledger, refunds, room blocks and housekeeping tasks;
 - the catalogue, content, reviews and notifications;
@@ -170,7 +170,7 @@ The release is five migrations, `20261118100000` to `20261118100400`. They add:
 
 ### C.4 Roll back
 1. Download anything needed from the `site-media` and `guest-documents` buckets, then empty them. The script refuses to run otherwise.
-2. `psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f supabase/rollbacks/20261118100000_access_architecture.down.sql` (one transaction: all or nothing).
+2. `psql "$DB_URL" -v ON_ERROR_STOP=1 -1 -f supabase/rollbacks/20261117203948_access_architecture.down.sql` (one transaction: all or nothing).
 3. Delete the five versions from `supabase_migrations.schema_migrations`.
 4. Redeploy the previous app build.
 
@@ -201,3 +201,32 @@ The release is five migrations, `20261118100000` to `20261118100400`. They add:
   - tables in `private` and `audit` with RLS on but no policies (deliberate: no direct access);
   - "leaked password protection" off. This is an Auth dashboard setting; turn it on in production if your plan includes it.
 - **Not yet tested:** a real browser sign-in with authenticator-app enrolment. The checks above used Supabase's own role and JWT mechanism directly. To try it, point a local or preview build at the staging keys.
+
+### C.6 Production release: 18 Nov 2026
+
+1. **Backup:** the production data was exported to `supabase/backups/2026-11-18-production-before-access-architecture.json`. At the time it held 7 room types, 12 rooms and settings; there were no bookings, staff, enquiries, users or files.
+2. **Migrations:** the five migrations were applied to production. The local files were renamed to the versions production recorded:
+   - `20261117203948_rbac`
+   - `20261117204108_reservations`
+   - `20261117204211_catalogue_and_content`
+   - `20261117204238_audit_log`
+   - `20261117204245_storage`
+
+   The rollback script is `supabase/rollbacks/20261117203948_access_architecture.down.sql`.
+3. **Checks on production (read-only, as a visitor):**
+   - 7 room types and availability are visible;
+   - bookings, guests, staff and the audit log are refused;
+   - 7 roles, 12 amenities and 7 rate plans exist;
+   - rooms and prices are unchanged;
+   - the 3 buckets exist.
+
+   The security advisor shows only the documented findings.
+4. **App:** deployed to Vercel production (`blossomsquare.online`).
+   - All 16 public pages, the sitemap and robots.txt return 200.
+   - `/admin` redirects to the login page, and `/design-system` returns 404.
+   - Live prices and availability come from Supabase.
+
+**Next (owner):**
+1. Create the first owner: an Auth user, then a staff row with role `owner` (`docs/DATABASE.md` §3).
+2. Sign in at `/admin` and enrol the authenticator app.
+3. Optionally turn on leaked-password protection in Auth settings.

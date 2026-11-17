@@ -20,7 +20,7 @@
 --
 -- Rollback (in order): drop the functions and triggers created below; restore
 -- _free_units and admin_record_payment from 20261116114952 (with the
--- _require('payments.record') line from 20261118100000); drop tables
+-- _require('payments.record') line from 20261117203948); drop tables
 -- housekeeping_tasks, room_blocks, refunds, payments, booking_guests,
 -- booking_rooms; alter table bookings drop column guest_id; drop table guests.
 

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { as, createDevDatabase, type Db } from "./harness";
 
 const BEFORE = "20261117194819_guest_services_staff_grant.sql";
-const DOWN = readFileSync("supabase/rollbacks/20261118100000_access_architecture.down.sql", "utf8");
+const DOWN = readFileSync("supabase/rollbacks/20261117203948_access_architecture.down.sql", "utf8");
 
 // Everything that defines the API surface and its security.
 const SNAPSHOT = `

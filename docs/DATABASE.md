@@ -5,9 +5,9 @@ staff roles, MFA for privileged roles, an append-only audit log and
 per-bucket storage policies.
 
 - **Migrations:** `supabase/migrations/` (applied in filename order).
-- **Rollback for this release:** `supabase/rollbacks/20261118100000_access_architecture.down.sql`.
+- **Rollback for this release:** `supabase/rollbacks/20261117203948_access_architecture.down.sql`.
 - **Tests:** `tests/db/` (real PostgreSQL via PGlite: `npm run test:db`).
-- **Status (18 Nov 2026):** migrations `20261118100000` to `20261118100400` exist in development only. They are **not applied to production**. See the release plan in [MIGRATION_AND_ROLLBACK.md](MIGRATION_AND_ROLLBACK.md#access-architecture-release).
+- **Status (18 Nov 2026):** applied to production together with the app release. See [MIGRATION_AND_ROLLBACK.md](MIGRATION_AND_ROLLBACK.md#access-architecture-release) §C.6.
 
 ## 1. Schemas
 
@@ -65,7 +65,7 @@ Also: `booking_events` (per-booking history), `booking_lookup_attempts` (throttl
 | Content editor | 30 | — | website content, media, reviews |
 | Housekeeping | 20 | — | housekeeping tasks and room cleaning status |
 
-The full matrix is in `20261118100000_rbac.sql`. `src/lib/access.ts` mirrors it for the UI, and a test fails if the two differ.
+The full matrix is in `20261117203948_rbac.sql`. `src/lib/access.ts` mirrors it for the UI, and a test fails if the two differ.
 
 **Rules enforced in the database:**
 - **Permission checks:** every policy and staff function checks a *permission* (`has_permission` / `_require`), never a role name.
