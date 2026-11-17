@@ -2,10 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import StaySearch from "@/components/booking/StaySearch";
 import MapEmbed from "@/components/home/MapEmbed";
-import RoomShowcase from "@/components/home/RoomShowcase";
 import StickyBook from "@/components/home/StickyBook";
 import StoryTabs, { type Story } from "@/components/home/StoryTabs";
-import { ArrowRight, PathIcon } from "@/components/icons";
+import { ArrowRight, ArrowUpRight, PathIcon } from "@/components/icons";
+import Gallery from "@/components/system/Gallery";
+import RoomCard from "@/components/system/RoomCard";
+import TestimonialCard from "@/components/system/TestimonialCard";
+import { galleryItems } from "@/lib/content/gallery";
+import { NEARBY } from "@/lib/content/location";
+import { rateOffers } from "@/lib/content/offers";
+import { getReviews, REVIEWS_URL } from "@/lib/content/reviews";
+import { roomKind } from "@/lib/format";
+import { hotelJsonLd, JsonLd } from "@/lib/seo";
 import Parallax from "@/components/motion/Parallax";
 import SplitWords from "@/components/motion/SplitWords";
 import CopyButton from "@/components/ui/CopyButton";
@@ -23,14 +31,6 @@ export const revalidate = 300;
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties;
 
-// Kept to places and directions; no distances until the hotel confirms them.
-const NEARBY: [string, string][] = [
-  ["Kolatoli beach", "A few minutes on foot"],
-  ["Laboni Point & Burmese Market", "North, in town"],
-  ["Himchari & Marine Drive", "South along the coast"],
-  ["Inani Beach", "Further south on Marine Drive"],
-];
-
 const STORIES: Story[] = [
   {
     id: "dining",
@@ -44,7 +44,7 @@ const STORIES: Story[] = [
       "Fish from the morning's local catch",
       "Twenty-four-hour room service",
     ],
-    cta: { label: "Call to reserve a table", href: RESERVATIONS.href },
+    cta: { label: "Dining at Blossom Square", href: "/dining" },
     photo: photo("RESTAURANT", "The restaurant and café", "dusk"),
   },
   {
@@ -58,15 +58,25 @@ const STORIES: Story[] = [
       "Banquet hall with full catering",
       "Setup, décor and menus arranged for you",
     ],
-    cta: { label: "Enquire about an event", href: RESERVATIONS.href },
+    cta: { label: "Plan an event", href: "/meetings-events" },
     photo: photo("BANQUET", "The banquet hall", "forest"),
   },
 ];
 
+/** Three rooms that span the range: the first by price, the middle, and the top suite. */
+function pickFeatured<T extends { price_bdt: number; gallery: { src: string | null }[] }>(rooms: T[]): T[] {
+  const byPrice = [...rooms].sort((a, b) => a.price_bdt - b.price_bdt);
+  const picks = [byPrice[0], byPrice[Math.floor(byPrice.length / 2)], byPrice[byPrice.length - 1]].filter(Boolean);
+  return [...new Set(picks)];
+}
+
 export default async function HomePage() {
-  const rooms = await getRooms();
+  const [rooms, reviews] = await Promise.all([getRooms(), getReviews({ limit: 2 })]);
   const today = hotelToday();
   const fromPrice = Math.min(...rooms.map((r) => r.price_bdt));
+  const featured = pickFeatured(rooms);
+  const offer = rateOffers(rooms)[0] ?? null;
+  const gallery = galleryItems();
 
   const hero = photo("DSC5566", "The Connecting King Suite in the evening, lamps lit above the bed", "dusk");
   const lobby = photo("DSC5562", "The upstairs corridor, with original artwork on the walls", "sand");
@@ -171,23 +181,38 @@ export default async function HomePage() {
               </h2>
             </div>
             <Link href="/rooms" className="link-line" data-reveal="fade">
-              Compare all rooms
+              Compare all {rooms.length} rooms
               <ArrowRight />
             </Link>
           </div>
-          <div data-reveal="up" style={d(150)}>
-            <RoomShowcase
-              rooms={rooms.map((r) => ({
-                slug: r.slug,
-                name: r.name,
-                tag: r.tag,
-                blurb: r.blurb,
-                features: r.features.filter((f) => f.toLowerCase().includes("bed") || f.includes("bathroom") || f === "Balcony"),
-                price: r.price_bdt,
-                cover: r.gallery[0],
-              }))}
-            />
-          </div>
+          <ul role="list" className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {featured.map((r, i) => (
+              <li key={r.slug} data-reveal="up" style={d(i * 120)} className={i === 0 ? "md:col-span-2 lg:col-span-1" : undefined}>
+                <RoomCard
+                  href={`/rooms/${r.slug}`}
+                  name={r.name}
+                  kind={roomKind(r.tag)}
+                  photo={r.gallery[0]}
+                  facts={[r.bed, `Sleeps ${r.sleeps}`]}
+                  blurb={r.blurb}
+                  priceBdt={r.price_bdt}
+                  wasBdt={r.rack_price_bdt}
+                  bookHref={`/booking?room=${r.slug}`}
+                  className="h-full"
+                />
+              </li>
+            ))}
+          </ul>
+          <p className={styles.roomsNote} data-reveal="fade">
+            Also: {rooms.filter((r) => !featured.includes(r)).map((r, i, all) => (
+              <span key={r.slug}>
+                <Link href={`/rooms/${r.slug}`} className="text-link">
+                  {r.name}
+                </Link>
+                {i < all.length - 1 ? ", " : "."}
+              </span>
+            ))}
+          </p>
         </div>
       </section>
 
@@ -205,6 +230,10 @@ export default async function HomePage() {
               Breakfast, parking, Wi-Fi and the pool are part of the room rate. Airport pickup and drop-off can be
               arranged for an extra charge.
             </p>
+            <Link href="/facilities" className="link-line" data-reveal="fade">
+              All facilities
+              <ArrowRight />
+            </Link>
           </div>
           <ul role="list" className={styles.amenList}>
             {HOTEL_AMENITIES.map((a, i) => (
@@ -257,6 +286,69 @@ export default async function HomePage() {
           </div>
           <div data-reveal="up" style={d(150)}>
             <StoryTabs stories={STORIES} />
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- Gallery */}
+      <section className="section" aria-labelledby="gallery-h">
+        <div className="wrap">
+          <div className={styles.head}>
+            <div>
+              <p className="caps eyebrow" data-reveal="up">
+                Gallery
+              </p>
+              <h2 id="gallery-h" className={`h2 ${styles.headTitle}`} data-reveal="words">
+                <SplitWords text="The hotel, *as it is.*" />
+              </h2>
+            </div>
+            <Link href="/gallery" className="link-line" data-reveal="fade">
+              See every photograph
+              <ArrowRight />
+            </Link>
+          </div>
+          <div data-reveal="up">
+            <Gallery photos={gallery} title="Blossom Square" max={5} />
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- Offers & reviews */}
+      <section className={`section ${styles.proof}`} aria-label="Offers and reviews">
+        <div className={`wrap ${styles.proofGrid}`}>
+          {offer && (
+            <article className={styles.offer} data-reveal="up" aria-labelledby="offer-h">
+              <p className="caps eyebrow">Offers</p>
+              <h2 id="offer-h" className="h2">
+                {offer.title} {offer.accent && <em>{offer.accent}</em>}
+              </h2>
+              <p className={styles.offerBody}>{offer.summary}</p>
+              <Link href="/offers" className="link-line">
+                See offers
+                <ArrowRight />
+              </Link>
+            </article>
+          )}
+          <div className={styles.reviews} data-reveal="up" style={d(150)}>
+            <p className="caps eyebrow">Guest reviews</p>
+            {reviews.length ? (
+              <div className={styles.reviewList}>
+                {reviews.map((t) => (
+                  <TestimonialCard key={t.author + t.quote.slice(0, 16)} t={t} variant="feature" />
+                ))}
+              </div>
+            ) : (
+              <>
+                <p className={`h3 ${styles.reviewsLine}`}>
+                  Read what guests say, <em>in their own words.</em>
+                </p>
+                <p className={styles.offerBody}>We only share reviews guests have published themselves. You&apos;ll find them, and can leave your own, on our Google listing.</p>
+                <a href={REVIEWS_URL} target="_blank" rel="noopener noreferrer" className="link-line">
+                  Reviews on Google
+                  <ArrowUpRight />
+                </a>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -336,6 +428,7 @@ export default async function HomePage() {
       </section>
 
       <StickyBook fromPrice={fromPrice} />
+      <JsonLd data={hotelJsonLd({ image: "/photos/DSC5566.jpg", priceRange: `৳${fromPrice.toLocaleString("en-US")}+ per night` })} />
     </>
   );
 }

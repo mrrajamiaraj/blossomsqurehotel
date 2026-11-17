@@ -1,46 +1,46 @@
-import type { Metadata } from "next";
+import Link from "next/link";
 import StaySearch from "@/components/booking/StaySearch";
-import SplitWords from "@/components/motion/SplitWords";
-import RoomsList from "@/components/rooms/RoomsList";
+import RoomsExplorer from "@/components/rooms/RoomsExplorer";
+import CtaBand from "@/components/site/CtaBand";
+import PageHero from "@/components/site/PageHero";
 import { getAvailability } from "@/lib/availability";
 import { formatRange, hotelToday, nightsBetween } from "@/lib/dates";
 import { HOTEL } from "@/lib/hotel";
+import { WEEKEND_LABEL } from "@/lib/pricing";
+import { parseFilters } from "@/lib/room-filters";
 import { getRooms, getSettings, ratesOf } from "@/lib/rooms";
+import { pageMetadata } from "@/lib/seo";
 import { parseStay } from "@/lib/stay";
 import styles from "./rooms.module.css";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Rooms & Suites",
-  description:
-    "Seven ways to stay at Blossom Square in Kolatoli, Cox's Bazar, from a couple's room to a family suite, with weekday rates from ৳2,500.",
-};
+  description: "Seven ways to stay at Blossom Square in Kolatoli, Cox's Bazar, from a couple's room to a family suite. Live availability and direct rates.",
+  path: "/rooms",
+});
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function RoomsPage({ searchParams }: Props) {
+  const params = await searchParams;
   const today = hotelToday();
-  const stay = parseStay(await searchParams, today);
+  const stay = parseStay(params, today);
   const [rooms, settings] = await Promise.all([getRooms(), getSettings()]);
   const availability = await getAvailability(rooms, stay.checkIn, stay.checkOut);
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
 
   return (
     <>
-      <section className={styles.intro} aria-labelledby="page-h">
-        <div className={`wrap ${styles.introGrid}`}>
-          <p className="caps eyebrow" data-reveal="up">
-            Accommodations
-          </p>
-          <h1 id="page-h" className={`h1 ${styles.title}`} data-reveal="words">
-            <SplitWords text="Rooms *& Suites*" />
-          </h1>
-          <p className={`lede ${styles.lede}`} data-reveal="up" style={{ "--d": "300ms" } as React.CSSProperties}>
-            {rooms.length} ways to stay, from a room for two to a family suite. Every room has a private bathroom, AC, TV,
-            Wi-Fi and hot water. Weekday rates run Sunday to Wednesday nights; Thursday and Friday nights are charged at the
-            weekend rate.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Accommodation"
+        title={
+          <>
+            Rooms <em>&amp; Suites</em>
+          </>
+        }
+        lede={`${rooms.length} ways to stay, from a room for two to a family suite. Every room has a private bathroom, air conditioning, TV, Wi-Fi and hot water, and breakfast is included.`}
+        crumbs={[{ label: "Rooms & Suites" }]}
+      />
 
       <div className={styles.searchBar}>
         <div className="wrap">
@@ -55,24 +55,26 @@ export default async function RoomsPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <section className={`wrap ${styles.results}`} aria-label="Available rooms">
-        <RoomsList
+      <section className={`wrap ${styles.results}`} aria-label="Rooms">
+        <RoomsExplorer
+          key={`${stay.checkIn}${stay.checkOut}${stay.adults}${stay.children}${stay.rooms}`}
           stay={stay}
           nights={nights}
           live={availability.live}
+          initial={parseFilters(params)}
           rangeLabel={`${formatRange(stay.checkIn, stay.checkOut)} · ${nights} ${nights === 1 ? "night" : "nights"}`}
           rooms={rooms.map((r) => ({
             slug: r.slug,
             name: r.name,
             tag: r.tag,
             bed: r.bed,
-            floor: r.floor,
-            size: r.size_sqft ? `${r.size_sqft} sq ft` : "",
             sleeps: r.sleeps,
+            size: r.size_sqft ? `${r.size_sqft} sq ft` : "",
             blurb: r.blurb,
             features: r.features,
             rates: ratesOf(r),
-            gallery: r.gallery,
+            cover: r.gallery[0],
+            photoCount: r.gallery.filter((p) => p.src).length,
             available: availability.bySlug[r.slug] ?? 0,
           }))}
         />
@@ -90,19 +92,31 @@ export default async function RoomsPage({ searchParams }: Props) {
                 From {HOTEL.checkIn} / until {HOTEL.checkOut}. Early or late on request.
               </dd>
             </div>
-            {settings.cancellation_policy && (
-              <div>
-                <dt>Cancellation</dt>
-                <dd>{settings.cancellation_policy}</dd>
-              </div>
-            )}
             <div>
-              <dt>House rules</dt>
-              <dd>No pets. Airport transfers on request, at an extra charge.</dd>
+              <dt>Rates</dt>
+              <dd>Weekday rates Sunday to Wednesday nights; {WEEKEND_LABEL.toLowerCase()} at the weekend rate.</dd>
+            </div>
+            <div>
+              <dt>{settings.cancellation_policy ? "Cancellation" : "House rules"}</dt>
+              <dd>
+                {settings.cancellation_policy || "No pets. Airport transfers on request, at an extra charge."}{" "}
+                <Link href="/terms" className="text-link">
+                  Booking terms
+                </Link>
+              </dd>
             </div>
           </dl>
         </div>
       </section>
+
+      <CtaBand
+        eyebrow="Not sure which room?"
+        title={<>Tell us who&apos;s coming, <em>we&apos;ll suggest one.</em></>}
+        body="Families, friends travelling together, a honeymoon: our front desk knows every room and can advise on the best fit."
+        bookHref="/contact"
+        bookLabel="Ask the front desk"
+        message="Hello, which room would suit us best?"
+      />
     </>
   );
 }

@@ -24,8 +24,8 @@ export default async function SetupPage() {
           <ol className={styles.steps}>
             <li>Create a Supabase project and run the files in <code>supabase/migrations</code>, in order.</li>
             <li>
-              Set <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> and{" "}
-              <code>SUPABASE_SERVICE_ROLE_KEY</code> on the server, then redeploy.
+              Set <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> and{" "}
+              <code>SUPABASE_SECRET_KEY</code> (server only) on the host, then redeploy.
             </li>
             <li>Create the first manager (see <code>README.md</code>) and sign in.</li>
           </ol>

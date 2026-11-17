@@ -1,14 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import Script from "next/script";
 import MotionRoot from "@/components/motion/MotionRoot";
+import AppProviders from "@/components/providers/AppProviders";
 import Toaster from "@/components/ui/Toaster";
 import "./globals.css";
 
-// Type system: Inter throughout — headings, wordmark, body, navigation,
-// buttons, the whole admin and dashboard figures. It is a variable font, so
-// every weight comes from one file per style; italic is loaded for the
-// accent phrase in headlines.
+// Type system
+// · Cormorant Garamond — guest-site headlines and the wordmark. Light weights
+//   plus italic for the accent phrase. Only the weights used are loaded.
+// · Inter — body, navigation, buttons, forms and the whole admin. Variable, so
+//   one file per style covers every weight.
+const serif = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+
 const inter = Inter({
   subsets: ["latin"],
   style: ["normal", "italic"],
@@ -43,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={inter.variable}
+      className={`${inter.variable} ${serif.variable}`}
       suppressHydrationWarning
     >
       {/* Browser extensions (e.g. Grammarly) add attributes to <body> before hydration. */}
@@ -54,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        {children}
+        <AppProviders>{children}</AppProviders>
         <Toaster />
         <MotionRoot />
       </body>

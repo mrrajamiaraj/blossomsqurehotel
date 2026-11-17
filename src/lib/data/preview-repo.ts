@@ -12,9 +12,13 @@ import type {
   BookingEvent,
   BookingFilter,
   BookingStatus,
+  GuestBookingView,
   GuestDetails,
   GuestSummary,
   HotelSettings,
+  Inquiry,
+  InquiryInput,
+  InquiryStatus,
   PaymentMethod,
   RoomPatch,
   RoomTypePatch,
@@ -39,6 +43,7 @@ type Store = {
   events: BookingEvent[];
   settings: HotelSettings;
   nextEvent: number;
+  inquiries?: Inquiry[];
 };
 
 const g = globalThis as unknown as { __bsqPreview?: Store };
@@ -214,6 +219,77 @@ export class PreviewRepo implements AdminRepo {
     ).length;
     if (recent >= 3) throw new RepoError("RATE_LIMITED");
     return this.insert({ ...input, notes: "", source: "website", status: "pending" });
+  }
+
+  async lookupBooking(reference: string, contact: string): Promise<GuestBookingView | null> {
+    const ref = reference.trim().toUpperCase();
+    const email = contact.trim().toLowerCase();
+    const digits = contact.replace(/\D/g, "").slice(-10);
+    const s = store();
+    const b = s.bookings.find(
+      (x) =>
+        x.reference === ref &&
+        ((x.email !== null && x.email.toLowerCase() === email) ||
+          (digits.length >= 8 && x.phone.replace(/\D/g, "").slice(-10) === digits)),
+    );
+    if (!b) return null;
+    return {
+      reference: b.reference,
+      status: b.status,
+      room_name: s.roomTypes.find((t) => t.id === b.room_type_id)?.name ?? "Room",
+      check_in: b.check_in,
+      check_out: b.check_out,
+      rooms: b.rooms,
+      adults: b.adults,
+      children: b.children,
+      total_bdt: b.total_bdt,
+      amount_paid_bdt: b.amount_paid_bdt,
+      payment_status: b.payment_status,
+      guest_name: b.guest_name.split(" ")[0],
+      created_at: b.created_at,
+    };
+  }
+
+  async submitInquiry(input: InquiryInput): Promise<string> {
+    const s = store();
+    s.inquiries ??= [];
+    const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    const recent = s.inquiries.filter(
+      (q) => q.created_at > hourAgo && ((input.email && q.email === input.email.toLowerCase()) || (input.phone && q.phone === input.phone)),
+    ).length;
+    if (recent >= 3) throw new RepoError("RATE_LIMITED");
+    const reference = `ENQ-${String(Math.floor(Math.random() * 1_000_000)).padStart(6, "0")}`;
+    s.inquiries.unshift({
+      id: crypto.randomUUID(),
+      reference,
+      kind: input.kind,
+      name: input.name,
+      email: input.email?.toLowerCase() ?? null,
+      phone: input.phone,
+      message: input.message,
+      event_date: input.eventDate,
+      guests: input.guests,
+      status: "new",
+      handled_at: null,
+      created_at: new Date().toISOString(),
+    });
+    return reference;
+  }
+
+  async listInquiries(opts: { status?: InquiryStatus | "all"; limit?: number }): Promise<Inquiry[]> {
+    this.requireStaff();
+    return (store().inquiries ?? [])
+      .filter((q) => !opts.status || opts.status === "all" || q.status === opts.status)
+      .slice(0, opts.limit ?? 100)
+      .map((q) => ({ ...q }));
+  }
+
+  async setInquiryStatus(id: string, status: InquiryStatus): Promise<void> {
+    this.requireStaff();
+    const q = (store().inquiries ?? []).find((x) => x.id === id);
+    if (!q) throw new RepoError("NOT_FOUND");
+    q.status = status;
+    q.handled_at = status === "new" ? null : new Date().toISOString();
   }
 
   /* ---------- Reads ---------- */

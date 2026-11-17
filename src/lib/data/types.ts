@@ -113,7 +113,53 @@ export type GuestSummary = {
   upcoming: boolean;
 };
 
+/** What a guest sees when they look up their own booking. No notes, no full contact details. */
+export type GuestBookingView = {
+  reference: string;
+  status: BookingStatus;
+  room_name: string;
+  check_in: string;
+  check_out: string;
+  rooms: number;
+  adults: number;
+  children: number;
+  total_bdt: number;
+  amount_paid_bdt: number;
+  payment_status: PaymentStatus;
+  /** First name only. */
+  guest_name: string;
+  created_at: string;
+};
+
+export type InquiryKind = "general" | "booking" | "dining" | "event" | "group" | "other";
+export type InquiryStatus = "new" | "handled" | "spam";
+
+export type Inquiry = {
+  id: string;
+  reference: string;
+  kind: InquiryKind;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  message: string;
+  event_date: string | null;
+  guests: number | null;
+  status: InquiryStatus;
+  handled_at: string | null;
+  created_at: string;
+};
+
 /* ---------- Inputs ---------- */
+
+export type InquiryInput = {
+  kind: InquiryKind;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  message: string;
+  eventDate: string | null;
+  guests: number | null;
+};
 
 export type WebsiteBookingInput = {
   room: string;

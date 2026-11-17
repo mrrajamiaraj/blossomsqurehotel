@@ -14,7 +14,7 @@ export default function HousekeepingList({ rooms }: { rooms: Row[] }) {
   const set = (id: string, housekeeping: Housekeeping, number: string) =>
     start(async () => {
       const res = await updateRoom(id, { housekeeping });
-      toast(res.ok ? `Room ${number}: ${housekeeping === "clean" ? "cleaned" : housekeeping}` : res.message);
+      if (res.ok) toast.success(`Room ${number}: ${housekeeping === "clean" ? "cleaned" : housekeeping}`); else toast.error(res.message);
     });
 
   if (!attention.length) {

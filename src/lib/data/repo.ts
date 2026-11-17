@@ -6,9 +6,13 @@ import type {
   BookingEvent,
   BookingFilter,
   BookingStatus,
+  GuestBookingView,
   GuestDetails,
   GuestSummary,
   HotelSettings,
+  Inquiry,
+  InquiryInput,
+  InquiryStatus,
   PaymentMethod,
   RoomPatch,
   RoomTypePatch,
@@ -29,6 +33,14 @@ export interface PublicRepo {
   getSettings(): Promise<HotelSettings>;
   /** Returns the booking reference. Throws RepoError on rule violations. */
   createWebsiteBooking(input: WebsiteBookingInput): Promise<string>;
+  /**
+   * A guest's own booking, when the reference and the phone or email on it
+   * both match; otherwise null. Throws RepoError("UNAVAILABLE") until the
+   * guest-services migration is applied.
+   */
+  lookupBooking(reference: string, contact: string): Promise<GuestBookingView | null>;
+  /** Stores a website enquiry; returns its reference (ENQ-…). */
+  submitInquiry(input: InquiryInput): Promise<string>;
 }
 
 /** What the front desk needs. Every method is permission-checked. */
@@ -63,6 +75,9 @@ export interface AdminRepo extends PublicRepo {
   deleteRoom(id: string): Promise<void>;
   updateSettings(patch: Partial<HotelSettings>): Promise<void>;
   listStaff(): Promise<StaffMember[]>;
+
+  listInquiries(opts: { status?: InquiryStatus | "all"; limit?: number }): Promise<Inquiry[]>;
+  setInquiryStatus(id: string, status: InquiryStatus): Promise<void>;
 }
 
 export const DEFAULT_SETTINGS: HotelSettings = {

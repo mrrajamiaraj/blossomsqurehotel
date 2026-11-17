@@ -114,6 +114,27 @@ export const Mail = (p: IconProps) => (
   </Icon>
 );
 
+/** Speech bubble, used for WhatsApp links (not the WhatsApp logo). */
+export const Chat = (p: IconProps) => (
+  <Icon size={18} {...p}>
+    <path d="M4 19.5l1.3-3.9A8 8 0 1 1 8.4 19z" />
+    <path d="M9 10.5h.01M12 10.5h.01M15 10.5h.01" />
+  </Icon>
+);
+
+export const Search = (p: IconProps) => (
+  <Icon size={18} {...p}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M20 20l-4.2-4.2" />
+  </Icon>
+);
+
+export const Filter = (p: IconProps) => (
+  <Icon size={18} {...p}>
+    <path d="M4 6h16M7 12h10M10 18h4" />
+  </Icon>
+);
+
 export const Pin = (p: IconProps) => (
   <Icon size={18} {...p}>
     <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" />

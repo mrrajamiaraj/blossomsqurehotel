@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createBooking } from "@/app/booking/actions";
 import type { HotelSettings } from "@/lib/data/types";
@@ -40,7 +41,7 @@ type Guest = {
 
 type Errors = Partial<Record<keyof Guest | "room" | "agree" | "form", string>>;
 
-const STEPS = ["Room", "Guest details", "Review", "Confirmed"];
+const STEPS = ["Room", "Guest details", "Review", "Requested"];
 
 const COUNTRIES = [
   "Bangladesh", "India", "Nepal", "Bhutan", "Sri Lanka", "Myanmar", "Malaysia", "Singapore",
@@ -100,8 +101,8 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
   const [errors, setErrors] = useState<Errors>({});
   const [agree, setAgree] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [result, setResult] = useState<{ reference: string; preview: boolean } | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
   const topRef = useRef<HTMLDivElement>(null);
 
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
@@ -179,11 +180,12 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
         agree,
       });
       if (res.ok) {
-        setResult({ reference: res.reference, preview: res.preview });
         try {
           sessionStorage.removeItem(DRAFT_KEY);
         } catch {}
-        goTo(4);
+        // The server set a private receipt cookie; the confirmation page reads
+        // the booking back from the database.
+        router.replace("/booking/confirmation");
       } else {
         setErrors({ form: res.message });
       }
@@ -207,100 +209,6 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
         {errors[key]}
       </span>
     ) : null;
-
-  /* ---------------------------------------------------------- Confirmed */
-
-  if (step === 4 && result && room) {
-    const firstName = guest.name.trim().split(/\s+/)[0] || "";
-    return (
-      <div ref={topRef} className={`wrap ${styles.done}`}>
-        <svg className={styles.seal} viewBox="0 0 96 96" aria-hidden="true">
-          <circle cx="48" cy="48" r="46" pathLength={1} />
-          <path d="M30 49l12 12 25-26" pathLength={1} />
-        </svg>
-        <p className={`caps ${styles.doneRef}`}>
-          Booking received · Ref {result.reference}
-        </p>
-        <h1 className={`h1 ${styles.doneTitle}`}>
-          See you on the {dayOrdinal(stay.checkIn)}
-          {firstName ? (
-            <>
-              , <em>{firstName}.</em>
-            </>
-          ) : (
-            "."
-          )}
-        </h1>
-        <p className={`lede ${styles.doneLede}`}>
-          Your room is held. Our front desk will call you on {guest.phone}{" "}
-          {settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm — no payment has been
-          taken.
-        </p>
-        {result.preview && (
-          <p className={styles.demo}>
-            <Info size={16} /> Preview mode: saved to the local preview data only (Supabase isn&apos;t connected yet).
-          </p>
-        )}
-        <dl className={styles.doneGrid}>
-          <div>
-            <dt>Room</dt>
-            <dd>
-              {room.name}
-              {stay.rooms > 1 ? ` × ${stay.rooms}` : ""}
-            </dd>
-          </div>
-          <div>
-            <dt>Dates</dt>
-            <dd>
-              {formatRange(stay.checkIn, stay.checkOut)} · {plural(nights, "night")}
-            </dd>
-          </div>
-          <div>
-            <dt>Guests</dt>
-            <dd>{guestsLabel(stay)}</dd>
-          </div>
-          <div>
-            <dt>{bill.taxesKnown ? "Total" : "Room total"}</dt>
-            <dd>
-              {formatTaka(bill.total)}
-              {bill.taxesKnown ? "" : " + taxes"}
-            </dd>
-          </div>
-        </dl>
-        <section className={styles.donePay} aria-labelledby="pay-adv">
-          <h2 id="pay-adv" className={`h3 ${styles.payTitle}`}>
-            Want to confirm faster? <em>Send an advance.</em>
-          </h2>
-          <PaymentDetails reference={result.reference} />
-          <p className={styles.small}>
-            Or simply pay at the hotel when you arrive. Questions?{" "}
-            <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className="text-link">
-              WhatsApp {WHATSAPP.display}
-            </a>
-          </p>
-        </section>
-        <div className={styles.doneActions}>
-          <button
-            type="button"
-            className="btn"
-            onClick={() =>
-              downloadStayEvent({ reference: result.reference, room: room.name, checkIn: stay.checkIn, checkOut: stay.checkOut })
-            }
-          >
-            <Calendar size={16} />
-            Add to calendar
-          </button>
-          <button type="button" className="btn btn--outline" onClick={() => window.print()}>
-            <Print />
-            Print
-          </button>
-          <Link href="/" className="link-line">
-            Back to home
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   /* ---------------------------------------------------------- Steps 1–3 */
 
@@ -689,8 +597,13 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                   />
                   <span>
                     {settings.cancellation_policy
-                      ? `I agree to the hotel's cancellation policy (${settings.cancellation_policy}) and house rules.`
-                      : "I agree to the hotel's cancellation policy and house rules."}
+                      ? `I agree to the hotel's cancellation policy (${settings.cancellation_policy}) and house rules`
+                      : "I agree to the hotel's cancellation policy and house rules"}{" "}
+                    (
+                    <Link href="/terms" target="_blank" className="text-link">
+                      booking terms
+                    </Link>
+                    ).
                   </span>
                 </label>
                 {err("agree")}
@@ -708,7 +621,7 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                     <ArrowLeft /> Back
                   </button>
                   <button type="button" className="btn" onClick={confirm} disabled={pending}>
-                    {pending ? "Reserving your room…" : "Confirm booking"}
+                    {pending ? "Sending your request…" : "Send booking request"}
                     {!pending && <ArrowRight />}
                   </button>
                 </div>

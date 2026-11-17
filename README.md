@@ -11,9 +11,25 @@ Next.js 16 (App Router) · Supabase (Postgres, Auth, RLS) · TypeScript.
 ```bash
 npm install
 npm run dev        # http://localhost:3000  ·  front desk at /admin
-npm test           # unit tests (booking rules, KPIs, dates, pricing)
-npm run build
+npm test           # unit tests (booking rules, KPIs, dates, pricing, security guards)
+npm run verify     # typecheck + tests + production build
 ```
+
+Docs: [Architecture](docs/ARCHITECTURE.md) · [UI system](docs/DESIGN_SYSTEM.md) (live at `/design-system` in dev) · [Audit](docs/AUDIT.md) ·
+[Checklist](docs/IMPLEMENTATION_CHECKLIST.md) · [Migrations & rollback](docs/MIGRATION_AND_ROLLBACK.md)
+
+Database scripts (Supabase CLI is a dev dependency):
+
+| Script | Does |
+| ------ | ---- |
+| `npm run db:start` / `db:stop` | local Supabase stack (needs Docker) |
+| `npm run db:reset` | rebuild the **local** DB from migrations + `seed.sql` |
+| `npm run db:new -- <name>` | new migration file |
+| `npm run db:types` / `db:types:local` | regenerate `src/lib/supabase/database.types.ts` |
+| `npm run db:migrations` / `db:push:dry` | compare / dry-run against the linked project |
+
+There is deliberately no `db:push` script; production pushes follow
+`docs/MIGRATION_AND_ROLLBACK.md`.
 
 Without Supabase, **development** runs on an in-memory preview hotel (clearly
 labelled, resets on restart) so every workflow can be tried. **Production**
@@ -22,12 +38,16 @@ online booking disabled, and `/admin` shows a "connect the database" page.
 
 ## Connect Supabase
 
-1. Create a project. In the SQL editor run every file in `supabase/migrations`
-   **in filename order** (or `supabase db push` with the CLI). Each file starts
-   with its rollback notes.
+1. Create a project (use a **staging** project for anything but production).
+   Apply `supabase/migrations` with `npx supabase link --project-ref <ref>` then
+   `npx supabase db push --linked`, or run the files in filename order in the
+   SQL editor. Each file starts with its rollback notes. The production project
+   already has every migration; its history matches these filenames.
 2. Copy `.env.example` to `.env.local` (and set the same variables on your host):
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY` (server only — never expose it), `NEXT_PUBLIC_SITE_URL`.
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`),
+   `SUPABASE_SECRET_KEY` (`sb_secret_…`, server only — the build fails if it is
+   given a `NEXT_PUBLIC_` prefix), `NEXT_PUBLIC_SITE_URL`. The legacy
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` still work as fallbacks.
 3. **Auth → URL configuration:** set Site URL to your domain and add
    `https://YOUR-DOMAIN/admin/auth/confirm` to the redirect URLs.
 4. **Auth → Email templates** (Invite user, Reset password): point the link at

@@ -1,0 +1,170 @@
+/* Admin kit — builds on admin.css tokens (--a-*); only works inside .admin. */
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--a-line);
+}
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
+}
+
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-line);
+  border-radius: var(--a-radius);
+  box-shadow: var(--a-shadow);
+}
+.stat[data-href] {
+  transition: border-color 0.3s var(--a-ease), transform 0.3s var(--a-ease);
+}
+@media (hover: hover) {
+  .stat[data-href]:hover {
+    border-color: var(--a-line-strong);
+    transform: translateY(-1px);
+  }
+}
+.stat:has(.statLink) {
+  padding: 0;
+}
+.statLink {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: inherit;
+}
+.statLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--a-muted);
+}
+.statValue {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--a-ink);
+  font-variant-numeric: tabular-nums;
+}
+.statFoot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--a-muted);
+}
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.delta[data-tone="good"] {
+  background: var(--s-confirmed-bg);
+  color: var(--s-confirmed-fg);
+}
+.delta[data-tone="bad"] {
+  background: var(--s-cancel-bg);
+  color: var(--s-cancel-fg);
+}
+.delta[data-tone="flat"] {
+  background: var(--s-out-bg);
+  color: var(--s-out-fg);
+}
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+.sortBtn svg {
+  opacity: 0.35;
+}
+.sortBtn[data-active] svg {
+  opacity: 1;
+}
+
+/* Row headers (<th scope="row">) read like body cells, not column headers:
+   undo `.a-table th` while keeping the semantic element. */
+:global(.a-table) tbody th.rowHeader {
+  padding: 12px 14px;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--a-ink);
+  background: transparent;
+  border-bottom: 1px solid var(--a-line);
+  white-space: normal;
+  vertical-align: middle;
+}
+:global(.a-table) tbody th.rowHeader:first-child {
+  padding-left: 20px;
+}
+:global(.a-table) tbody tr:last-child th.rowHeader {
+  border-bottom: 0;
+}
+/* Stacked (card) layout on phones: the row header becomes the card title. */
+@media (max-width: 760px) {
+  :global(.a-table--stack) tbody th.rowHeader {
+    display: block;
+    width: 100%;
+    padding: 0 0 8px !important;
+    border: 0;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--a-line);
+  background: var(--a-sunken);
+}
+.toolbarEnd {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}

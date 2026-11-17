@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { setReceipt } from "@/lib/booking-receipt";
 import { getPublicRepo } from "@/lib/data";
 import { errorCode, errorMessage } from "@/lib/data/errors";
 import { hotelToday, isISODate, nightsBetween } from "@/lib/dates";
@@ -81,6 +82,18 @@ export async function createBooking(input: BookingInput): Promise<BookingResult>
       arrival: String(input.arrival ?? "").slice(0, 60),
       requests: String(input.requests ?? "").trim(),
       airportPickup: Boolean(input.airportPickup),
+    });
+    await setReceipt({
+      reference,
+      phone: input.phone.trim(),
+      firstName: input.name.trim().split(/\s+/)[0] ?? "",
+      room: input.room,
+      checkIn: input.checkIn,
+      checkOut: input.checkOut,
+      adults: input.adults,
+      children: input.children,
+      rooms: input.rooms,
+      preview: repo.mode === "preview",
     });
     return { ok: true, reference, preview: repo.mode === "preview" };
   } catch (err) {

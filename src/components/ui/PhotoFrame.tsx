@@ -20,8 +20,9 @@ export default function PhotoFrame({ photo, className = "", sizes = "100vw", pri
         <Image src={photo.src} alt={photo.alt} fill sizes={sizes} priority={priority} />
       ) : (
         <>
-          <div className="photo-plate" data-tone={photo.tone} role="img" aria-label={photo.alt} />
-          {!bare && <span className="photo-ref">{photo.ref}</span>}
+          {/* data-ref tells the hotel which file to add: public/photos/<ref>.jpg */}
+          <div className="photo-plate" data-tone={photo.tone} data-ref={photo.ref} role="img" aria-label={`${photo.alt} (photograph to come)`} />
+          {!bare && <span className="photo-ref">Photograph to come</span>}
         </>
       )}
     </div>

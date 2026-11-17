@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HOTEL, NAV_LINKS, RESERVATIONS, directionsUrl } from "@/lib/hotel";
+import { HOTEL, NAV_LINKS, RESERVATIONS, SERVICE_LINKS, WHATSAPP, directionsUrl } from "@/lib/hotel";
 import type { Photo } from "@/lib/photos";
 import { ArrowRight, ArrowUpRight, Close, Monogram, Phone } from "../icons";
 import { lockScroll } from "../motion/SmoothScroll";
@@ -47,13 +47,53 @@ export default function MenuOverlay({ open, onClose, photos }: Props) {
     };
   }, [open, onClose]);
 
+  // Swipe left to close (touch). The panel follows the finger, then either
+  // completes the close or springs back. Vertical scrolling is left alone.
+  const drag = useRef<{ x: number; y: number; dx: number; horizontal: boolean | null } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    drag.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, horizontal: null };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const d = drag.current;
+    const panel = panelRef.current;
+    if (!d || !panel) return;
+    const dx = e.touches[0].clientX - d.x;
+    const dy = e.touches[0].clientY - d.y;
+    if (d.horizontal === null && Math.abs(dx) + Math.abs(dy) > 8) d.horizontal = Math.abs(dx) > Math.abs(dy);
+    if (!d.horizontal) return;
+    d.dx = Math.min(0, dx);
+    panel.style.transition = "none";
+    panel.style.transform = `translateX(${d.dx}px)`;
+  };
+  const onTouchEnd = () => {
+    const d = drag.current;
+    const panel = panelRef.current;
+    drag.current = null;
+    if (!d || !panel || !d.horizontal) return;
+    panel.style.transition = "";
+    panel.style.transform = "";
+    if (d.dx < -Math.min(110, panel.offsetWidth * 0.28)) onClose();
+  };
+
   const isCurrent = (href: string) => (href.includes("#") ? false : pathname === href || pathname.startsWith(`${href}/`));
 
   return (
     <div className={`${styles.root} ${open ? styles.open : ""}`} aria-hidden={!open} inert={!open}>
       <div className={styles.scrim} onClick={onClose} />
 
-      <aside ref={panelRef} id="site-menu" className={styles.panel} role="dialog" aria-modal="true" aria-label="Site menu" data-lenis-prevent>
+      <aside
+        ref={panelRef}
+        id="site-menu"
+        className={styles.panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        data-lenis-prevent
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+      >
         <div className={styles.head}>
           <Link href="/" className={styles.brand} onClick={onClose}>
             <Monogram size={22} className={styles.mark} />
@@ -106,13 +146,29 @@ export default function MenuOverlay({ open, onClose, photos }: Props) {
           <Link href="/booking" className="btn btn--block" onClick={onClose}>
             Reserve your stay
           </Link>
-          <a href={RESERVATIONS.href} className={styles.call}>
-            <Phone size={16} />
-            <span>
-              Reservations <strong>{RESERVATIONS.display}</strong>
-            </span>
-          </a>
+          <div className={styles.contactRow}>
+            <a href={RESERVATIONS.href} className={styles.call}>
+              <Phone size={16} />
+              <span>
+                Call <strong>{RESERVATIONS.display}</strong>
+              </span>
+            </a>
+            <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className={styles.call}>
+              <ArrowUpRight size={16} />
+              <span>
+                <strong>WhatsApp</strong>
+              </span>
+            </a>
+          </div>
         </div>
+
+        <nav aria-label="Guest services" className={styles.services}>
+          {SERVICE_LINKS.slice(1, 3).map((l) => (
+            <Link key={l.href} href={l.href} onClick={onClose} aria-current={isCurrent(l.href) ? "page" : undefined}>
+              {l.label}
+            </Link>
+          ))}
+        </nav>
 
         <div className={styles.foot}>
           <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className={styles.address}>

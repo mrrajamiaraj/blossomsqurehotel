@@ -99,6 +99,23 @@
   padding-bottom: calc(22px + env(safe-area-inset-bottom));
 }
 
+.footLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+.footLinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 4px;
+}
+.footerInner {
+  align-items: center;
+}
+
 @media (max-width: 640px) {
   .secure {
     display: none;

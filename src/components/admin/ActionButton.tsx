@@ -42,7 +42,7 @@ export default function ActionButton({ action, children, className = "a-btn", co
       } else if (asking) {
         setError(res.message);
       } else {
-        toast(res.message);
+        toast.error(res.message);
       }
     });
 

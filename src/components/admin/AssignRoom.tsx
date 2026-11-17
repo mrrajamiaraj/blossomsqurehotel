@@ -31,7 +31,7 @@ export default function AssignRoom({
         onChange={(e) =>
           start(async () => {
             const res = await assignRoom(bookingId, e.target.value || null);
-            toast(res.ok ? (res.message ?? "Saved") : res.message);
+            if (res.ok) toast.success((res.message ?? "Saved")); else toast.error(res.message);
           })
         }
         style={compact ? { minHeight: 32, paddingTop: 4, paddingBottom: 4 } : undefined}

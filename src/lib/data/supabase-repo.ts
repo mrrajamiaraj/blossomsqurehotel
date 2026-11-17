@@ -1,5 +1,5 @@
 import "server-only";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { TypedClient } from "../supabase/server";
 import { errorCode, RepoError } from "./errors";
 import { DEFAULT_SETTINGS, type AdminRepo } from "./repo";
 import { cleanSearch, viewSpec } from "./rules";
@@ -10,9 +10,13 @@ import type {
   BookingEvent,
   BookingFilter,
   BookingStatus,
+  GuestBookingView,
   GuestDetails,
   GuestSummary,
   HotelSettings,
+  Inquiry,
+  InquiryInput,
+  InquiryStatus,
   PaymentMethod,
   RoomPatch,
   RoomTypePatch,
@@ -26,6 +30,14 @@ import type {
 
 const ROOM_TYPE_COLUMNS =
   "id, slug, name, tag, bed, size_sqft, sleeps, floor, view, price_bdt, weekend_price_bdt, rack_price_bdt, blurb, description, features, gallery, sort_order, is_published";
+
+/**
+ * SQL function parameters accept NULL, but generated RPC types mark every
+ * argument non-null. This narrows the type only; the value sent is unchanged.
+ */
+function sqlNull<T>(value: T | null): T {
+  return value as T;
+}
 
 /** Throws a RepoError carrying the database's error code, if any. */
 function check<T>(res: { data: T; error: { message: string } | null }): T {
@@ -45,7 +57,7 @@ function check<T>(res: { data: T; error: { message: string } | null }): T {
 export class SupabaseRepo implements AdminRepo {
   readonly mode = "live" as const;
 
-  constructor(private db: SupabaseClient) {}
+  constructor(private db: TypedClient) {}
 
   /* ---------- Public ---------- */
 
@@ -98,6 +110,44 @@ export class SupabaseRepo implements AdminRepo {
         }),
       ),
     );
+  }
+
+  async lookupBooking(reference: string, contact: string): Promise<GuestBookingView | null> {
+    const rows = check(await this.db.rpc("lookup_booking", { p_reference: reference, p_contact: contact }));
+    const row = rows?.[0];
+    return row ? (row as GuestBookingView) : null;
+  }
+
+  async submitInquiry(input: InquiryInput): Promise<string> {
+    return String(
+      check(
+        await this.db.rpc("submit_inquiry", {
+          p_kind: input.kind,
+          p_name: input.name,
+          p_email: sqlNull(input.email),
+          p_phone: sqlNull(input.phone),
+          p_message: input.message,
+          p_event_date: sqlNull(input.eventDate),
+          p_guests: sqlNull(input.guests),
+        }),
+      ),
+    );
+  }
+
+  /* ---------- Enquiries (staff) ---------- */
+
+  async listInquiries(opts: { status?: InquiryStatus | "all"; limit?: number }): Promise<Inquiry[]> {
+    let query = this.db
+      .from("inquiries")
+      .select("id, reference, kind, name, email, phone, message, event_date, guests, status, handled_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(opts.limit ?? 100);
+    if (opts.status && opts.status !== "all") query = query.eq("status", opts.status);
+    return check(await query) as Inquiry[];
+  }
+
+  async setInquiryStatus(id: string, status: InquiryStatus): Promise<void> {
+    check(await this.db.rpc("admin_set_inquiry_status", { p_inquiry: id, p_status: status }));
   }
 
   /* ---------- Reads ---------- */
@@ -213,7 +263,7 @@ export class SupabaseRepo implements AdminRepo {
           p_adults: input.adults,
           p_children: input.children,
           p_guest_name: input.name,
-          p_email: input.email,
+          p_email: sqlNull(input.email),
           p_phone: input.phone,
           p_country: input.country,
           p_special_requests: input.requests,
@@ -227,11 +277,11 @@ export class SupabaseRepo implements AdminRepo {
   }
 
   async setStatus(id: string, status: BookingStatus, reason?: string): Promise<void> {
-    check(await this.db.rpc("admin_set_status", { p_booking: id, p_status: status, p_reason: reason ?? null }));
+    check(await this.db.rpc("admin_set_status", { p_booking: id, p_status: status, p_reason: sqlNull(reason ?? null) }));
   }
 
   async assignRoom(id: string, roomId: string | null): Promise<void> {
-    check(await this.db.rpc("admin_assign_room", { p_booking: id, p_room: roomId }));
+    check(await this.db.rpc("admin_assign_room", { p_booking: id, p_room: sqlNull(roomId) }));
   }
 
   async modifyBooking(id: string, c: BookingChange): Promise<void> {
@@ -257,11 +307,11 @@ export class SupabaseRepo implements AdminRepo {
       await this.db.rpc("admin_update_guest_details", {
         p_booking: id,
         p_guest_name: d.name,
-        p_email: d.email,
+        p_email: sqlNull(d.email),
         p_phone: d.phone,
-        p_arrival_window: d.arrival,
-        p_special_requests: d.requests,
-        p_internal_notes: d.notes,
+        p_arrival_window: sqlNull(d.arrival),
+        p_special_requests: sqlNull(d.requests),
+        p_internal_notes: sqlNull(d.notes),
         p_airport_pickup: d.airportPickup,
       }),
     );
@@ -280,7 +330,7 @@ export class SupabaseRepo implements AdminRepo {
   async addRoom(input: RoomUnitInput): Promise<string> {
     return String(
       check(
-        await this.db.rpc("admin_add_room", { p_number: input.number, p_room_type: input.room_type_id, p_floor: input.floor }),
+        await this.db.rpc("admin_add_room", { p_number: input.number, p_room_type: input.room_type_id, p_floor: sqlNull(input.floor) }),
       ),
     );
   }
@@ -291,7 +341,7 @@ export class SupabaseRepo implements AdminRepo {
         p_room: id,
         p_number: input.number,
         p_room_type: input.room_type_id,
-        p_floor: input.floor,
+        p_floor: sqlNull(input.floor),
       }),
     );
   }

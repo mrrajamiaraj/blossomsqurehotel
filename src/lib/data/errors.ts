@@ -32,7 +32,12 @@ const MESSAGES: Record<string, string> = {
   ROOM_NEEDED: "Existing bookings need every room of this type. Move or cancel some of them first.",
   BAD_PHOTO: "Upload a JPEG, PNG or WebP photo under 5 MB.",
   PHOTO_LIMIT: "A room can have up to 12 photos. Remove one first.",
+  BAD_INQUIRY: "Please add your name, a phone number or email, and a message of at least 10 characters.",
+  UNAVAILABLE: "This isn't available online yet. Please call or WhatsApp us and we'll help straight away.",
 };
+
+/** PostgREST / Postgres wording when a function or table hasn't been created yet. */
+const MISSING_OBJECT = /Could not find the function|PGRST202|does not exist|schema cache/i;
 
 export function errorMessage(code: string): string {
   return MESSAGES[code] ?? "Something went wrong. Please try again.";
@@ -42,5 +47,7 @@ export function errorMessage(code: string): string {
 export function errorCode(err: unknown): string {
   if (err instanceof RepoError) return err.code;
   const text = err instanceof Error ? err.message : String(err);
-  return Object.keys(MESSAGES).find((code) => text.includes(code)) ?? "UNKNOWN";
+  const known = Object.keys(MESSAGES).find((code) => text.includes(code));
+  if (known) return known;
+  return MISSING_OBJECT.test(text) ? "UNAVAILABLE" : "UNKNOWN";
 }

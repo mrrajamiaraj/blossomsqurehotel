@@ -50,7 +50,8 @@ export const resolveAdmin = cache(async (): Promise<Resolved> => {
   return {
     mode: "live",
     repo: new SupabaseRepo(db),
-    staff: { id: data.user.id, name: member.full_name, role: member.role, email: data.user.email ?? null },
+    // staff.role has a check constraint ('manager' | 'front_desk'); the generated type is plain text.
+    staff: { id: data.user.id, name: member.full_name, role: member.role as StaffRole, email: data.user.email ?? null },
   };
 });
 

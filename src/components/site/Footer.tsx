@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HOTEL, NAV_LINKS, directionsUrl } from "@/lib/hotel";
+import { HOTEL, NAV_LINKS, PAYMENT_METHODS, SERVICE_LINKS, WHATSAPP, directionsUrl } from "@/lib/hotel";
 import { getSettings } from "@/lib/rooms";
 import { ArrowRight, ArrowUpRight, Monogram } from "../icons";
 import BackToTop from "./BackToTop";
@@ -54,9 +54,15 @@ export default async function Footer() {
                 {p.display}
               </a>
             ))}
+            <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className={styles.link}>
+              WhatsApp {WHATSAPP.display}
+            </a>
             <a href={`mailto:${HOTEL.email}`} className={styles.link}>
               {HOTEL.email}
             </a>
+            <p className={styles.muted}>
+              We accept {PAYMENT_METHODS.map((m) => ({ bkash: "bKash", nagad: "Nagad", bank: "bank transfer" })[m.id]).join(", ")} and cash at the hotel.
+            </p>
           </div>
           <nav className={styles.col} aria-label="Footer">
             <p className={styles.heading}>Explore</p>
@@ -66,14 +72,20 @@ export default async function Footer() {
               </Link>
             ))}
           </nav>
-          <div className={styles.col}>
-            <p className={styles.heading}>Follow</p>
+          <nav className={styles.col} aria-label="Guest services">
+            <p className={styles.heading}>Guest services</p>
+            {SERVICE_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} className={styles.link}>
+                {l.label}
+              </Link>
+            ))}
+            <p className={`${styles.heading} ${styles.headingGap}`}>Follow</p>
             {HOTEL.social.map((s) => (
               <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className={styles.link}>
                 {s.label}
               </a>
             ))}
-          </div>
+          </nav>
         </div>
       </div>
 

@@ -24,5 +24,5 @@ grant update on public.room_types, public.rooms, public.hotel_settings to authen
 -- Pin search_path on the one helper that lacked it.
 alter function public._is_weekend_night(date) set search_path = public;
 
--- A trigger function; never callable through the API.
-revoke all on function public.guard_room_service() from public, anon, authenticated;
+-- (The guard_room_service() revoke was applied to production as its own
+-- migration: 20261116115127_revoke_trigger_fn_execute.sql.)

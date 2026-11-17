@@ -4,13 +4,17 @@ import Footer from "@/components/site/Footer";
 import Header from "@/components/site/Header";
 import { photo } from "@/lib/photos";
 
-// One image per menu entry, shown as each link is hovered.
+// One image per menu entry (NAV_LINKS order), shown as each link is hovered.
+// Spaces not yet photographed fall back to the tonal plate, never stock imagery.
 const MENU_PHOTOS = [
-  photo("DSC5565", "Connecting King Suite", "forest"),
+  photo("DSC5565", "Suite bedroom", "forest"),
   photo("RESTAURANT", "Restaurant & café", "dusk"),
+  photo("POOL", "Swimming pool", "sea"),
   photo("BANQUET", "Banquet hall", "forest"),
-  photo("DSC5550", "Deluxe Couple room", "sea"),
+  photo("DSC5551", "Couple's room at turn-down", "sand"),
+  photo("DSC5575", "Premium Twin", "sea"),
   photo("DSC5562", "Upstairs corridor", "dusk"),
+  photo("DSC5555", "Couple's room", "forest"),
 ];
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {

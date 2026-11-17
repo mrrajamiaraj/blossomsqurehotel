@@ -4,3 +4,14 @@ node_modules
 .env
 .env*.local
 *.log
+
+# Source material kept in the repo but not needed to build the site
+# (saved pages of the old site, design canvases, original artwork).
+/*.html
+/*_files
+/*.ai
+/Blossom Square - Deep Green.png
+/blossom-square-design
+/download-images.mjs
+/docs
+/supabase/.temp

@@ -11,7 +11,13 @@ import ThemeToggle from "./ThemeToggle";
 import styles from "./Header.module.css";
 
 /** Pages that open on a full-bleed dark image get a transparent header. */
-const OVER_IMAGE = new Set(["/"]);
+const OVER_IMAGE = new Set(["/", "/about", "/gallery"]);
+
+const QUICK_LINKS = [
+  { label: "Rooms & Suites", href: "/rooms" },
+  { label: "Dining", href: "/dining" },
+  { label: "Offers", href: "/offers" },
+];
 
 export default function Header({ menuPhotos }: { menuPhotos: Photo[] }) {
   const pathname = usePathname();
@@ -75,12 +81,16 @@ export default function Header({ menuPhotos }: { menuPhotos: Photo[] }) {
               <span className={styles.menuLabel}>{menuOpen ? "Close" : "Menu"}</span>
             </button>
             <nav aria-label="Primary" className={styles.quick}>
-              <Link href="/rooms" className={`${styles.quickLink} ${pathname.startsWith("/rooms") ? styles.current : ""}`}>
-                Rooms &amp; Suites
-              </Link>
-              <Link href="/#dining" className={styles.quickLink}>
-                Dining
-              </Link>
+              {QUICK_LINKS.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={`${styles.quickLink} ${pathname.startsWith(l.href) ? styles.current : ""}`}
+                  aria-current={pathname === l.href ? "page" : undefined}
+                >
+                  {l.label}
+                </Link>
+              ))}
             </nav>
           </div>
 

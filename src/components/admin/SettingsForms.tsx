@@ -31,7 +31,7 @@ export function PoliciesForm({ initial }: { initial: HotelSettings }) {
         vat_percent: s.vat === "" ? null : Number(s.vat),
         service_charge_percent: s.svc === "" ? null : Number(s.svc),
       });
-      toast(res.ok ? (res.message ?? "Saved") : res.message);
+      if (res.ok) toast.success((res.message ?? "Saved")); else toast.error(res.message);
     });
   };
 
@@ -95,7 +95,7 @@ export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfI
     e.preventDefault();
     start(async () => {
       const res = await inviteStaff(email, name, role);
-      toast(res.ok ? (res.message ?? "Invited") : res.message);
+      if (res.ok) toast.success((res.message ?? "Invited")); else toast.error(res.message);
       if (res.ok) {
         setEmail("");
         setName("");
@@ -106,7 +106,7 @@ export function TeamPanel({ staff, selfId, live }: { staff: StaffMember[]; selfI
   const change = (id: string, patch: { role?: StaffRole; active?: boolean }) =>
     start(async () => {
       const res = await updateStaffMember(id, patch);
-      toast(res.ok ? (res.message ?? "Saved") : res.message);
+      if (res.ok) toast.success((res.message ?? "Saved")); else toast.error(res.message);
     });
 
   return (

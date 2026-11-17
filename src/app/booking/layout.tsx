@@ -37,7 +37,12 @@ export default function BookingLayout({ children }: { children: React.ReactNode 
       <footer className={styles.footer}>
         <div className={`wrap ${styles.footerInner}`}>
           <span>© {new Date().getFullYear()} {HOTEL.fullName}</span>
-          <span>{HOTEL.shortAddress}</span>
+          <nav aria-label="Booking help" className={styles.footLinks}>
+            <Link href="/booking/lookup">Find my booking</Link>
+            <Link href="/faq">Questions</Link>
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+          </nav>
         </div>
       </footer>
     </>

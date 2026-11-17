@@ -54,10 +54,23 @@ export const PAYMENT_METHODS = [
 export const directionsUrl = HOTEL.mapUrl;
 export const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(HOTEL.mapQuery)}&z=16&output=embed`;
 
+/** Primary site sections, in menu order. */
 export const NAV_LINKS = [
   { label: "Rooms & Suites", href: "/rooms", note: "Seven ways to stay" },
-  { label: "Dining", href: "/#dining", note: "Seafood & breakfast" },
-  { label: "Meetings & Events", href: "/#events", note: "Banquet & conference" },
-  { label: "Amenities", href: "/#amenities", note: "Included with every stay" },
-  { label: "Find us", href: "/#location", note: "Kolatoli, Cox's Bazar" },
+  { label: "Dining", href: "/dining", note: "Seafood & breakfast" },
+  { label: "Facilities", href: "/facilities", note: "Pool, Wi-Fi, parking" },
+  { label: "Meetings & Events", href: "/meetings-events", note: "Banquet & conference" },
+  { label: "Offers", href: "/offers", note: "Direct & midweek rates" },
+  { label: "Gallery", href: "/gallery", note: "The hotel in photographs" },
+  { label: "About", href: "/about", note: "Kolatoli, Cox's Bazar" },
+  { label: "Contact", href: "/contact", note: "Call, WhatsApp, find us" },
+] as const;
+
+/** Guest services, shown in the footer and on help pages. */
+export const SERVICE_LINKS = [
+  { label: "Book a stay", href: "/booking" },
+  { label: "Find my booking", href: "/booking/lookup" },
+  { label: "Questions & answers", href: "/faq" },
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
 ] as const;

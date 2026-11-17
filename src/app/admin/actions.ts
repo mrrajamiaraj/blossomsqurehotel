@@ -13,6 +13,7 @@ import type {
   GuestDetails,
   HotelSettings,
   Housekeeping,
+  InquiryStatus,
   PaymentMethod,
   StaffBookingInput,
   StaffRole,
@@ -41,6 +42,16 @@ async function run(fn: () => Promise<unknown>, message?: string): Promise<Action
 }
 
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
+
+/* ---------------------------------------------------------- Enquiries */
+
+const INQUIRY_STATUSES: InquiryStatus[] = ["new", "handled", "spam"];
+
+export async function setInquiryStatus(id: string, status: InquiryStatus): Promise<ActionResult> {
+  const { repo } = await requireAdmin();
+  if (!INQUIRY_STATUSES.includes(status)) return { ok: false, message: errorMessage("BAD_INQUIRY") };
+  return run(() => repo.setInquiryStatus(String(id).slice(0, 60), status), status === "handled" ? "Marked as handled" : status === "spam" ? "Marked as spam" : "Moved back to new");
+}
 
 /* ---------------------------------------------------------- Bookings */
 
@@ -316,7 +327,7 @@ export async function inviteStaff(email: string, fullName: string, role: StaffRo
   const { mode } = await requireManager();
   if (mode === "preview") return { ok: false, message: "Invitations need Supabase. Connect it to add real staff." };
   const service = getServiceClient();
-  if (!service) return { ok: false, message: "Add SUPABASE_SERVICE_ROLE_KEY on the server to invite staff." };
+  if (!service) return { ok: false, message: "Add SUPABASE_SECRET_KEY on the server to invite staff." };
   const addr = text(email, 160).toLowerCase();
   const name = text(fullName, 80);
   if (!EMAIL_RE.test(addr) || name.length < 2 || !["manager", "front_desk"].includes(role)) {
@@ -340,7 +351,7 @@ export async function updateStaffMember(userId: string, patch: { role?: StaffRol
   if (mode === "preview") return { ok: false, message: "Team changes need Supabase." };
   if (userId === staff.id) return { ok: false, message: "You can't change your own role or access." };
   const service = getServiceClient();
-  if (!service) return { ok: false, message: "Add SUPABASE_SERVICE_ROLE_KEY on the server to manage staff." };
+  if (!service) return { ok: false, message: "Add SUPABASE_SECRET_KEY on the server to manage staff." };
   const update: { role?: StaffRole; active?: boolean } = {};
   if (patch.role && ["manager", "front_desk"].includes(patch.role)) update.role = patch.role;
   if (patch.active !== undefined) update.active = Boolean(patch.active);

@@ -2,27 +2,145 @@
    Blossom Square — design system
    ========================================================================== */
 
+/* ---------- Tailwind CSS v4 (utilities + theme, NO preflight) ----------
+   The hand-built styles below stay UNLAYERED, so they keep priority over
+   anything layered and the existing pages render exactly as before.
+   Tailwind's own reset (preflight) is intentionally not loaded; the element
+   reset further down lives in `@layer base` so utilities can override it.
+   See docs/ARCHITECTURE.md → "Styling". */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source("..");
+
+/* `dark:` follows the site's own day/night switch (html[data-theme]). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Static design scales (emitted as variables, usable as Tailwind utilities). */
+@theme {
+  /* Breakpoints — the same widths the hand-built CSS uses.
+     sm 640 · md 860 (tablet / nav collapses) · lg 1180 (desktop nav) · xl 1440 (max content) */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 53.75rem;
+  --breakpoint-lg: 73.75rem;
+  --breakpoint-xl: 90rem;
+  --breakpoint-2xl: 100rem;
+
+  /* Fluid type scale (mobile → desktop). Serif steps (2xl+) are for headlines. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: clamp(1.0625rem, 0.98rem + 0.35vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
+  --text-2xl: clamp(1.6rem, 1.3rem + 1.2vw, 2.4rem);
+  --text-3xl: clamp(2.05rem, 1.5rem + 2.2vw, 3.5rem);
+  --text-4xl: clamp(2.6rem, 1.7rem + 3.6vw, 5rem);
+  --text-5xl: clamp(3.1rem, 1.8rem + 5.4vw, 7rem);
+
+  --tracking-caps: 0.16em;
+  --ease-luxe: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  @keyframes shimmer {
+    0% { background-position: 150% 0; }
+    100% { background-position: -50% 0; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+  }
+}
+
+/* shadcn/ui tokens mapped onto the brand palette. They reference the
+   variables below, so they flip with the night theme automatically. */
+@theme inline {
+  --font-sans: var(--font-text);
+  --font-serif: var(--font-serif-stack);
+  --font-display: var(--font-serif-stack);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-ivory: var(--ivory);
+  --color-sand: var(--sand);
+  --color-champagne: var(--champagne);
+  --color-bronze: var(--bronze);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --shadow-xs: var(--shadow-1);
+  --shadow-sm: var(--shadow-2);
+  --shadow-md: var(--shadow-3);
+  --shadow-lg: var(--shadow-4);
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+  --color-card: var(--ivory);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--ivory);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--pine-800);
+  --color-primary-foreground: var(--paper);
+  --color-secondary: var(--sand);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--sand);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--sand-deep);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--rust);
+  --color-border: var(--line);
+  --color-input: var(--line-strong);
+  --color-ring: var(--focus);
+  --color-brass: var(--brass);
+  --color-brass-light: var(--brass-light);
+  --color-pine: var(--pine-900);
+  --color-cream: var(--cream);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 14px;
+}
+
+/* ==========================================================================
+   Brand tokens
+   Warm ivory grounds, charcoal type, champagne-gold accents. Deep sea-pine is
+   the brand's anchor (logo, dark surfaces, primary actions).
+
+   Contrast rules (WCAG 2.2 AA — verified in tests/design-tokens.test.ts):
+   · Body text: --ink or --ink-soft on --paper / --ivory / --sand  (≥ 7:1 / ≥ 4.5:1)
+   · Small secondary text: --muted on --paper / --ivory            (≥ 4.5:1)
+   · Gold TEXT at small sizes: --bronze, never --brass             (≥ 4.5:1)
+   · --brass / --champagne: rules, icons, ornaments, text ≥ 24px    (decorative)
+   · On dark surfaces (--pine-900): --cream text, --brass-light accents
+   ========================================================================== */
 :root {
-  /* Palette: sea-pine greens, paper ivory, aged brass */
+  /* Brand anchor: sea-pine */
   --pine-950: #071d17;
   --pine-900: #0a2a21;
   --pine-800: #0f3b2e;
   --pine-700: #174a3b;
   --pine-600: #24594a;
-  --paper: #f7f2e8;
-  --ivory: #fcfaf5;
-  --sand: #efe5d3;
-  --sand-deep: #e3d5bd;
-  --ink: #16201c;
-  --ink-soft: #3b4641;
-  --muted: #66716b;
-  --brass: #a8834a;
-  --brass-light: #d4b685;
-  --bronze: #7a5b2e;
-  --mist: #c7d2cb;
-  --rust: #8a3b1e;
-  --line: rgba(22, 32, 28, 0.13);
-  --line-strong: rgba(22, 32, 28, 0.28);
+
+  /* Grounds: warm ivory */
+  --paper: #f8f4ec;
+  --ivory: #fffdf8;
+  --sand: #f1eadc;
+  --sand-deep: #e6dac4;
+
+  /* Type: charcoal */
+  --ink: #1f1d1a;
+  --ink-soft: #48443e;
+  --muted: #6b655c;
+
+  /* Accent: champagne gold */
+  --champagne: #c8ab74;
+  --brass: #b08f58;
+  --brass-light: #dcc79e;
+  --bronze: #765a2c;
+
+  --mist: #c9d3cc;
+  /* Focus ring: ≥ 3:1 against every light ground (WCAG 2.4.11 / 1.4.11). */
+  --focus: #8a6a35;
+  --rust: #9a3f1f;
+  --success: #2f6b4f;
+  --line: rgba(31, 29, 26, 0.12);
+  --line-strong: rgba(31, 29, 26, 0.26);
   --line-light: rgba(247, 242, 232, 0.18);
 
   /* Theme-independent cream: text on surfaces that are always dark
@@ -32,16 +150,40 @@
   --accent-deep: var(--pine-950);
   color-scheme: light;
 
-  /* Type */
-  /* Inter for everything */
+  /* Elevation: warm, low and wide — never grey or harsh */
+  --shadow-1: 0 1px 2px rgba(31, 29, 26, 0.05);
+  --shadow-2: 0 1px 2px rgba(31, 29, 26, 0.04), 0 6px 16px -8px rgba(31, 29, 26, 0.12);
+  --shadow-3: 0 2px 4px rgba(31, 29, 26, 0.04), 0 18px 36px -20px rgba(31, 29, 26, 0.24);
+  --shadow-4: 0 4px 8px rgba(31, 29, 26, 0.04), 0 36px 72px -36px rgba(31, 29, 26, 0.34);
+
+  /* Corners: near-square reads as tailored; pills only for chips/badges */
+  --radius-0: 0;
+  --radius-1: 2px;
+  --radius-2: 4px;
+
+  /* Type
+     Serif (Cormorant Garamond) for headlines, Inter for everything read or tapped. */
   --font-text: var(--font-inter), "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-display: var(--font-text);
+  --font-serif-stack: var(--font-cormorant), "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --font-display: var(--font-serif-stack);
   --font-ui: var(--font-text);
   --font-caps: var(--font-text);
 
+  /* Spacing rhythm (8-pt based, fluid at the top end) */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2.5rem;
+  --space-xl: clamp(3rem, 2rem + 4vw, 5rem);
+  --space-2xl: clamp(4.5rem, 3rem + 6vw, 8rem);
+
   /* Layout */
   --max: 1440px;
+  --measure: 66ch;
   --gutter: clamp(20px, 4.4vw, 64px);
+  --grid-gap: clamp(16px, 2.2vw, 32px);
   --section: clamp(88px, 12vw, 176px);
   --header-h: 84px;
 
@@ -57,21 +199,28 @@
    parchment, and the brand accent (--pine-800) becomes a pale brass so
    headings and buttons keep their contrast. Set on <html data-theme>. */
 html[data-theme="dark"] {
-  --paper: #0c1613;
-  --ivory: #111d19;
-  --sand: #16241f;
-  --sand-deep: #1d2e28;
-  --ink: #ece5d6;
-  --ink-soft: #c4c1b5;
-  --muted: #929d96;
-  --pine-800: #dccba4;
+  --paper: #0d1412;
+  --ivory: #131b18;
+  --sand: #18221e;
+  --sand-deep: #202d28;
+  --ink: #efe8da;
+  --ink-soft: #cbc5b8;
+  --muted: #9ea59f;
+  --pine-800: #dcc79e;
   --pine-700: #1b3a30;
-  --bronze: #cfac72;
-  --brass: #c49c5d;
-  --rust: #e3916d;
-  --line: rgba(236, 229, 214, 0.12);
-  --line-strong: rgba(236, 229, 214, 0.26);
+  --champagne: #d2b680;
+  --focus: #dcc79e;
+  --bronze: #d6b77f;
+  --brass: #c9a76c;
+  --rust: #e59a78;
+  --success: #8fc4a6;
+  --line: rgba(239, 232, 218, 0.12);
+  --line-strong: rgba(239, 232, 218, 0.26);
   --accent-deep: #f1e6cb;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 18px -8px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 2px 4px rgba(0, 0, 0, 0.3), 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  --shadow-4: 0 4px 8px rgba(0, 0, 0, 0.3), 0 40px 80px -36px rgba(0, 0, 0, 0.7);
   color-scheme: dark;
 }
 
@@ -87,8 +236,12 @@ html[data-theme="dark"] {
   color-scheme: light;
 }
 
-/* ---------- Reset ---------- */
+/* ---------- Reset ----------
+   Element-only selectors, in the `base` layer: every class rule (global or
+   CSS module) already out-ranked them by specificity, so behaviour is
+   unchanged — but Tailwind utilities can now override them too. */
 
+@layer base {
 *,
 *::before,
 *::after {
@@ -169,15 +322,25 @@ button {
   padding: 0;
   touch-action: manipulation;
 }
+} /* end @layer base */
 
 ::selection {
   background: var(--pine-800);
   color: var(--paper);
 }
 
-:focus-visible {
-  outline: 1.5px solid var(--brass);
-  outline-offset: 4px;
+/* Default focus ring. In the base layer so a component can restyle it with
+   utilities; unlayered rules that already overrode it still do. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 4px;
+  }
+  /* Always-dark surfaces (hero, footer, menu) need the light gold ring. */
+  .on-dark :focus-visible,
+  [data-surface="dark"] :focus-visible {
+    outline-color: var(--brass-light);
+  }
 }
 
 .sr-only {
@@ -226,38 +389,72 @@ button {
 
 /* ---------- Type ---------- */
 
-/* Inter is wide with a tall x-height: headings sit smaller than a serif
-   scale, and tracking tightens as size grows so large lines stay compact. */
+/* Headlines: Cormorant Garamond. A serif with a small x-height reads larger
+   than it measures, so the scale sits a step above an Inter scale; tracking
+   stays near zero (serifs crowd when tightened) and weights stay light —
+   contrast comes from size and the italic accent, not boldness. */
 .display {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(2.35rem, 5.6vw, 5.8rem);
+  font-weight: 400;
+  font-size: var(--text-5xl);
   line-height: 1.04;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 
 .h1 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(2.15rem, 4.4vw, 4.2rem);
+  font-weight: 400;
+  font-size: var(--text-4xl);
   line-height: 1.06;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
 }
 
 .h2 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(1.8rem, 3.1vw, 3rem);
+  font-weight: 400;
+  font-size: var(--text-3xl);
   line-height: 1.1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.008em;
+  text-wrap: balance;
 }
 
 .h3 {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(1.3rem, 1.7vw, 1.65rem);
+  font-weight: 500;
+  font-size: clamp(1.5rem, 1.25rem + 0.9vw, 2rem);
+  line-height: 1.12;
+  letter-spacing: -0.005em;
+}
+
+.h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--text-xl);
   line-height: 1.2;
-  letter-spacing: -0.02em;
+}
+
+/* Layout grid: 4 columns on phones, 8 on tablets, 12 on desktop. */
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--grid-gap);
+  row-gap: var(--space-lg);
+}
+@media (min-width: 53.75rem) {
+  .layout-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+@media (min-width: 73.75rem) {
+  .layout-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+}
+
+.measure {
+  max-width: var(--measure);
 }
 
 /* Italic is reserved for the accent phrase in a headline; any other
@@ -748,8 +945,9 @@ select.input {
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
+  /* Room for serif descenders (g, y, p) inside the reveal mask. */
+  padding-bottom: 0.24em;
+  margin-bottom: -0.24em;
 }
 .js [data-reveal="words"] .wi {
   display: inline-block;
@@ -778,6 +976,66 @@ select.input {
   from {
     opacity: 0;
     transform: translateY(14px);
+  }
+}
+
+/* ---------- Component motion (primitives: dialogs, sheets, menus) ----------
+   Driven by Radix's [data-state]; Radix waits for the exit animation before
+   unmounting. Short, transform/opacity only (compositor-friendly). The
+   reduced-motion block below collapses all of them to an instant change. */
+.ui-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  background: rgba(10, 18, 15, 0.52);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+.ui-overlay[data-state="open"] { animation: ui-fade-in 0.35s var(--ease-out); }
+.ui-overlay[data-state="closed"] { animation: ui-fade-out 0.25s ease-in forwards; }
+
+/* Centred with transform (not Tailwind's `translate` property) so the
+   keyframes below compose with it. */
+.ui-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 190;
+  transform: translate(-50%, -50%);
+}
+.ui-dialog[data-state="open"] { animation: ui-dialog-in 0.45s var(--ease-out); }
+.ui-dialog[data-state="closed"] { animation: ui-dialog-out 0.2s ease-in forwards; }
+
+.ui-sheet[data-side="right"][data-state="open"] { animation: ui-from-right 0.55s var(--ease-out); }
+.ui-sheet[data-side="right"][data-state="closed"] { animation: ui-to-right 0.3s ease-in forwards; }
+.ui-sheet[data-side="left"][data-state="open"] { animation: ui-from-left 0.55s var(--ease-out); }
+.ui-sheet[data-side="left"][data-state="closed"] { animation: ui-to-left 0.3s ease-in forwards; }
+.ui-sheet[data-side="bottom"][data-state="open"] { animation: ui-from-bottom 0.5s var(--ease-out); }
+.ui-sheet[data-side="bottom"][data-state="closed"] { animation: ui-to-bottom 0.28s ease-in forwards; }
+
+.ui-pop[data-state="open"] { animation: ui-pop-in 0.22s var(--ease-out); }
+.ui-pop[data-state="closed"] { animation: ui-fade-out 0.14s ease-in forwards; }
+
+@keyframes ui-fade-in { from { opacity: 0; } }
+@keyframes ui-fade-out { to { opacity: 0; } }
+@keyframes ui-dialog-in { from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(0.985); } }
+@keyframes ui-dialog-out { to { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.99); } }
+@keyframes ui-from-right { from { transform: translateX(100%); } }
+@keyframes ui-to-right { to { transform: translateX(100%); } }
+@keyframes ui-from-left { from { transform: translateX(-100%); } }
+@keyframes ui-to-left { to { transform: translateX(-100%); } }
+@keyframes ui-from-bottom { from { transform: translateY(100%); } }
+@keyframes ui-to-bottom { to { transform: translateY(100%); } }
+@keyframes ui-pop-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+
+/* Hover lift for cards (pointer devices only; no layout shift). */
+@media (hover: hover) {
+  .lift {
+    transition: transform 0.6s var(--ease-out), box-shadow 0.6s var(--ease-out);
+  }
+  .lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-3);
   }
 }
 

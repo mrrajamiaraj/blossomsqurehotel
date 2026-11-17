@@ -56,7 +56,7 @@ export function RoomTypeEditor(p: TypeProps) {
         blurb,
         is_published: published,
       });
-      toast(res.ok ? (res.message ?? "Saved") : res.message);
+      if (res.ok) toast.success((res.message ?? "Saved")); else toast.error(res.message);
     });
   };
 
@@ -152,7 +152,7 @@ export function RoomPhotos({ typeId, name, photos, canEdit }: { typeId: string; 
   const saveOrder = (next: string[], done?: string) =>
     start(async () => {
       const res = await setRoomGallery(typeId, next);
-      toast(res.ok ? (done ?? res.message ?? "Saved") : res.message);
+      if (res.ok) toast.success((done ?? res.message ?? "Saved")); else toast.error(res.message);
       setConfirming(null);
     });
 
@@ -265,7 +265,7 @@ export function AddRoomForm({ types }: { types: TypeOption[] }) {
     e.preventDefault();
     start(async () => {
       const res = await addRoom({ number, room_type_id: type, floor: floor || null });
-      toast(res.ok ? (res.message ?? "Room added") : res.message);
+      if (res.ok) toast.success((res.message ?? "Room added")); else toast.error(res.message);
       if (res.ok) {
         setNumber("");
         setFloor("");
@@ -334,13 +334,13 @@ function RoomSetup(p: RoomProps) {
   const save = () =>
     start(async () => {
       const res = await editRoom(p.id, { number, room_type_id: type, floor: floor || null });
-      toast(res.ok ? (res.message ?? "Saved") : res.message);
+      if (res.ok) toast.success((res.message ?? "Saved")); else toast.error(res.message);
     });
 
   const remove = () =>
     start(async () => {
       const res = await deleteRoom(p.id);
-      toast(res.ok ? `Room ${p.number} removed` : res.message);
+      if (res.ok) toast.success(`Room ${p.number} removed`); else toast.error(res.message);
       setConfirmDelete(false);
     });
 
@@ -397,7 +397,7 @@ export function RoomTile(p: RoomProps) {
   const save = (patch: Parameters<typeof updateRoom>[1], done: string) =>
     start(async () => {
       const res = await updateRoom(p.id, patch);
-      toast(res.ok ? done : res.message);
+      if (res.ok) toast.success(done); else toast.error(res.message);
     });
 
   return (
