@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import { addRoom, deleteRoom, editRoom, setRoomGallery, updateRoom, updateRoomType, uploadRoomPhoto } from "@/app/admin/actions";
 import type { Housekeeping } from "@/lib/data/types";
 import { formatTaka } from "@/lib/format";
@@ -130,6 +130,37 @@ function moveRef(list: string[], from: number, to: number) {
   return next;
 }
 
+// Small controls sitting on the bottom edge of each photo, so they never
+// spill out of the thumbnail however narrow the card is.
+const photoBar: CSSProperties = {
+  position: "absolute",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 4,
+  padding: 5,
+  background: "linear-gradient(to top, rgba(20, 18, 15, 0.55), rgba(20, 18, 15, 0))",
+};
+const photoBtn: CSSProperties = {
+  width: 26,
+  height: 26,
+  display: "inline-grid",
+  placeItems: "center",
+  border: "none",
+  borderRadius: 999,
+  background: "rgba(255, 255, 255, 0.94)",
+  color: "#25221e",
+  fontSize: 13,
+  fontWeight: 600,
+  lineHeight: 1,
+  cursor: "pointer",
+  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.25)",
+};
+const photoBtnDanger: CSSProperties = { background: "#9a3b30", color: "#fff", fontSize: 11.5 };
+
 export function RoomPhotos({ typeId, name, photos, canEdit }: { typeId: string; name: string; photos: PhotoItem[]; canEdit: boolean }) {
   const [pending, start] = useTransition();
   const [progress, setProgress] = useState("");
@@ -174,58 +205,66 @@ export function RoomPhotos({ typeId, name, photos, canEdit }: { typeId: string; 
         <span className="a-hint">{photos.length ? "The first photo is the cover" : "No photos yet"}</span>
       </div>
       {photos.length > 0 && (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))", gap: 8 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>
           {photos.map((p, i) => (
-            <li key={p.ref} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <div style={{ position: "relative", aspectRatio: "4 / 3", borderRadius: 6, overflow: "hidden", background: "var(--a-line)" }}>
+            <li key={p.ref}>
+              <div style={{ position: "relative", aspectRatio: "4 / 3", borderRadius: 8, overflow: "hidden", background: "var(--a-line)" }}>
                 {p.src ? (
-                  <Image src={p.src} alt={`${name}, photo ${i + 1}`} fill sizes="120px" style={{ objectFit: "cover" }} />
+                  <Image src={p.src} alt={`${name}, photo ${i + 1}`} fill sizes="160px" style={{ objectFit: "cover" }} />
                 ) : (
                   <span className="a-hint" style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
                     Missing
                   </span>
                 )}
                 {i === 0 && (
-                  <span className="a-badge" data-s="confirmed" style={{ position: "absolute", left: 4, top: 4 }}>
+                  <span className="a-badge" data-s="confirmed" style={{ position: "absolute", left: 6, top: 6 }}>
                     Cover
                   </span>
                 )}
+                {canEdit && (
+                  <div style={photoBar}>
+                    <span style={{ display: "flex", gap: 4 }}>
+                      {i > 0 && (
+                        <button type="button" style={photoBtn} disabled={pending} title="Move earlier" aria-label={`Move photo ${i + 1} earlier`} onClick={() => saveOrder(moveRef(refs, i, i - 1), "Order saved")}>
+                          ←
+                        </button>
+                      )}
+                      {i < refs.length - 1 && (
+                        <button type="button" style={photoBtn} disabled={pending} title="Move later" aria-label={`Move photo ${i + 1} later`} onClick={() => saveOrder(moveRef(refs, i, i + 1), "Order saved")}>
+                          →
+                        </button>
+                      )}
+                    </span>
+                    <span style={{ display: "flex", gap: 4 }}>
+                      {i > 0 && (
+                        <button
+                          type="button"
+                          style={photoBtn}
+                          disabled={pending}
+                          title="Make cover photo"
+                          aria-label={`Make photo ${i + 1} the cover`}
+                          onClick={() => saveOrder([p.ref, ...refs.filter((r) => r !== p.ref)], "Cover photo changed")}
+                        >
+                          ★
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        style={confirming === p.ref ? { ...photoBtn, ...photoBtnDanger, width: "auto", padding: "0 8px" } : { ...photoBtn, color: "#9a3b30" }}
+                        disabled={pending}
+                        title={confirming === p.ref ? "Click again to remove" : "Remove photo"}
+                        onClick={() =>
+                          confirming === p.ref ? saveOrder(refs.filter((r) => r !== p.ref), "Photo removed") : setConfirming(p.ref)
+                        }
+                        onBlur={() => setConfirming((c) => (c === p.ref ? null : c))}
+                        aria-label={confirming === p.ref ? `Confirm removing photo ${i + 1}` : `Remove photo ${i + 1}`}
+                      >
+                        {confirming === p.ref ? "Remove?" : "✕"}
+                      </button>
+                    </span>
+                  </div>
+                )}
               </div>
-              {canEdit && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {i > 0 && (
-                    <button
-                      type="button"
-                      className="a-btn a-btn--sm"
-                      disabled={pending}
-                      onClick={() => saveOrder([p.ref, ...refs.filter((r) => r !== p.ref)], "Cover photo changed")}
-                    >
-                      Cover
-                    </button>
-                  )}
-                  {i > 0 && (
-                    <button type="button" className="a-btn a-btn--sm a-btn--ghost" disabled={pending} aria-label={`Move photo ${i + 1} earlier`} onClick={() => saveOrder(moveRef(refs, i, i - 1), "Order saved")}>
-                      ←
-                    </button>
-                  )}
-                  {i < refs.length - 1 && (
-                    <button type="button" className="a-btn a-btn--sm a-btn--ghost" disabled={pending} aria-label={`Move photo ${i + 1} later`} onClick={() => saveOrder(moveRef(refs, i, i + 1), "Order saved")}>
-                      →
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="a-btn a-btn--sm a-btn--danger"
-                    disabled={pending}
-                    onClick={() =>
-                      confirming === p.ref ? saveOrder(refs.filter((r) => r !== p.ref), "Photo removed") : setConfirming(p.ref)
-                    }
-                    aria-label={confirming === p.ref ? `Confirm removing photo ${i + 1}` : `Remove photo ${i + 1}`}
-                  >
-                    {confirming === p.ref ? "Sure?" : "Remove"}
-                  </button>
-                </div>
-              )}
             </li>
           ))}
         </ul>

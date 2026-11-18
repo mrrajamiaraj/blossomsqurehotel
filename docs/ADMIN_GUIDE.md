@@ -1,6 +1,6 @@
 # Blossom Square admin — staff guide
 
-The admin is at **https://blossomsquare.online/admin**. Sign in with your email and password. Owners, super admins, managers and finance also enter a 6-digit code from their authenticator app.
+The admin is at **https://blossomsquare.online/admin**. Sign in with your email and password. For extra safety, anyone can also turn on a 6-digit code from an authenticator app on their **Account** page (optional).
 
 You only see the menu items your role allows. If something you need is missing, ask a manager to change your role. Nobody can change their own.
 
@@ -119,7 +119,7 @@ Open **Housekeeping**:
 | You see | Do this |
 | ------- | ------- |
 | "Your role doesn't allow this" | Ask a manager |
-| "Confirm it's you with your authenticator app" | Sign out and in again, then enter the code |
+| "Confirm it's you with your authenticator app" (only if you turned the code on) | Sign out and in again, then enter the code |
 | "That room is already given to another guest…" | Choose another room; the system prevents double-booking |
 | "The price for these dates has just changed" (guest) | The guest reviews the new total and confirms again |
 | A guest says they paid but it isn't showing | Check **Payments → To verify**; if it's not there, ask for the transaction ID and record it at the desk |

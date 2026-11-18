@@ -42,7 +42,10 @@ const plus = (n: number) => {
 
 beforeAll(async () => {
   db = await createDevDatabase();
-  today = (await one<{ d: string }>("select to_char(public._today(), 'YYYY-MM-DD') d")).d;
+  // Authenticator requirement switched back on here so the journeys also cover
+  // it (the hotel has it off: 20261119120000, tested in mfa-optional.test.ts).
+  await db.query("update private.roles set requires_mfa = true where code in ('owner', 'super_admin', 'manager', 'finance')");
+  today =(await one<{ d: string }>("select to_char(public._today(), 'YYYY-MM-DD') d")).d;
   const people: [string, string, string][] = [
     [id.owner, "Olivia Owner", "owner"],
     [id.manager, "Mina Manager", "manager"],

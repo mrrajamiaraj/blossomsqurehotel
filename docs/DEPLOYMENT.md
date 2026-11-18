@@ -110,7 +110,9 @@ Production has **no staff accounts**.
    select id, 'Owner Name', 'owner' from auth.users where email = 'owner@example.com';
    ```
 3. **Set a password:** the owner opens the invite email, sets a password (at least 10 characters), and signs in at `https://blossomsquare.online/admin/login`.
-4. **Two-step sign-in:** the admin asks the owner to set up an authenticator app (Google or Microsoft Authenticator, 1Password…). Scan the QR code and enter the 6-digit code. This is required for owner, super admin, manager and finance.
+4. **Two-step sign-in (optional):** the owner decided on 18 Nov 2026 that no role must use an authenticator app (`private.roles.requires_mfa = false`, migration `20261119120000_mfa_optional`). Anyone can still turn it on from their Account page. To require it again: `update private.roles set requires_mfa = true where code in ('owner','super_admin','manager','finance');`.
+
+   **Done 18 Nov 2026:** owner account `blossomsquarehotel@gmail.com` ("mrrmr") created by the owner in the dashboard and made owner by SQL.
 5. **Invite colleagues:** Admin → Team → invite, choosing each person's role. Nobody can appoint at or above their own rank.
 6. **Fill in hotel details:**
    - Settings: VAT %, service %, advance %, policies, ways to pay;

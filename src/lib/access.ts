@@ -4,10 +4,10 @@
 // tests/db/access-parity.test.ts fails if the two ever differ.
 
 export const ROLES = [
-  { code: "owner", name: "Owner", rank: 100, requiresMfa: true },
-  { code: "super_admin", name: "Super admin", rank: 90, requiresMfa: true },
-  { code: "manager", name: "Manager", rank: 70, requiresMfa: true },
-  { code: "finance", name: "Finance", rank: 50, requiresMfa: true },
+  { code: "owner", name: "Owner", rank: 100, requiresMfa: false },
+  { code: "super_admin", name: "Super admin", rank: 90, requiresMfa: false },
+  { code: "manager", name: "Manager", rank: 70, requiresMfa: false },
+  { code: "finance", name: "Finance", rank: 50, requiresMfa: false },
   { code: "receptionist", name: "Receptionist", rank: 40, requiresMfa: false },
   { code: "content_editor", name: "Content editor", rank: 30, requiresMfa: false },
   { code: "housekeeping", name: "Housekeeping", rank: 20, requiresMfa: false },

@@ -41,6 +41,9 @@ async function one<T>(q: Db["query"], sql: string, params: unknown[] = []): Prom
 
 beforeAll(async () => {
   db = await createDevDatabase();
+  // The hotel has the authenticator requirement switched off (20261119120000);
+  // these tests keep the protection itself covered, so it can be switched back on.
+  await db.query("update private.roles set requires_mfa = true where code in ('owner', 'super_admin', 'manager', 'finance')");
   const users: [string, string][] = [
     [id.owner, "owner@hotel.test"], [id.owner2, "owner2@hotel.test"], [id.superAdmin, "super@hotel.test"],
     [id.manager, "manager@hotel.test"], [id.finance, "finance@hotel.test"], [id.reception, "desk@hotel.test"],
