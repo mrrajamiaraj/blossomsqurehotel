@@ -7,6 +7,7 @@ import { getEngine } from "@/lib/data/engine";
 import { errorCode, errorMessage } from "@/lib/data/errors";
 import { hotelToday } from "@/lib/dates";
 import { normaliseReference, toInquiryInput, validateInquiry, validContact, type InquiryErrors, type InquiryForm } from "@/lib/guest-services";
+import { kickOutbox } from "@/lib/messaging/worker";
 import { allow } from "@/lib/rate-limit";
 
 async function clientIp(): Promise<string> {
@@ -44,6 +45,7 @@ export async function submitInquiry(form: InquiryForm): Promise<InquiryResult> {
   if (!repo) return { ok: false, message: errorMessage("UNAVAILABLE"), offline: true };
   try {
     const reference = await repo.submitInquiry(toInquiryInput(f));
+    if (repo.mode === "live") kickOutbox(); // acknowledgment email
     return { ok: true, reference, preview: repo.mode === "preview" };
   } catch (err) {
     const code = errorCode(err);

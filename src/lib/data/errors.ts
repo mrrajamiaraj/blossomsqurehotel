@@ -77,6 +77,17 @@ const MESSAGES: Record<string, string> = {
   PROMO_CODE_TAKEN: "Another offer already uses that code. Choose a different code.",
   PROMO_IN_USE: "Guests have already booked with this offer, so it can't be deleted. Switch it off instead.",
   BAD_ROOM_DETAILS: "Check the room details: a name, a bed description, and sleeps 1–10.",
+  METHOD_DISABLED: "That payment method isn't offered at the moment. Choose another, or pay at the hotel.",
+  METHOD_UNAVAILABLE: "That payment method isn't available yet. Choose another, or pay at the hotel.",
+  GATEWAY_UNAVAILABLE: "We couldn't reach the payment service just now. Nothing has been charged — please try again in a few minutes, or choose another way to pay.",
+  BAD_REFERENCE: "Enter the transaction ID exactly as it appears in your confirmation SMS or bank receipt (6–40 letters and numbers).",
+  DUPLICATE_REFERENCE: "That transaction ID has already been reported. If you think this is a mistake, please call or WhatsApp us.",
+  TOO_MANY_PENDING: "You already have three payments waiting to be checked. We'll confirm them shortly — please wait before reporting another.",
+  RESEND_NOT_ALLOWED: "Only messages that failed, weren't sent, or weren't set up can be resent.",
+  ALREADY_RESENT: "This message has already been resent. Check the newer copy in the list.",
+  NO_RECIPIENT: "There's no email address or WhatsApp number for this guest. Add one to the booking first.",
+  NO_CONSENT: "The guest hasn't agreed to WhatsApp messages, so this can't be sent on WhatsApp.",
+  RESEND_LIMIT: "This message has been resent three times today. Contact the guest directly instead.",
 };
 
 /** PostgREST / Postgres wording when a function or table hasn't been created yet. */

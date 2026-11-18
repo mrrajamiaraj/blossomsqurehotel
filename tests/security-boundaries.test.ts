@@ -50,6 +50,32 @@ describe("Supabase keys never reach the browser", () => {
   });
 });
 
+describe("Payment and messaging secrets never reach the browser", () => {
+  const SECRET_ENV = /(RESEND_API_KEY|RESEND_WEBHOOK_SECRET|WHATSAPP_ACCESS_TOKEN|WHATSAPP_APP_SECRET|WHATSAPP_VERIFY_TOKEN|BKASH_[A-Z_]+|SSLCOMMERZ_[A-Z_]+|NAGAD_[A-Z_]+|CRON_SECRET)/;
+  const isRoute = (f: string) => /src[\\/]app[\\/]api[\\/].*route\.ts$/.test(f);
+
+  it("no NEXT_PUBLIC_ variable carries a payment or messaging secret", () => {
+    const offenders = sourceFiles.filter((f) => new RegExp(`NEXT_PUBLIC_${SECRET_ENV.source}`).test(read(f)));
+    expect(offenders.map(rel)).toEqual([]);
+  });
+
+  it("only server-only modules and API route handlers read those secrets", () => {
+    const readers = sourceFiles.filter((f) => SECRET_ENV.test(read(f)) && /process\.env|env\(/.test(read(f)));
+    expect(readers.length).toBeGreaterThan(3);
+    const unsafe = readers.filter((f) => !isRoute(f) && !/^import "server-only";/m.test(read(f)) && !/messaging[\\/]templates\.ts$/.test(f));
+    expect(unsafe.map(rel)).toEqual([]);
+  });
+
+  it("client components don't import the gateway, provider or worker modules", () => {
+    const offenders = sourceFiles.filter((f) => {
+      const src = read(f);
+      if (!isClientModule(src)) return false;
+      return /from ["']@\/lib\/(payments\/(gateways|service|guest)|messaging\/(providers|worker)|integrations|data\/payments)["']/.test(src.replace(/import type [^;]+;/g, ""));
+    });
+    expect(offenders.map(rel)).toEqual([]);
+  });
+});
+
 describe("Database migrations", () => {
   const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
   const sql = files.map((f) => read(join(MIGRATIONS, f))).join("\n");

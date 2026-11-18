@@ -1,0 +1,5 @@
+{"taken_at":"2026-11-18T12:21:41.487569+00:00","project":"sbzwlizkllzjpbqjhued","before":"20261118230000_payments_and_messaging",
+"payments":[],"refunds":[],"payment_intents":[],
+"hotel_settings":[{"id":1,"cancellation_policy":"","children_policy":"","confirm_call_within":"","vat_percent":null,"service_charge_percent":null,"updated_at":"2026-11-16T15:17:00.093631+00:00","advance_percent":null,"advance_due_hours":24,"hold_minutes":15,"max_discount_percent":50}],
+"bookings":[{"id":"0978a7d5-d274-4156-a89e-a5d88eb5e6b3","reference":"BSQ-99296","status":"cancelled","total_bdt":2500,"amount_paid_bdt":0,"payment_status":"unpaid"}],
+"inquiries":0,"cron_jobs":["bsq-booking-expiry"]}

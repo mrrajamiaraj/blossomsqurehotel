@@ -720,6 +720,7 @@ export type Database = {
           hold_minutes: number
           id: number
           max_discount_percent: number
+          payment_methods: string[]
           service_charge_percent: number | null
           updated_at: string
           vat_percent: number | null
@@ -733,6 +734,7 @@ export type Database = {
           hold_minutes?: number
           id?: number
           max_discount_percent?: number
+          payment_methods?: string[]
           service_charge_percent?: number | null
           updated_at?: string
           vat_percent?: number | null
@@ -746,6 +748,7 @@ export type Database = {
           hold_minutes?: number
           id?: number
           max_discount_percent?: number
+          payment_methods?: string[]
           service_charge_percent?: number | null
           updated_at?: string
           vat_percent?: number | null
@@ -863,6 +866,38 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          booking_id: string
+          id: string
+          issued_at: string
+          issued_by: string | null
+          number: string
+        }
+        Insert: {
+          booking_id: string
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          number: string
+        }
+        Update: {
+          booking_id?: string
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_assets: {
         Row: {
           alt: string
@@ -911,6 +946,177 @@ export type Database = {
         }
         Relationships: []
       }
+      message_events: {
+        Row: {
+          actor: string | null
+          created_at: string
+          detail: Json
+          id: number
+          kind: string
+          message_id: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          id?: never
+          kind: string
+          message_id: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          id?: never
+          kind?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_events_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "message_outbox"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_outbox: {
+        Row: {
+          attempts: number
+          booking_id: string | null
+          channel: string
+          created_at: string
+          created_by: string | null
+          data: Json
+          dedupe_key: string | null
+          delivered_at: string | null
+          id: string
+          inquiry_id: string | null
+          last_error: string | null
+          locked_until: string | null
+          max_attempts: number
+          next_attempt_at: string
+          payment_id: string | null
+          provider: string | null
+          provider_message_id: string | null
+          recipient: string | null
+          resent_from: string | null
+          sent_at: string | null
+          status: string
+          template: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          booking_id?: string | null
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          dedupe_key?: string | null
+          delivered_at?: string | null
+          id?: string
+          inquiry_id?: string | null
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payment_id?: string | null
+          provider?: string | null
+          provider_message_id?: string | null
+          recipient?: string | null
+          resent_from?: string | null
+          sent_at?: string | null
+          status?: string
+          template: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          booking_id?: string | null
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          dedupe_key?: string | null
+          delivered_at?: string | null
+          id?: string
+          inquiry_id?: string | null
+          last_error?: string | null
+          locked_until?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          payment_id?: string | null
+          provider?: string | null
+          provider_message_id?: string | null
+          recipient?: string | null
+          resent_from?: string | null
+          sent_at?: string | null
+          status?: string
+          template?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_outbox_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "inquiries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outbox_resent_from_fkey"
+            columns: ["resent_from"]
+            isOneToOne: false
+            referencedRelation: "message_outbox"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_consents: {
+        Row: {
+          booking_id: string
+          source: string
+          updated_at: string
+          whatsapp: boolean
+        }
+        Insert: {
+          booking_id: string
+          source: string
+          updated_at?: string
+          whatsapp?: boolean
+        }
+        Update: {
+          booking_id?: string
+          source?: string
+          updated_at?: string
+          whatsapp?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_consents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -944,11 +1150,65 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_gateway_events: {
+        Row: {
+          amount_bdt: number | null
+          event_id: string
+          id: number
+          intent_id: string | null
+          outcome: string
+          payload_sha256: string | null
+          provider: string
+          provider_ref: string | null
+          received_at: string
+          signature_ok: boolean
+          status: string | null
+          verified: boolean
+        }
+        Insert: {
+          amount_bdt?: number | null
+          event_id: string
+          id?: never
+          intent_id?: string | null
+          outcome?: string
+          payload_sha256?: string | null
+          provider: string
+          provider_ref?: string | null
+          received_at?: string
+          signature_ok: boolean
+          status?: string | null
+          verified: boolean
+        }
+        Update: {
+          amount_bdt?: number | null
+          event_id?: string
+          id?: never
+          intent_id?: string | null
+          outcome?: string
+          payload_sha256?: string | null
+          provider?: string
+          provider_ref?: string | null
+          received_at?: string
+          signature_ok?: boolean
+          status?: string | null
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_gateway_events_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "payment_intents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_intents: {
         Row: {
           amount_bdt: number
           booking_id: string
           created_at: string
+          expires_at: string
           failure_reason: string | null
           id: string
           idempotency_key: string
@@ -961,6 +1221,7 @@ export type Database = {
           amount_bdt: number
           booking_id: string
           created_at?: string
+          expires_at?: string
           failure_reason?: string | null
           id?: string
           idempotency_key: string
@@ -973,6 +1234,7 @@ export type Database = {
           amount_bdt?: number
           booking_id?: string
           created_at?: string
+          expires_at?: string
           failure_reason?: string | null
           id?: string
           idempotency_key?: string
@@ -1000,10 +1262,16 @@ export type Database = {
           intent_id: string | null
           method: string
           note: string | null
+          receipt_no: string | null
           received_at: string
           recorded_by: string | null
           reference: string | null
+          review_note: string | null
+          sender: string | null
+          source: string
           status: string
+          verified_at: string | null
+          verified_by: string | null
           void_reason: string | null
           voided_at: string | null
           voided_by: string | null
@@ -1016,10 +1284,16 @@ export type Database = {
           intent_id?: string | null
           method: string
           note?: string | null
+          receipt_no?: string | null
           received_at?: string
           recorded_by?: string | null
           reference?: string | null
+          review_note?: string | null
+          sender?: string | null
+          source?: string
           status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           void_reason?: string | null
           voided_at?: string | null
           voided_by?: string | null
@@ -1032,10 +1306,16 @@ export type Database = {
           intent_id?: string | null
           method?: string
           note?: string | null
+          receipt_no?: string | null
           received_at?: string
           recorded_by?: string | null
           reference?: string | null
+          review_note?: string | null
+          sender?: string | null
+          source?: string
           status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           void_reason?: string | null
           voided_at?: string | null
           voided_by?: string | null
@@ -1725,6 +2005,24 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_receipts: {
+        Row: {
+          event_id: string
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          event_id: string
+          provider: string
+          received_at?: string
+        }
+        Update: {
+          event_id?: string
+          provider?: string
+          received_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       guest_summary: {
@@ -1753,6 +2051,11 @@ export type Database = {
         Args: { p_token: string }
         Returns: string
       }
+      _booking_message_data:
+        | {
+        Args: { p_booking: string }
+        Returns: Json
+      }
       _check_party:
         | {
         Args: { p_adults: number; p_children: number; p_types: string[] }
@@ -1767,6 +2070,11 @@ export type Database = {
         | {
         Args: { p_key: string; p_locale: string }
         Returns: undefined
+      }
+      _enqueue_message:
+        | {
+        Args: { p_booking: string; p_channel: string; p_data: Json; p_dedupe: string; p_inquiry: string; p_payment: string; p_recipient: string; p_template: string }
+        Returns: string
       }
       _free_units:
         | {
@@ -1790,6 +2098,16 @@ export type Database = {
       _insert_booking:
         | {
         Args: { p_adults: number; p_airport_pickup: boolean; p_arrival_window: string; p_check_in: string; p_check_out: string; p_children: number; p_country: string; p_email: string; p_guest_name: string; p_internal_notes: string; p_phone: string; p_room_slug: string; p_rooms: number; p_source: string; p_special_requests: string; p_status: string }
+        Returns: string
+      }
+      _invoice_json:
+        | {
+        Args: { p_booking: string; p_full_contact: boolean }
+        Returns: Json
+      }
+      _invoice_number:
+        | {
+        Args: { p_booking: string }
         Returns: string
       }
       _is_weekend_night:
@@ -1821,6 +2139,16 @@ export type Database = {
         | {
         Args: { p: string }
         Returns: string
+      }
+      _message_guest:
+        | {
+        Args: { p_booking: string; p_dedupe: string; p_extra: Json; p_payment: string; p_template: string }
+        Returns: undefined
+      }
+      _method_enabled:
+        | {
+        Args: { p_method: string }
+        Returns: boolean
       }
       _modify:
         | {
@@ -1871,6 +2199,11 @@ export type Database = {
         Args: { p_booking: string }
         Returns: undefined
       }
+      _receipt_json:
+        | {
+        Args: { p_full_contact: boolean; p_payment: string }
+        Returns: Json
+      }
       _record_promotions:
         | {
         Args: { p_booking: string; p_quote: Json }
@@ -1889,6 +2222,11 @@ export type Database = {
       _require_media:
         | {
         Args: { p_bucket: string }
+        Returns: undefined
+      }
+      _require_room_copy:
+        | {
+        Args: never
         Returns: undefined
       }
       _require_staff:
@@ -1960,6 +2298,11 @@ export type Database = {
         | {
         Args: { p_in: string; p_out: string }
         Returns: undefined
+      }
+      _wa_number:
+        | {
+        Args: { p_phone: string }
+        Returns: string
       }
       admin_add_review:
         | {
@@ -2078,6 +2421,11 @@ export type Database = {
         Args: { p_key: string; p_locale: string }
         Returns: undefined
       }
+      admin_invoice:
+        | {
+        Args: { p_booking: string }
+        Returns: Json
+      }
       admin_list_content:
         | {
         Args: never
@@ -2120,6 +2468,16 @@ export type Database = {
         Args: { p_adults: number; p_booking: string; p_check_in: string; p_check_out: string; p_children: number; p_lines: Json }
         Returns: undefined
       }
+      admin_payment_receipt:
+        | {
+        Args: { p_payment: string }
+        Returns: Json
+      }
+      admin_payment_reconciliation:
+        | {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
       admin_promotion_usage:
         | {
         Args: never
@@ -2159,6 +2517,11 @@ export type Database = {
         Args: { p_amount: number; p_booking: string; p_method: string; p_payment?: string; p_reason: string }
         Returns: string
       }
+      admin_resend_message:
+        | {
+        Args: { p_id: string }
+        Returns: string
+      }
       admin_resolve_request:
         | {
         Args: { p_request: string; p_status: string }
@@ -2194,10 +2557,20 @@ export type Database = {
         Args: { p_inquiry: string; p_status: string }
         Returns: undefined
       }
+      admin_set_payment_methods:
+        | {
+        Args: { p_methods: string[] }
+        Returns: string[]
+      }
       admin_set_promotion_active:
         | {
         Args: { p_active: boolean; p_id: string }
         Returns: undefined
+      }
+      admin_set_room_gallery:
+        | {
+        Args: { p_gallery: string[]; p_type: string }
+        Returns: string[]
       }
       admin_set_staff_active:
         | {
@@ -2224,6 +2597,11 @@ export type Database = {
         Args: { p_alt: string; p_folder: string; p_id: string }
         Returns: undefined
       }
+      admin_update_room_copy:
+        | {
+        Args: { p_blurb: string; p_description: string; p_features: string[]; p_type: string; p_view: string }
+        Returns: undefined
+      }
       admin_update_room_unit:
         | {
         Args: { p_floor: string; p_number: string; p_room: string; p_room_type: string }
@@ -2239,6 +2617,11 @@ export type Database = {
         Args: { p_full_name: string; p_role: string; p_user: string }
         Returns: undefined
       }
+      admin_verify_payment:
+        | {
+        Args: { p_accept: boolean; p_note: string; p_payment: string }
+        Returns: undefined
+      }
       admin_void_payment:
         | {
         Args: { p_payment: string; p_reason: string }
@@ -2252,6 +2635,16 @@ export type Database = {
       claim_guest_profile:
         | {
         Args: never
+        Returns: string
+      }
+      claim_messages:
+        | {
+        Args: { p_limit?: number }
+        Returns: string[]
+      }
+      complete_message:
+        | {
+        Args: { p_error: string; p_id: string; p_provider: string; p_provider_message_id: string; p_result: string }
         Returns: string
       }
       confirm_hold:
@@ -2274,12 +2667,22 @@ export type Database = {
         Args: { p_amount: number; p_idempotency_key: string; p_provider: string; p_reference: string }
         Returns: Json
       }
+      enqueue_pre_arrival_reminders:
+        | {
+        Args: never
+        Returns: number
+      }
       expire_holds:
         | {
         Args: never
         Returns: number
       }
       expire_overdue_bookings:
+        | {
+        Args: never
+        Returns: number
+      }
+      expire_payment_intents:
         | {
         Args: never
         Returns: number
@@ -2299,9 +2702,39 @@ export type Database = {
         Args: { p_reason: string; p_token: string }
         Returns: string
       }
+      guest_invoice:
+        | {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      guest_payment_options:
+        | {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      guest_payment_receipt:
+        | {
+        Args: { p_payment: string; p_token: string }
+        Returns: Json
+      }
+      guest_payment_status:
+        | {
+        Args: { p_intent: string; p_token: string }
+        Returns: Json
+      }
       guest_request_change:
         | {
         Args: { p_check_in: string; p_check_out: string; p_note: string; p_token: string }
+        Returns: Json
+      }
+      guest_set_whatsapp_consent:
+        | {
+        Args: { p_on: boolean; p_token: string }
+        Returns: boolean
+      }
+      guest_submit_payment:
+        | {
+        Args: { p_amount: number; p_method: string; p_reference: string; p_sender: string; p_token: string }
         Returns: Json
       }
       has_permission:
@@ -2375,6 +2808,11 @@ export type Database = {
         Args: { p_ids?: string[] }
         Returns: number
       }
+      message_delivery_update:
+        | {
+        Args: { p_detail: Json; p_event_id: string; p_provider: string; p_provider_message_id: string; p_status: string }
+        Returns: string
+      }
       my_access:
         | {
         Args: never
@@ -2397,6 +2835,11 @@ export type Database = {
           status: string
           total_bdt: number
         }[]
+      }
+      record_gateway_event:
+        | {
+        Args: { p_amount: number; p_event_id: string; p_intent: string; p_payload_sha256: string; p_provider: string; p_provider_ref: string; p_signature_ok: boolean; p_status: string; p_verified: boolean }
+        Returns: string
       }
       release_hold:
         | {

@@ -5,7 +5,12 @@ import AssignRoom, { AutoAssign } from "@/components/admin/AssignRoom";
 import BookingRequests from "@/components/admin/BookingRequests";
 import { PaymentBadge, SOURCE_LABEL, StatusBadge } from "@/components/admin/badges";
 import { ChangeStay, EditGuest, PrintButton, RecordPayment } from "@/components/admin/BookingDialogs";
+import LedgerPanel from "@/components/admin/LedgerPanel";
+import MessageList from "@/components/admin/MessageList";
 import StatusActions from "@/components/admin/StatusActions";
+import { can } from "@/lib/access";
+import { PaymentsRepo, type LedgerRow, type MessageRow, type RefundRow } from "@/lib/data/payments";
+import { getSessionClient } from "@/lib/supabase";
 import { describeEvent } from "@/lib/admin/events";
 import { ago, dateTime, longDate } from "@/lib/admin/format";
 import { roomOptions } from "@/lib/admin/rooms";
@@ -23,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BookingPage({ params }: Props) {
-  const { repo } = await requireAdmin();
+  const { repo, mode, access, staff } = await requireAdmin();
   const HOTEL = await getHotelInfo();
   const { reference } = await params;
   const booking = await repo.getBooking(decodeURIComponent(reference));
@@ -37,6 +42,17 @@ export default async function BookingPage({ params }: Props) {
     repo.linesBetween(booking.check_in, booking.check_out),
     repo.bookingRequests(booking.id),
   ]);
+
+  // Ledger and guest messages (live only; RLS limits each to who may see it).
+  let ledger: { payments: LedgerRow[]; refunds: RefundRow[] } = { payments: [], refunds: [] };
+  let messages: MessageRow[] = [];
+  if (mode === "live") {
+    const pay = new PaymentsRepo(await getSessionClient());
+    [ledger, messages] = await Promise.all([
+      can(access, "payments.read") ? pay.ledger(booking.id).catch(() => ledger) : ledger,
+      pay.messages({ bookingId: booking.id, limit: 30 }).catch(() => []),
+    ]);
+  }
 
   const today = hotelToday();
   const b = booking;
@@ -301,6 +317,36 @@ export default async function BookingPage({ params }: Props) {
                 </p>
               )}
             </div>
+          </section>
+
+          {can(access, "payments.read") && (
+            <LedgerPanel
+              bookingId={b.id}
+              reference={b.reference}
+              payments={ledger.payments}
+              refunds={ledger.refunds}
+              paid={b.amount_paid_bdt}
+              live={mode === "live"}
+              me={staff.id}
+              perms={{
+                record: can(access, "payments.record"),
+                void: can(access, "payments.void"),
+                refundRequest: can(access, "refunds.request"),
+                refundApprove: can(access, "refunds.approve"),
+              }}
+            />
+          )}
+
+          <section className="a-panel" aria-labelledby="msg-h">
+            <div className="a-panel-head">
+              <h2 id="msg-h" className="a-h2">
+                Guest messages<span className="a-count">{messages.length}</span>
+              </h2>
+              <Link href="/admin/messages" className="a-btn a-btn--sm a-btn--ghost">
+                All messages
+              </Link>
+            </div>
+            <MessageList messages={messages} canResend={can(access, "bookings.write")} live={mode === "live"} />
           </section>
 
           <section className="a-panel" aria-labelledby="hist-h">

@@ -31,6 +31,8 @@ export default async function RoomTypePage({ params }: { params: Promise<{ id: s
     ]);
   }
   const manager = can(access, "rooms.manage");
+  // Content editors keep the wording and photos up to date.
+  const editor = !manager && can(access, "content.manage");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 960 }}>
@@ -53,7 +55,8 @@ export default async function RoomTypePage({ params }: { params: Promise<{ id: s
       />
       {mode === "preview" && <p className="a-hint">Changes here need Supabase.</p>}
       <RoomTypeDetailsForm
-        canEdit={manager && mode === "live"}
+        canEdit={(manager || editor) && mode === "live"}
+        copyOnly={editor}
         initial={{ id: type.id, name: type.name, tag: type.tag, bed: type.bed, sleeps: type.sleeps, view: type.view, size_sqft: type.size_sqft, blurb: type.blurb, description: type.description, features: type.features }}
       />
       <section className="a-panel">
@@ -61,7 +64,7 @@ export default async function RoomTypePage({ params }: { params: Promise<{ id: s
           <h2 className="a-h2">Photo gallery</h2>
           <span className="a-hint">Up to 12 photos. Use the arrows to change the order; the first is the cover.</span>
         </div>
-        <RoomPhotos typeId={type.id} name={type.name} photos={type.gallery.map((ref) => ({ ref, src: photo(ref, "").src }))} canEdit={manager} />
+        <RoomPhotos typeId={type.id} name={type.name} photos={type.gallery.map((ref) => ({ ref, src: photo(ref, "").src }))} canEdit={manager || editor} />
       </section>
       <AmenitiesPicker typeId={type.id} amenities={amenities} selected={links.filter((l) => l.room_type_id === type.id).map((l) => l.amenity_id)} canEdit={manager && mode === "live"} />
       <SeasonsPanel typeId={type.id} seasons={seasons.filter((s) => s.room_type_id === type.id)} today={hotelToday()} canEdit={can(access, "rates.manage") && mode === "live"} basePrice={type.price_bdt} />

@@ -6,6 +6,7 @@ import { getEngine } from "@/lib/data/engine";
 import type { PaymentOption, Quote } from "@/lib/data/engine-types";
 import { errorCode, errorMessage } from "@/lib/data/errors";
 import { hotelToday, isISODate, nightsBetween } from "@/lib/dates";
+import { kickOutbox } from "@/lib/messaging/worker";
 import { allow } from "@/lib/rate-limit";
 import { LIMITS } from "@/lib/stay";
 
@@ -144,6 +145,7 @@ export async function confirmBooking(input: ConfirmInput): Promise<ConfirmAction
     );
     await setReceipt({ reference: res.reference, token: res.manage_token, firstName: name.split(/\s+/)[0] ?? "", preview: engine.mode === "preview" });
     await clearHoldToken();
+    if (engine.mode === "live") kickOutbox(); // "We've received your booking" email
     return { ok: true, reference: res.reference };
   } catch (err) {
     const code = errorCode(err);

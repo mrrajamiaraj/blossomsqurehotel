@@ -336,3 +336,97 @@ Redeploy the previous app version, then run the down file in one transaction.
 5. **App:** deployed to `blossomsquare.online`.
    - All public pages return 200, and `/admin/*` redirects to sign-in.
    - Over the public API: published content returns 200, while drafts, `media_assets` and `admin_promotion_usage` return 401.
+
+## F. Payments & guest messaging release
+
+- **Migration:** `supabase/migrations/20261118230000_payments_and_messaging.sql`
+- **Rollback:** `supabase/rollbacks/20261118230000_payments_and_messaging.down.sql`
+- **How it works:** [PAYMENTS_AND_MESSAGING.md](PAYMENTS_AND_MESSAGING.md)
+
+### F.1 What changes
+
+- **Payments:**
+  - `payments` gains source, sender, review note, verification and receipt number. Existing confirmed payments are numbered.
+  - Guest-reported transfers stay `pending` until verified.
+  - `create_payment_intent` now accepts only `bkash` / `nagad` / `card`, only when offered, and never above the open balance.
+  - `apply_payment_callback` records the real method and accepts a late success.
+- **New tables** (all with RLS): `payment_gateway_events`, `invoices`, `message_outbox`, `message_events`, `messaging_consents`, `webhook_receipts`.
+- **Triggers** on `booking_events`, `payments`, `payment_intents` and `inquiries` queue guest messages in the same transaction.
+- **pg_cron jobs:**
+  - `bsq-payment-intents`: every 5 minutes;
+  - `bsq-pre-arrival`: 04:00 UTC, which is 10:00 Dhaka.
+- **App:**
+  - guest payments, invoice and receipt pages;
+  - admin Payments and Guest messages pages, and a Payments panel on each booking;
+  - Settings → Ways to pay;
+  - API routes for the sweep and webhooks.
+
+### F.2 Evidence (local, 18 Nov 2026)
+
+| Check | Result |
+| ----- | ------ |
+| `tests/db/payments-messaging.test.ts` | 25/25 |
+| `tests/db/payments-rollback.test.ts` (exact schema restore, ledger kept) | 3/3 |
+| `tests/payments-gateways.test.ts`, `tests/messaging.test.ts`, `tests/payment-workflows.test.tsx` | 41/41 |
+| Full suite, typecheck, build (`npm run verify`) | 345/345, build OK |
+
+### F.3 Apply
+
+1. **Staging first:**
+   - apply the migration in two parts, ending part 1 with an interim RLS guard for the new tables (as in E.5);
+   - check RLS and grants, run the security advisor.
+2. **Back up production** to `supabase/backups/` (payments, payment_intents, hotel_settings).
+3. **Apply to production** the same way, and check the two cron jobs exist.
+4. **Scheduled sweep** (retries and the morning reminders when nobody is on the site):
+   - add a random `CRON_SECRET` to Vercel Production as Sensitive. Use `--value` and never pipe it (see the BOM gotcha);
+   - in Supabase, store the same value in the vault:
+     ```sql
+     create extension if not exists pg_net;
+     select vault.create_secret('<CRON_SECRET>', 'bsq_cron_secret');
+     select cron.schedule('bsq-message-sweep', '*/5 * * * *', $$
+       select net.http_post(
+         url := 'https://blossomsquare.online/api/jobs/messages',
+         headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'bsq_cron_secret')),
+         timeout_milliseconds := 55000)
+     $$);
+     ```
+5. **Deploy** the app.
+6. **Smoke test:**
+   - `/booking/manage` shows "Payments";
+   - `/api/jobs/messages` returns 401 without the secret;
+   - `/api/webhooks/email` and `/api/webhooks/whatsapp` return 503 (not configured);
+   - `/api/payments/card/webhook` returns 404 (not configured).
+
+### F.4 Roll back
+
+Redeploy the previous app version, then run the down file in one transaction. Also run `select cron.unschedule('bsq-message-sweep');` if the sweep was scheduled.
+
+### F.5 Production release: 18 Nov 2026
+
+1. **Staging** (`eayihyxelygfljulmmjp`): applied as `payments_and_messaging` + `payments_and_messaging_part2`, split before the Messaging section.
+   - Part 1 ends with an interim guard: RLS on its two tables, sequences revoked, execute revoked on all 18 functions it creates.
+   - Proven on PGlite that the split equals the single file, and that `anon` can't call `record_gateway_event` between the parts.
+   - Checks:
+     - RLS is on for all six new tables;
+     - the gateway recorder and worker are callable with the server key only;
+     - guests can report a transfer but not verify one;
+     - `confirm_hold` is still public;
+     - the jobs `bsq-payment-intents` and `bsq-pre-arrival` exist.
+   - Rolled-back smoke test:
+     - booking BSQ-53999 created;
+     - ৳1,000 bKash report accepted, and the same ID with spacing refused (`DUPLICATE_REFERENCE`);
+     - once confirmed: paid ৳1,000, receipt RCP-2026-000002, invoice INV-2026-00001, balance ৳6,000;
+     - booking-confirmation and payment-confirmation emails queued.
+2. **Backup:** `supabase/backups/2026-11-18-production-before-payments-and-messaging.json` (no payments, refunds or intents; 1 cancelled test booking).
+3. **Production:** the same two parts and the same checks. The Standard Couple 1-night quote is still ৳2,500.
+4. **Sweep:**
+   - `CRON_SECRET` added to Vercel Production (Sensitive);
+   - `pg_net` enabled, and vault secret `bsq_cron_secret` stored;
+   - `bsq-message-sweep` scheduled every 5 minutes;
+   - a manual `net.http_post` returned 200 `{"claimed":0,...}`.
+5. **App:** deployed to `blossomsquare.online`. Smoke test:
+   - public and guest pages return 200, and `/admin/payments` and `/admin/messages` redirect to sign-in;
+   - `/api/jobs/messages` returns 401 without or with a wrong secret;
+   - the email and WhatsApp webhooks return 503 (not configured), and WhatsApp verification with a wrong token returns 403;
+   - `/api/payments/card/webhook` returns 404 (not configured);
+   - a bKash return redirects 303 to `/booking/payment`.

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { updateRoomTypeDetails } from "@/app/admin/actions";
+import { updateRoomCopy, updateRoomTypeDetails } from "@/app/admin/actions";
 import { addAmenity, blockRoom, createRoomType, deleteSeason, releaseBlock, saveSeason, setAmenityActive, setRoomTypeAmenities } from "@/app/admin/operations";
 import type { AmenityRow, RoomBlock, SeasonalRate } from "@/lib/data/operations";
 import { formatTaka } from "@/lib/format";
@@ -100,17 +100,25 @@ export function NewRoomType() {
 
 export type TypeDetails = { id: string; name: string; tag: "SUITE" | "DELUXE"; bed: string; sleeps: number; view: string; size_sqft: number | null; blurb: string; description: string; features: string[] };
 
-export function RoomTypeDetailsForm({ initial, canEdit }: { initial: TypeDetails; canEdit: boolean }) {
+/**
+ * Room type details. `copyOnly` (content editors): only the wording — view,
+ * descriptions and features — is editable; name, beds, occupancy and size
+ * stay with managers.
+ */
+export function RoomTypeDetailsForm({ initial, canEdit, copyOnly = false }: { initial: TypeDetails; canEdit: boolean; copyOnly?: boolean }) {
   const router = useRouter();
   const [d, setD] = useState({ ...initial, size: initial.size_sqft ? String(initial.size_sqft) : "", sleepsText: String(initial.sleeps) });
   const [pending, start] = useTransition();
+  const locked = copyOnly || !canEdit;
   const save = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
-      const res = await updateRoomTypeDetails(initial.id, {
-        name: d.name, tag: d.tag, bed: d.bed, sleeps: Number(d.sleepsText), view: d.view, size_sqft: d.size ? Number(d.size) : null,
-        blurb: d.blurb, description: d.description, features: d.features,
-      });
+      const res = copyOnly
+        ? await updateRoomCopy(initial.id, { blurb: d.blurb, description: d.description, features: d.features, view: d.view })
+        : await updateRoomTypeDetails(initial.id, {
+            name: d.name, tag: d.tag, bed: d.bed, sleeps: Number(d.sleepsText), view: d.view, size_sqft: d.size ? Number(d.size) : null,
+            blurb: d.blurb, description: d.description, features: d.features,
+          });
       if (!res.ok) return void toast.error(res.message);
       toast.success(res.message ?? "Saved");
       router.refresh();
@@ -120,28 +128,28 @@ export function RoomTypeDetailsForm({ initial, canEdit }: { initial: TypeDetails
     <form onSubmit={save} className="a-panel">
       <div className="a-panel-head">
         <h2 className="a-h2">Details</h2>
-        <span className="a-hint">Shown on the room page and room cards</span>
+        <span className="a-hint">{copyOnly ? "You can edit the wording and features. Name, beds and occupancy are set by a manager." : "Shown on the room page and room cards"}</span>
       </div>
       <fieldset disabled={!canEdit || pending} className="a-panel-body a-grid-2" style={{ border: 0, margin: 0 }}>
         <label className="a-field a-span-2">
           <span className="a-label">Name</span>
-          <input className="a-input" value={d.name} maxLength={60} onChange={(e) => setD({ ...d, name: e.target.value })} required />
+          <input className="a-input" value={d.name} maxLength={60} disabled={locked} onChange={(e) => setD({ ...d, name: e.target.value })} required />
         </label>
         <label className="a-field">
           <span className="a-label">Category</span>
-          <select className="a-input" value={d.tag} onChange={(e) => setD({ ...d, tag: e.target.value as "SUITE" | "DELUXE" })}>
+          <select className="a-input" value={d.tag} disabled={locked} onChange={(e) => setD({ ...d, tag: e.target.value as "SUITE" | "DELUXE" })}>
             <option value="DELUXE">Room</option>
             <option value="SUITE">Suite</option>
           </select>
         </label>
         <label className="a-field">
           <span className="a-label">Sleeps (adults)</span>
-          <input className="a-input a-num" inputMode="numeric" value={d.sleepsText} onChange={(e) => setD({ ...d, sleepsText: digits(e.target.value) })} required />
+          <input className="a-input a-num" inputMode="numeric" value={d.sleepsText} disabled={locked} onChange={(e) => setD({ ...d, sleepsText: digits(e.target.value) })} required />
           <span className="a-hint">Occupancy limit used by the booking engine (plus one child per room).</span>
         </label>
         <label className="a-field">
           <span className="a-label">Beds</span>
-          <input className="a-input" value={d.bed} maxLength={80} onChange={(e) => setD({ ...d, bed: e.target.value })} required />
+          <input className="a-input" value={d.bed} maxLength={80} disabled={locked} onChange={(e) => setD({ ...d, bed: e.target.value })} required />
         </label>
         <label className="a-field">
           <span className="a-label">View</span>
@@ -149,7 +157,7 @@ export function RoomTypeDetailsForm({ initial, canEdit }: { initial: TypeDetails
         </label>
         <label className="a-field">
           <span className="a-label">Size (sq ft)</span>
-          <input className="a-input a-num" inputMode="numeric" value={d.size} onChange={(e) => setD({ ...d, size: digits(e.target.value) })} placeholder="Not shown" />
+          <input className="a-input a-num" inputMode="numeric" value={d.size} disabled={locked} onChange={(e) => setD({ ...d, size: digits(e.target.value) })} placeholder="Not shown" />
         </label>
         <label className="a-field a-span-2">
           <span className="a-label">One-line description</span>
@@ -186,7 +194,7 @@ export function RoomTypeDetailsForm({ initial, canEdit }: { initial: TypeDetails
         <div className="a-dialog-foot">
           <button type="submit" className="a-btn a-btn--primary" disabled={pending}>
             {pending && <span className="a-spin" aria-hidden="true" />}
-            Save details
+            {copyOnly ? "Save wording" : "Save details"}
           </button>
         </div>
       )}

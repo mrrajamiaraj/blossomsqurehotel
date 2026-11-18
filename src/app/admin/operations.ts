@@ -12,6 +12,7 @@ import { errorCode, errorMessage } from "@/lib/data/errors";
 import { OperationsRepo, type PromotionInput, type TaskKind, type TaskStatus } from "@/lib/data/operations";
 import type { PaymentMethod } from "@/lib/data/types";
 import { isISODate } from "@/lib/dates";
+import { kickOutbox } from "@/lib/messaging/worker";
 import { getSessionClient } from "@/lib/supabase";
 
 export type OpResult = { ok: true; message?: string; id?: string } | { ok: false; message: string };
@@ -30,6 +31,7 @@ async function op(permission: Permission, fn: (ops: OperationsRepo) => Promise<u
     revalidatePath("/admin", "layout");
     // Rates, offers and room setup show on the public site too.
     revalidatePath("/", "layout");
+    kickOutbox();
     return { ok: true, message, id: typeof value === "string" ? value : undefined };
   } catch (err) {
     return { ok: false, message: errorMessage(errorCode(err)) };

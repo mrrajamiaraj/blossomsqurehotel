@@ -21,6 +21,7 @@ import type {
   StaffRole,
 } from "@/lib/data/types";
 import { hotelToday, isISODate } from "@/lib/dates";
+import { kickOutbox } from "@/lib/messaging/worker";
 import { allow } from "@/lib/rate-limit";
 import { getServiceClient, getSessionClient, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -37,6 +38,7 @@ async function run(fn: () => Promise<unknown>, message?: string): Promise<Action
     const value = await fn();
     revalidatePath("/admin", "layout");
     revalidatePath("/", "layout");
+    kickOutbox(); // status changes, payments and edits may have queued guest messages
     return { ok: true, message, reference: typeof value === "string" ? value : undefined };
   } catch (err) {
     return { ok: false, message: errorMessage(errorCode(err)) };
@@ -303,8 +305,40 @@ async function findRoomType(repo: AdminRepo, id: string) {
   return (await repo.listRoomTypes({ includeUnpublished: true })).find((t) => t.id === id) ?? null;
 }
 
+/** Room wording and photos: managers (rooms.manage) and content editors (content.manage). */
+async function requireRoomCopy() {
+  const ctx = await requireAdmin();
+  if (!ctx.access.permissions.includes("rooms.manage") && !ctx.access.permissions.includes("content.manage")) return null;
+  return ctx;
+}
+
+/** Writes a gallery through the database function that checks every entry. */
+async function saveGallery(repo: AdminRepo, mode: string, roomTypeId: string, gallery: string[]) {
+  if (mode === "preview") return repo.updateRoomType(roomTypeId, { gallery });
+  const db = await getSessionClient();
+  const { error } = await db.rpc("admin_set_room_gallery", { p_type: roomTypeId, p_gallery: gallery });
+  if (error) throw new Error(error.message);
+}
+
+/** How a room type is described: one-liner, description, features, view. Not its name, beds, occupancy or price. */
+export async function updateRoomCopy(id: string, d: { blurb: string; description: string; features: string[]; view: string }): Promise<ActionResult> {
+  const ctx = await requireRoomCopy();
+  if (!ctx) return { ok: false, message: errorMessage("NOT_ALLOWED") };
+  if (!UUID_RE.test(id)) return { ok: false, message: errorMessage("NO_ROOM") };
+  const features = (Array.isArray(d.features) ? d.features : []).map((f) => text(f, 60)).filter(Boolean).slice(0, 16);
+  const copy = { blurb: text(d.blurb, 240), description: text(d.description, 1500), features, view: text(d.view, 40) };
+  if (ctx.mode === "preview") return run(() => ctx.repo.updateRoomType(id, copy), "Room wording saved");
+  return run(async () => {
+    const db = await getSessionClient();
+    const { error } = await db.rpc("admin_update_room_copy", { p_type: id, p_blurb: copy.blurb, p_description: copy.description, p_features: copy.features, p_view: copy.view });
+    if (error) throw new Error(error.message);
+  }, "Room wording saved — the website shows it now");
+}
+
 export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promise<ActionResult> {
-  const { mode, repo } = await requirePermission("rooms.manage");
+  const ctx = await requireRoomCopy();
+  if (!ctx) return { ok: false, message: errorMessage("NOT_ALLOWED") };
+  const { mode, repo } = ctx;
   if (mode === "preview") return { ok: false, message: "Photo uploads need Supabase. Connect it to add real photos." };
   if (!UUID_RE.test(roomTypeId)) return { ok: false, message: errorMessage("NO_ROOM") };
   const file = form.get("photo");
@@ -324,7 +358,7 @@ export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promi
     return { ok: false, message: "The photo couldn't be uploaded. Try again." };
   }
   const url = bucket.getPublicUrl(path).data.publicUrl;
-  const result = await run(() => repo.updateRoomType(roomTypeId, { gallery: [...type.gallery, url] }), "Photo added");
+  const result = await run(() => saveGallery(repo, mode, roomTypeId, [...type.gallery, url]), "Photo added");
   if (!result.ok) {
     await bucket.remove([path]);
     return result;
@@ -345,13 +379,15 @@ export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promi
  * the gallery are accepted; removed uploads are deleted from storage.
  */
 export async function setRoomGallery(roomTypeId: string, gallery: string[]): Promise<ActionResult> {
-  const { mode, repo } = await requirePermission("rooms.manage");
+  const ctx = await requireRoomCopy();
+  if (!ctx) return { ok: false, message: errorMessage("NOT_ALLOWED") };
+  const { mode, repo } = ctx;
   const type = await findRoomType(repo, roomTypeId);
   if (!type) return { ok: false, message: errorMessage("NO_ROOM") };
   const next = [...new Set(gallery.map((g) => String(g)))];
   if (!next.every((g) => type.gallery.includes(g))) return { ok: false, message: "Refresh the page and try again." };
 
-  const result = await run(() => repo.updateRoomType(roomTypeId, { gallery: next }), "Photos saved");
+  const result = await run(() => saveGallery(repo, mode, roomTypeId, next), "Photos saved");
   if (result.ok && mode === "live") {
     const prefix = photoUrlPrefix();
     const removed = type.gallery.filter((g) => !next.includes(g) && g.startsWith(prefix));

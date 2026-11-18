@@ -39,7 +39,13 @@ export default async function RoomsPage() {
           <p className="a-eyebrow">Inventory</p>
           <h1 className="a-title">Rooms &amp; rates</h1>
         </div>
-        {!manager && <p className="a-hint">Rates and room setup are managed by a manager. You can update housekeeping.</p>}
+        {!manager && (
+          <p className="a-hint">
+            {can(access, "content.manage")
+              ? "Rates and room setup are managed by a manager. Open a room type to edit its wording and photos."
+              : "Rates and room setup are managed by a manager. You can update housekeeping."}
+          </p>
+        )}
         {manager && mode === "live" && <NewRoomType />}
       </header>
 
@@ -72,7 +78,7 @@ export default async function RoomsPage() {
                 typeId={t.id}
                 name={t.name}
                 photos={t.gallery.map((ref) => ({ ref, src: photo(ref, "").src }))}
-                canEdit={manager}
+                canEdit={manager || can(access, "content.manage")}
               />
               <div className="a-panel-body" style={{ borderTop: "1px solid var(--a-line)", paddingTop: 12, paddingBottom: 12 }}>
                 <Link href={`/admin/rooms/${t.id}`} className="text-link" style={{ fontSize: "0.82rem", fontWeight: 500 }}>

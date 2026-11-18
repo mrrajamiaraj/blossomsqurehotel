@@ -114,7 +114,7 @@ export type BookingRequest = {
 export type BookingEvent = {
   id: number;
   booking_id: string;
-  kind: "created" | "status" | "room" | "modified" | "payment" | "details";
+  kind: "created" | "status" | "room" | "modified" | "payment" | "details" | "message" | "consent";
   detail: Record<string, unknown>;
   actor_name: string;
   created_at: string;
