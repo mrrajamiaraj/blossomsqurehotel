@@ -6,7 +6,7 @@
 //     TTFB, FCP, LCP, CLS, transferred bytes.
 //
 //   AUDIT_BASE=https://blossomsquare.online AUDIT_OUT=<dir> npx tsx scripts/e2e/prod-audit.mts
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import tls from "node:tls";
 import { Browser, sleep } from "./browser.mts";
@@ -148,6 +148,7 @@ const report = {
   cert,
   perf,
 };
+mkdirSync(OUT, { recursive: true });
 writeFileSync(path.join(OUT, "prod-audit.json"), JSON.stringify(report, null, 2));
 console.log(
   `\nCrawled ${pages.size} pages (${report.brokenPages.length} broken, ${report.redirects.length} redirects), ${assets.size} images (${report.brokenImages.length} broken).` +

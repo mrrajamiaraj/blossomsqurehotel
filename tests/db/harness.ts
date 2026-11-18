@@ -1,4 +1,4 @@
-// A disposable PostgreSQL (PGlite, in-process) with the parts of Supabase the
+﻿// A disposable PostgreSQL (PGlite, in-process) with the parts of Supabase the
 // migrations rely on: the anon / authenticated / service_role roles, auth.uid()
 // and auth.jwt() driven by request.jwt.claims, auth.users, auth.mfa_factors and
 // a minimal storage schema. Every migration in supabase/migrations is applied
@@ -93,9 +93,12 @@ $$;
 grant execute on all functions in schema storage to anon, authenticated, service_role;
 `;
 
+// Migrations that only manage Supabase platform extensions PGlite doesn't have.
+const PLATFORM_ONLY = new Set(["20261119110000_pg_net_extensions_schema.sql"]);
+
 export function migrationFiles(): string[] {
   return readdirSync(MIGRATIONS)
-    .filter((f) => /^\d{14}_.+\.sql$/.test(f))
+    .filter((f) => /^\d{14}_.+\.sql$/.test(f) && !PLATFORM_ONLY.has(f))
     .sort();
 }
 
