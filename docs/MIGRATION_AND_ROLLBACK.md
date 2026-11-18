@@ -317,3 +317,22 @@ Redeploy the previous app version, then run the down file in one transaction. It
 ### E.4 Roll back
 
 Redeploy the previous app version, then run the down file in one transaction.
+
+### E.5 Production release: 18 Nov 2026
+
+1. **Staging first** (`eayihyxelygfljulmmjp`): applied as `cms_and_operations` + `cms_and_operations_part2`.
+   - RLS is on for the three new tables; `anon` can't read media or drafts, or call staff and internal functions; `confirm_hold` is still public.
+   - The audit triggers are present and `_quote` prices correctly.
+   - The security advisor shows only the documented kinds of finding.
+2. **Backup:** `supabase/backups/2026-11-18-production-before-cms-and-operations.json` (12 rooms, 7 room types, settings, 1 cancelled test booking; no content, promotions, tasks or seasons).
+3. **Migration:** applied as `cms_and_operations` (20261118113708) and `cms_and_operations_part2` (20261118113854), split at `-- The full price of a reservation` (file line 758).
+   - Part 1 ends with an *interim guard*: RLS, table revokes and helper-function revokes taken from the end of the file, so the new tables were never open between the two parts.
+   - Part 2 repeats those statements unchanged, so the end state equals the file.
+4. **Checks on production:**
+   - same security results as staging;
+   - `bsq-booking-expiry` cron is still active;
+   - Standard Couple, 1 night on 20 Dec, is ৳2,500 (unchanged);
+   - `max_discount_percent` is 50.
+5. **App:** deployed to `blossomsquare.online`.
+   - All public pages return 200, and `/admin/*` redirects to sign-in.
+   - Over the public API: published content returns 200, while drafts, `media_assets` and `admin_promotion_usage` return 401.

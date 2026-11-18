@@ -389,24 +389,26 @@ describe("expiry and payments", () => {
 
   it("payment callbacks apply once, reject wrong amounts, and only the server may call them", async () => {
     const r = await book({ types: ["deluxe-couple"] });
-    expect(await rejects(as(db, anon, (q) => q("select public.create_payment_intent($1, 1000, 'testpay', 'intent-key-1')", [r.reference])))).toMatch(/permission denied/);
-    const intent = await as(db, service, async (q) => (await q<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 1000, 'testpay', 'intent-key-1') as i", [r.reference])).rows[0].i);
+    // Gateways must be offered in Settings (20261118230000).
+    await db.query("update hotel_settings set payment_methods = array['pay_at_hotel', 'card']");
+    expect(await rejects(as(db, anon, (q) => q("select public.create_payment_intent($1, 1000, 'card', 'intent-key-1')", [r.reference])))).toMatch(/permission denied/);
+    const intent = await as(db, service, async (q) => (await q<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 1000, 'card', 'intent-key-1') as i", [r.reference])).rows[0].i);
     // as() rolls back, so create it for real:
-    const i = (await one<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 1000, 'testpay', 'intent-key-2') as i", [r.reference])).i;
+    const i = (await one<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 1000, 'card', 'intent-key-2') as i", [r.reference])).i;
     expect(intent.intent_id).toBeTruthy();
-    const cb = (status: string, amount: number, ref = "PSP-1") => one<{ r: string }>("select public.apply_payment_callback('testpay', $1, $2, $3, $4) as r", [i.intent_id, ref, status, amount]);
+    const cb = (status: string, amount: number, ref = "PSP-1") => one<{ r: string }>("select public.apply_payment_callback('card', $1, $2, $3, $4) as r", [i.intent_id, ref, status, amount]);
     expect((await cb("succeeded", 1000)).r).toBe("applied");
     expect((await cb("succeeded", 1000)).r).toBe("duplicate");
     expect((await cb("failed", 1000)).r).toBe("ignored");
     expect((await one<{ paid: number }>("select amount_paid_bdt paid from bookings where reference = $1", [r.reference])).paid).toBe(1000);
 
-    const j = (await one<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 500, 'testpay', 'intent-key-3') as i", [r.reference])).i;
-    expect((await one<{ r: string }>("select public.apply_payment_callback('testpay', $1, 'PSP-2', 'succeeded', 499) as r", [j.intent_id])).r).toBe("mismatch");
-    const k = (await one<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 500, 'testpay', 'intent-key-4') as i", [r.reference])).i;
-    expect((await one<{ r: string }>("select public.apply_payment_callback('testpay', $1, 'PSP-3', 'failed', 500) as r", [k.intent_id])).r).toBe("applied");
+    const j = (await one<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 500, 'card', 'intent-key-3') as i", [r.reference])).i;
+    expect((await one<{ r: string }>("select public.apply_payment_callback('card', $1, 'PSP-2', 'succeeded', 499) as r", [j.intent_id])).r).toBe("mismatch");
+    const k = (await one<{ i: { intent_id: string } }>("select public.create_payment_intent($1, 500, 'card', 'intent-key-4') as i", [r.reference])).i;
+    expect((await one<{ r: string }>("select public.apply_payment_callback('card', $1, 'PSP-3', 'failed', 500) as r", [k.intent_id])).r).toBe("applied");
     expect((await one<{ paid: number }>("select amount_paid_bdt paid from bookings where reference = $1", [r.reference])).paid).toBe(1000);
     // Same idempotency key → the same intent.
-    expect((await one<{ i: { intent_id: string; replayed: boolean } }>("select public.create_payment_intent($1, 1000, 'testpay', 'intent-key-2') as i", [r.reference])).i)
+    expect((await one<{ i: { intent_id: string; replayed: boolean } }>("select public.create_payment_intent($1, 1000, 'card', 'intent-key-2') as i", [r.reference])).i)
       .toMatchObject({ intent_id: i.intent_id, replayed: true });
   });
 
