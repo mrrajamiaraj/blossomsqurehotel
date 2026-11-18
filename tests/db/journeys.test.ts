@@ -148,6 +148,8 @@ describe("guest journey: from the homepage to a cancelled booking", () => {
     const after = (await peek<{ available: number }>(anon, "select available from public.search_availability($1, $2, 2, 0, null) where room_type = 'deluxe-couple'", [IN(), OUT()]))[0].available;
     expect(after).toBe(before + 1);
     expect((await one<{ n: number }>("select count(*)::int n from message_outbox where booking_id = $1 and template = 'booking_cancellation'", [state.bookingId])).n).toBe(1);
+    // The date-change request closed with the booking (staff don't see a stale request).
+    expect((await one<{ status: string }>("select status from booking_requests where booking_id = $1 and kind = 'change'", [state.bookingId])).status).toBe("declined");
     // A cancelled booking can't be cancelled again.
     expect(await rejects(run(anon, "select public.guest_cancel($1, 'again')", [state.access]))).toMatch(/NOT_ALLOWED/);
   });
@@ -236,6 +238,22 @@ describe("staff journey: a walk-in from arrival to the revenue report", () => {
     expect(t.n).toBe(1);
     // A checked-out booking can't be checked in again.
     expect(await rejects(run(desk(), "select public.admin_set_status($1, 'checked_in', null)", [s.bookingId]))).toMatch(/BAD_TRANSITION/);
+  });
+
+  it("7b. a second check-out from the same uncleaned room doesn't duplicate its cleaning task; marking it clean closes it", async () => {
+    const ref = (await run<{ r: string }>(desk(), "select public.admin_create_reservation('[{\"room_type\":\"deluxe-couple\"}]'::jsonb, $1, $2, 2, 0, null, 'Back To Back', null, '+8801911000666', '', '', '', false, 'walk_in', 'confirmed', 'pay_at_hotel') as r", [today, plus(1)])).r;
+    const bid = (await one<{ id: string }>("select id from bookings where reference = $1", [ref])).id;
+    await run(desk(), "select public.admin_assign_room($1, $2)", [bid, s.roomId]);
+    await run(desk(), "select public.admin_set_status($1, 'checked_in', null)", [bid]);
+    await run(desk(), "select public.admin_set_status($1, 'checked_out', null)", [bid]);
+    const open = await one<{ n: number }>("select count(*)::int n from housekeeping_tasks where room_id = $1 and kind = 'clean' and status = 'open'", [s.roomId]);
+    expect(open.n).toBe(1);
+    await run(hk(), "update rooms set housekeeping = 'clean' where id = $1", [s.roomId]);
+    const left = await one<{ n: number; done: number }>(
+      "select count(*) filter (where status in ('open','in_progress'))::int n, count(*) filter (where status = 'done')::int done from housekeeping_tasks where room_id = $1 and kind = 'clean'",
+      [s.roomId],
+    );
+    expect(left).toEqual({ n: 0, done: 1 });
   });
 
   it("8. the manager's revenue figures add up (takings by method, invoice totals)", async () => {

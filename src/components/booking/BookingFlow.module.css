@@ -93,6 +93,9 @@
 
 .main {
   min-width: 0;
+  /* The step slide-in starts 32px to the side; don't let it widen the page on phones. */
+  overflow-x: clip;
+  overflow-clip-margin: 8px;
 }
 
 .stepBody {

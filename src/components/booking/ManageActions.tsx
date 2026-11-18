@@ -34,7 +34,9 @@ export default function ManageActions({ reference, today, checkIn, checkOut, can
   const [pending, start] = useTransition();
   const cancelAsked = openRequests.some((r) => r.kind === "cancel");
 
-  if (!canCancel && !canChange) return null;
+  // Keep the panel while it has something to say (e.g. "your booking is cancelled"
+  // stays on screen after the refresh removes the actions).
+  if (!canCancel && !canChange && !msg) return null;
 
   const doCancel = () =>
     start(async () => {

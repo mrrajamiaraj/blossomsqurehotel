@@ -46,6 +46,10 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+  // Structural CSP: no plugins, no <base> hijack, forms only to this site,
+  // no framing, upgrade stray http. (Script/style allow-lists with nonces
+  // are a later step: see docs/SECURITY.md.)
+  { key: "Content-Security-Policy", value: "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests" },
 ];
 
 const nextConfig: NextConfig = {
@@ -58,9 +62,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     // Vercel's image optimizer is a paid quota (it returned 402 and broke every
-    // photo). The photos in public/ are already web-sized and admin uploads are
-    // shrunk in the browser, so serve the files as they are.
-    unoptimized: true,
+    // photo). Instead, hotel photos have pre-generated WebP sizes
+    // (scripts/gen-photo-variants.mts) chosen by this loader; admin uploads are
+    // shrunk in the browser and served as they are.
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
     remotePatterns: supabaseHost
       ? [
           { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/room-photos/**" },
