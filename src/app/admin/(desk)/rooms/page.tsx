@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AddRoomForm, RoomPhotos, RoomTile, RoomTypeEditor } from "@/components/admin/RoomsEditors";
+import { MaintenanceBlocks, NewRoomType } from "@/components/admin/RoomTypeSetup";
+import { OperationsRepo, type RoomBlock } from "@/lib/data/operations";
+import { getSessionClient } from "@/lib/supabase";
 import { can } from "@/lib/access";
 import { requireAdmin } from "@/lib/admin/session";
 import { addDays, hotelToday } from "@/lib/dates";
@@ -9,12 +13,14 @@ import { WEEKEND_LABEL } from "@/lib/pricing";
 export const metadata: Metadata = { title: "Rooms & rates" };
 
 export default async function RoomsPage() {
-  const { repo, access } = await requireAdmin();
+  const { repo, access, mode } = await requireAdmin();
   const today = hotelToday();
-  const [types, rooms, tonight] = await Promise.all([
+  const canBlock = can(access, "maintenance.manage") && mode === "live";
+  const [types, rooms, tonight, blocks] = await Promise.all([
     repo.listRoomTypes({ includeUnpublished: true }),
     repo.listRooms(),
     repo.bookingsBetween(today, addDays(today, 1)),
+    canBlock ? new OperationsRepo(await getSessionClient()).blocks().catch((): RoomBlock[] => []) : Promise.resolve([] as RoomBlock[]),
   ]);
   const canRates = can(access, "rates.manage");
   const manager = can(access, "rooms.manage");
@@ -34,6 +40,7 @@ export default async function RoomsPage() {
           <h1 className="a-title">Rooms &amp; rates</h1>
         </div>
         {!manager && <p className="a-hint">Rates and room setup are managed by a manager. You can update housekeeping.</p>}
+        {manager && mode === "live" && <NewRoomType />}
       </header>
 
       <section aria-labelledby="types-h" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -67,6 +74,11 @@ export default async function RoomsPage() {
                 photos={t.gallery.map((ref) => ({ ref, src: photo(ref, "").src }))}
                 canEdit={manager}
               />
+              <div className="a-panel-body" style={{ borderTop: "1px solid var(--a-line)", paddingTop: 12, paddingBottom: 12 }}>
+                <Link href={`/admin/rooms/${t.id}`} className="text-link" style={{ fontSize: "0.82rem", fontWeight: 500 }}>
+                  Details, amenities &amp; seasonal rates →
+                </Link>
+              </div>
             </RoomTypeEditor>
           ))}
         </div>
@@ -98,7 +110,9 @@ export default async function RoomsPage() {
               note={r.service_note}
               occupant={occupant.get(r.id) ?? null}
               canManage={manager}
-            />
+            >
+              {canBlock && <MaintenanceBlocks roomId={r.id} number={r.number} blocks={blocks.filter((b) => b.room_id === r.id)} today={today} />}
+            </RoomTile>
           ))}
         </div>
       </section>

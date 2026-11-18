@@ -792,3 +792,90 @@
     display: none;
   }
 }
+
+/* ---------- Multi-room selection (booking engine) ---------- */
+
+.roomMulti {
+  grid-template-columns: 180px 1fr auto auto;
+  cursor: default;
+}
+.roomMulti:hover {
+  transform: none !important;
+}
+.roomOff {
+  opacity: 0.55;
+}
+.qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qtyBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  display: grid;
+  place-items: center;
+  color: var(--pine-800);
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+.qtyBtn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+@media (hover: hover) {
+  .qtyBtn:not(:disabled):hover {
+    background: var(--pine-800);
+    border-color: var(--pine-800);
+    color: var(--paper);
+  }
+}
+.qtyCount {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.holdNote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 0.92rem;
+  color: var(--pine-800);
+}
+.holdLate {
+  color: var(--rust);
+}
+.promoRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  margin-top: 28px;
+}
+.promoRow .input {
+  max-width: 220px;
+  text-transform: uppercase;
+}
+.discount {
+  color: var(--pine-800);
+}
+@media (max-width: 720px) {
+  .roomMulti {
+    grid-template-columns: 110px 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .roomMulti .roomPhoto {
+    grid-row: 1 / span 3;
+  }
+  .roomMulti .qty {
+    grid-column: 2;
+    grid-row: 3;
+    padding-bottom: 16px;
+  }
+}

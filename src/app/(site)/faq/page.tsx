@@ -1,22 +1,31 @@
 import Link from "next/link";
+import Accent from "@/components/cms/Accent";
 import ContactActions from "@/components/site/ContactActions";
 import CtaBand from "@/components/site/CtaBand";
 import FaqTabs from "@/components/site/FaqTabs";
 import PageHero from "@/components/site/PageHero";
-import { buildFaqs } from "@/lib/content/faq";
+import { getHotelInfo, getSection, hasCustom } from "@/lib/cms/content";
+import { seoMetadata } from "@/lib/cms/seo";
+import { buildFaqs, type FaqGroup } from "@/lib/content/faq";
 import { getSettings } from "@/lib/rooms";
-import { JsonLd, pageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata = pageMetadata({
-  title: "Questions & answers",
-  description: "Check-in times, breakfast, payment, airport transfers, parking and more at Blossom Square Hotel & Suites, Cox's Bazar.",
-  path: "/faq",
-});
+export async function generateMetadata() {
+  return seoMetadata("faq");
+}
+
+const slug = (s: string, i: number) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `topic-${i + 1}`;
 
 export default async function FaqPage() {
-  const groups = buildFaqs(await getSettings());
+  const settings = await getSettings();
+  const [c, custom, hotel] = await Promise.all([getSection("faq", settings), hasCustom("faq"), getHotelInfo()]);
+  // Until an editor publishes their own questions, the answers (with their
+  // links) follow Settings automatically.
+  const groups: FaqGroup[] = custom
+    ? c.groups.map((g, i) => ({ id: slug(g.title, i), title: g.title, items: g.items.map((x) => ({ q: x.q, a: x.a })) }))
+    : buildFaqs(settings, hotel);
   const faqLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -25,16 +34,7 @@ export default async function FaqPage() {
 
   return (
     <>
-      <PageHero
-        eyebrow="Help"
-        title={
-          <>
-            Questions, <em>answered.</em>
-          </>
-        }
-        lede="Everything guests usually ask before they arrive. Can't find yours? Our front desk is a call or a WhatsApp message away."
-        crumbs={[{ label: "Questions & answers" }]}
-      />
+      <PageHero eyebrow={c.hero_eyebrow} title={<Accent text={c.hero_title} />} lede={c.hero_lede} crumbs={[{ label: "Questions & answers" }]} />
 
       <section className="section pt-[clamp(48px,6vw,88px)]" aria-label="Questions">
         <div className="wrap grid gap-16 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

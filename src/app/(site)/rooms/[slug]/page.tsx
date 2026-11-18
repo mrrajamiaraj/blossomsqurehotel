@@ -13,7 +13,8 @@ import { featureIcon, ICONS } from "@/lib/amenities";
 import { getAvailability } from "@/lib/availability";
 import { hotelToday } from "@/lib/dates";
 import { formatTaka, roomKind } from "@/lib/format";
-import { HOTEL } from "@/lib/hotel";
+import { getHotelInfo, getSection } from "@/lib/cms/content";
+import { HOTEL as BUILT_IN } from "@/lib/hotel";
 import { taxNote, WEEKEND_LABEL } from "@/lib/pricing";
 import { getRoom, getRooms, getSettings, ratesOf } from "@/lib/rooms";
 import { JsonLd, SITE_URL } from "@/lib/seo";
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: room.name,
     description: room.blurb,
     alternates: { canonical: `/rooms/${room.slug}` },
-    openGraph: { title: `${room.name} · ${HOTEL.fullName}`, description: room.blurb, url: `/rooms/${room.slug}`, ...(cover ? { images: [{ url: cover }] } : {}) },
+    openGraph: { title: `${room.name} · ${BUILT_IN.fullName}`, description: room.blurb, url: `/rooms/${room.slug}`, ...(cover ? { images: [{ url: cover }] } : {}) },
   };
 }
 
@@ -56,7 +57,7 @@ export default async function RoomPage({ params, searchParams }: Props) {
 
   const today = hotelToday();
   const stay = parseStay(query, today);
-  const [rooms, settings] = await Promise.all([getRooms(), getSettings()]);
+  const [rooms, settings, HOTEL, policies] = await Promise.all([getRooms(), getSettings(), getHotelInfo(), getSection("policies")]);
   const availability = await getAvailability(rooms, stay.checkIn, stay.checkOut);
   // Closest in price first: the natural alternatives to this room.
   const others = rooms
@@ -80,7 +81,7 @@ export default async function RoomPage({ params, searchParams }: Props) {
     url: `${SITE_URL}/rooms/${room.slug}`,
     bed: room.bed,
     occupancy: { "@type": "QuantitativeValue", maxValue: room.sleeps, unitText: "guests" },
-    ...(photos[0]?.src ? { image: photos.filter((p) => p.src).map((p) => `${SITE_URL}${p.src}`) } : {}),
+    ...(photos[0]?.src ? { image: photos.filter((p) => p.src).map((p) => (p.src!.startsWith("https://") ? p.src : `${SITE_URL}${p.src}`)) } : {}),
     containedInPlace: { "@type": "Hotel", name: HOTEL.fullName, url: SITE_URL },
     offers: {
       "@type": "Offer",
@@ -166,8 +167,8 @@ export default async function RoomPage({ params, searchParams }: Props) {
             <div data-reveal="up">
               <Accordion
                 items={[
-                  { title: "Check-in", body: `From ${HOTEL.checkIn}. Early check-in on request, subject to availability.` },
-                  { title: "Check-out", body: `Until ${HOTEL.checkOut}. Late check-out on request.` },
+                  { title: "Check-in", body: `From ${HOTEL.checkIn}.${policies.check_in_note ? ` ${policies.check_in_note}` : ""}` },
+                  { title: "Check-out", body: `Until ${HOTEL.checkOut}.${policies.check_out_note ? ` ${policies.check_out_note}` : ""}` },
                   { title: "Cancellation", body: settings.cancellation_policy },
                   { title: "Children & extra beds", body: settings.children_policy },
                   {
@@ -178,7 +179,7 @@ export default async function RoomPage({ params, searchParams }: Props) {
                         : `${formatTaka(room.price_bdt)} a night.`,
                   },
                   { title: "Taxes", body: taxNote(settings) },
-                  { title: "Pets", body: "We're unable to accommodate pets." },
+                  ...policies.rules.map((r) => ({ title: r.title, body: r.body })),
                 ].filter((item) => item.body)}
               />
             </div>

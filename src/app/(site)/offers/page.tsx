@@ -6,44 +6,39 @@ import CtaBand from "@/components/site/CtaBand";
 import PageHero from "@/components/site/PageHero";
 import { Money } from "@/components/system/RoomCard";
 import SectionHeading from "@/components/system/SectionHeading";
-import { noPackagesYet, rateOffers } from "@/lib/content/offers";
+import Accent from "@/components/cms/Accent";
+import { getSection } from "@/lib/cms/content";
+import { seoMetadata } from "@/lib/cms/seo";
+import { rateOffers } from "@/lib/content/offers";
 import { roomKind } from "@/lib/format";
+import { liveOffers, packageOffers } from "@/lib/offers-live";
 import { WEEKEND_LABEL } from "@/lib/pricing";
 import { getRooms } from "@/lib/rooms";
-import { pageMetadata } from "@/lib/seo";
 
-// Rates come from Supabase; refresh with them.
+// Rates and offers come from Supabase; refresh with them.
 export const revalidate = 300;
 
-export const metadata = pageMetadata({
-  title: "Offers & packages",
-  description: "Book direct for our lowest rates and stay midweek for less at Blossom Square Hotel & Suites, Cox's Bazar.",
-  path: "/offers",
-});
+export async function generateMetadata() {
+  return seoMetadata("offers");
+}
+
+const RATE_BADGE: Record<string, string> = { direct: "Every day", midweek: "Sunday – Wednesday nights" };
 
 export default async function OffersPage() {
-  const [rooms, packages] = await Promise.all([getRooms(), noPackagesYet.getPackages()]);
-  const offers = [...rateOffers(rooms), ...packages];
+  const [rooms, c] = await Promise.all([getRooms(), getSection("offers")]);
+  const promos = await liveOffers(new Map(rooms.map((r) => [r.id, r.name])));
+  const offers = [...promos, ...rateOffers(rooms).map((o) => ({ ...o, badge: RATE_BADGE[o.id] })), ...packageOffers(c)];
 
   return (
     <>
-      <PageHero
-        eyebrow="Offers & packages"
-        title={
-          <>
-            The best rate <em>is the direct one.</em>
-          </>
-        }
-        lede="Every price on this page comes straight from today's room rates. No codes, no small print beyond what's written here."
-        crumbs={[{ label: "Offers" }]}
-      />
+      <PageHero eyebrow={c.hero_eyebrow} title={<Accent text={c.hero_title} />} lede={c.hero_lede} crumbs={[{ label: "Offers" }]} />
 
       <section className="section pt-[clamp(48px,6vw,88px)]" aria-label="Current offers">
         <div className="wrap grid gap-6 lg:grid-cols-2">
           {offers.map((o, i) => (
             <article key={o.id} className="flex flex-col gap-6 border border-line bg-ivory p-8 sm:p-12" data-reveal="up" style={{ "--d": `${i * 120}ms` } as React.CSSProperties} aria-labelledby={`${o.id}-h`}>
               <Badge tone="gold" className="w-fit">
-                {o.id === "direct" ? "Every day" : o.id === "midweek" ? "Sunday – Wednesday nights" : "Package"}
+                {o.badge ?? "Offer"}
               </Badge>
               <h2 id={`${o.id}-h`} className="h2 max-w-[16ch] [&_em]:text-bronze">
                 {o.title} {o.accent && <em>{o.accent}</em>}
@@ -70,7 +65,7 @@ export default async function OffersPage() {
           ))}
         </div>
         {offers.length === 0 && (
-          <p className="wrap text-ink-soft">There are no special offers right now. Our direct rates are always on the rooms page.</p>
+          <p className="wrap text-ink-soft">{c.empty_note}</p>
         )}
       </section>
 
@@ -132,9 +127,9 @@ export default async function OffersPage() {
       </section>
 
       <CtaBand
-        eyebrow="Groups & companies"
-        title={<>Travelling as a group? <em>Ask us.</em></>}
-        body="For family groups, company trips and event guests, send your dates and numbers and we'll come back with a quote for the whole party."
+        eyebrow={c.group_eyebrow}
+        title={<Accent text={c.group_title} />}
+        body={c.group_body}
         bookHref="/contact"
         bookLabel="Ask about a group stay"
         message="Hello, I'd like to ask about a group stay at Blossom Square."

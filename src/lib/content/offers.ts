@@ -14,6 +14,8 @@ import { WEEKEND_LABEL } from "../pricing";
  */
 export type Offer = {
   id: string;
+  /** Small label above the title, e.g. "Every day" or "Code SEA10". */
+  badge?: string;
   title: string;
   /** Accent phrase, set in italic. */
   accent?: string;

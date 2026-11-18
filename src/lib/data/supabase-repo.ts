@@ -9,6 +9,8 @@ import type {
   BookingChange,
   BookingEvent,
   BookingFilter,
+  BookingLine,
+  BookingRequest,
   BookingStatus,
   GuestBookingView,
   GuestDetails,
@@ -78,7 +80,7 @@ export class SupabaseRepo implements AdminRepo {
   async getSettings(): Promise<HotelSettings> {
     const res = await this.db
       .from("hotel_settings")
-      .select("cancellation_policy, children_policy, confirm_call_within, vat_percent, service_charge_percent")
+      .select("cancellation_policy, children_policy, confirm_call_within, vat_percent, service_charge_percent, advance_percent, max_discount_percent")
       .eq("id", 1)
       .maybeSingle();
     if (res.error || !res.data) return DEFAULT_SETTINGS;
@@ -87,6 +89,8 @@ export class SupabaseRepo implements AdminRepo {
       ...s,
       vat_percent: s.vat_percent == null ? null : Number(s.vat_percent),
       service_charge_percent: s.service_charge_percent == null ? null : Number(s.service_charge_percent),
+      advance_percent: s.advance_percent == null ? null : Number(s.advance_percent),
+      max_discount_percent: s.max_discount_percent == null ? 50 : Number(s.max_discount_percent),
     };
   }
 
@@ -282,6 +286,40 @@ export class SupabaseRepo implements AdminRepo {
 
   async assignRoom(id: string, roomId: string | null): Promise<void> {
     check(await this.db.rpc("admin_assign_room", { p_booking: id, p_room: sqlNull(roomId) }));
+  }
+
+  async linesBetween(from: string, to: string): Promise<BookingLine[]> {
+    return check(
+      await this.db
+        .from("booking_rooms")
+        .select("id, booking_id, line_no, room_type_id, room_id, check_in, check_out, active, subtotal_bdt")
+        .eq("active", true)
+        .lt("check_in", to)
+        .gt("check_out", from)
+        .order("line_no"),
+    ) as BookingLine[];
+  }
+
+  async assignRoomLine(lineId: string, roomId: string | null): Promise<void> {
+    check(await this.db.rpc("admin_assign_room_line", { p_line: lineId, p_room: sqlNull(roomId) }));
+  }
+
+  async autoAssign(id: string): Promise<number> {
+    return Number(check(await this.db.rpc("admin_auto_assign", { p_booking: id })));
+  }
+
+  async bookingRequests(bookingId: string): Promise<BookingRequest[]> {
+    return check(
+      await this.db
+        .from("booking_requests")
+        .select("id, booking_id, kind, status, detail, created_at, handled_at")
+        .eq("booking_id", bookingId)
+        .order("created_at", { ascending: false }),
+    ) as BookingRequest[];
+  }
+
+  async resolveRequest(requestId: string, status: "done" | "declined"): Promise<void> {
+    check(await this.db.rpc("admin_resolve_request", { p_request: requestId, p_status: status }));
   }
 
   async modifyBooking(id: string, c: BookingChange): Promise<void> {

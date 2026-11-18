@@ -22,27 +22,31 @@ export function pageMetadata({ title, description, path, image, noindex }: { tit
   };
 }
 
-/** schema.org Hotel, from the hotel's published facts only. */
-export function hotelJsonLd(opts: { image?: string | null; priceRange?: string | null } = {}) {
+type JsonLdHotel = { fullName: string; phones: readonly { href: string }[]; email: string; address: string; mapUrl: string };
+
+/** schema.org Hotel, from the hotel's published facts only (Website content → Contact details). */
+export function hotelJsonLd(opts: { image?: string | null; priceRange?: string | null; hotel?: JsonLdHotel } = {}) {
+  const h = opts.hotel ?? HOTEL;
+  const street = h.address.replace(/,\s*Cox'?s Bazar\s*$/i, "");
   return {
     "@context": "https://schema.org",
     "@type": "Hotel",
-    name: HOTEL.fullName,
+    name: h.fullName,
     url: SITE_URL,
-    telephone: HOTEL.phones.map((p) => p.href.replace("tel:", "")),
-    email: HOTEL.email,
+    telephone: h.phones.map((p) => p.href.replace("tel:", "")),
+    email: h.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "House 85, Block A, Light House Road, PWD R/A (Hotel Motel Zone), Kolatoli",
+      streetAddress: street,
       addressLocality: "Cox's Bazar",
       postalCode: "4700",
       addressCountry: "BD",
     },
-    hasMap: HOTEL.mapUrl,
+    hasMap: h.mapUrl,
     checkinTime: "13:00",
     checkoutTime: "11:00",
     petsAllowed: false,
-    ...(opts.image ? { image: `${SITE_URL}${opts.image}` } : {}),
+    ...(opts.image ? { image: opts.image.startsWith("https://") ? opts.image : `${SITE_URL}${opts.image}` } : {}),
     ...(opts.priceRange ? { priceRange: opts.priceRange } : {}),
     amenityFeature: ["Swimming pool", "Free Wi-Fi", "Free parking", "Breakfast included", "24-hour room service", "Restaurant"].map((name) => ({
       "@type": "LocationFeatureSpecification",

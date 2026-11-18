@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import AssignRoom from "@/components/admin/AssignRoom";
+import AssignRoom, { AutoAssign } from "@/components/admin/AssignRoom";
+import BookingRequests from "@/components/admin/BookingRequests";
 import { PaymentBadge, SOURCE_LABEL, StatusBadge } from "@/components/admin/badges";
 import { ChangeStay, EditGuest, PrintButton, RecordPayment } from "@/components/admin/BookingDialogs";
 import StatusActions from "@/components/admin/StatusActions";
@@ -12,8 +13,7 @@ import { requireAdmin } from "@/lib/admin/session";
 import { isLive } from "@/lib/data/rules";
 import { hotelToday, nightsBetween } from "@/lib/dates";
 import { formatTaka } from "@/lib/format";
-import { HOTEL } from "@/lib/hotel";
-import { priceBreakdown } from "@/lib/pricing";
+import { getHotelInfo } from "@/lib/cms/content";
 import styles from "./booking.module.css";
 
 type Props = { params: Promise<{ reference: string }> };
@@ -24,16 +24,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BookingPage({ params }: Props) {
   const { repo } = await requireAdmin();
+  const HOTEL = await getHotelInfo();
   const { reference } = await params;
   const booking = await repo.getBooking(decodeURIComponent(reference));
   if (!booking) notFound();
 
-  const [types, rooms, events, nearby, settings] = await Promise.all([
+  const [types, rooms, events, nearby, lines, requests] = await Promise.all([
     repo.listRoomTypes({ includeUnpublished: true }),
     repo.listRooms(),
     repo.bookingEvents(booking.id),
     repo.bookingsBetween(booking.check_in, booking.check_out),
-    repo.getSettings(),
+    repo.linesBetween(booking.check_in, booking.check_out),
+    repo.bookingRequests(booking.id),
   ]);
 
   const today = hotelToday();
@@ -42,8 +44,17 @@ export default async function BookingPage({ params }: Props) {
   const room = rooms.find((r) => r.id === b.room_id);
   const nights = nightsBetween(b.check_in, b.check_out);
   const balance = Math.max(0, b.total_bdt - b.amount_paid_bdt);
-  const bill = priceBreakdown(b.total_bdt, settings);
   const live = isLive(b.status);
+  // The booking's own price breakdown, stored when the engine priced it.
+  // total_bdt already includes service and VAT when the hotel had set them.
+  const subtotal = b.subtotal_bdt ?? b.total_bdt;
+  const discount = b.discount_bdt ?? 0;
+  const taxesPending = b.price_detail?.taxes_pending ?? true;
+  const myLines = lines.filter((l) => l.booking_id === b.id).sort((x, y) => (x.line_no ?? 0) - (y.line_no ?? 0));
+  const unassigned = myLines.some((l) => !l.room_id);
+  const multi = myLines.length > 1 || myLines.some((l) => l.room_type_id !== b.room_type_id);
+  const typeName = (id: string) => types.find((t) => t.id === id)?.name ?? "Room";
+  const advanceOwed = b.payment_option === "advance" && (b.advance_due_bdt ?? 0) > b.amount_paid_bdt;
 
   return (
     <div className={styles.page}>
@@ -71,7 +82,7 @@ export default async function BookingPage({ params }: Props) {
             status={b.status}
             guest={b.guest_name}
             balance={balance}
-            needsRoom={b.rooms === 1 && !b.room_id}
+            needsRoom={myLines.length ? unassigned : b.rooms === 1 && !b.room_id}
             arrivalFuture={b.check_in > today}
           />
           <PrintButton />
@@ -119,21 +130,54 @@ export default async function BookingPage({ params }: Props) {
                 </div>
               </div>
               <dl className="a-dl">
-                <dt>Room type</dt>
-                <dd>
-                  {type?.name}
-                  {b.rooms > 1 ? ` × ${b.rooms} rooms` : ""}
-                </dd>
-                <dt>Room</dt>
-                <dd>
-                  {b.rooms === 1 && live ? (
-                    <AssignRoom compact bookingId={b.id} value={b.room_id} options={roomOptions(b, rooms, nearby)} />
-                  ) : room ? (
-                    room.number
-                  ) : (
-                    <span className="a-muted">{b.rooms > 1 ? "Assign at the desk" : "—"}</span>
-                  )}
-                </dd>
+                {!multi ? (
+                  <>
+                    <dt>Room type</dt>
+                    <dd>{type?.name}</dd>
+                    <dt>Room</dt>
+                    <dd>
+                      {live ? (
+                        <AssignRoom compact bookingId={b.id} value={b.room_id} options={roomOptions(b, rooms, nearby, { lines })} />
+                      ) : room ? (
+                        room.number
+                      ) : (
+                        <span className="a-muted">—</span>
+                      )}
+                    </dd>
+                  </>
+                ) : (
+                  <>
+                    <dt>Rooms</dt>
+                    <dd>
+                      <ol role="list" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {myLines.map((l, i) => (
+                          <li key={l.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+                            <span style={{ minWidth: 150 }}>
+                              {i + 1}. {typeName(l.room_type_id)}
+                            </span>
+                            {live ? (
+                              <AssignRoom
+                                compact
+                                bookingId={b.id}
+                                lineId={l.id}
+                                label={`Room for line ${i + 1}`}
+                                value={l.room_id}
+                                options={roomOptions(b, rooms, nearby, { typeId: l.room_type_id, lineId: l.id, lines })}
+                              />
+                            ) : (
+                              <span className="a-muted">{rooms.find((r) => r.id === l.room_id)?.number ?? "—"}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                      {live && unassigned && (
+                        <div style={{ marginTop: 10 }}>
+                          <AutoAssign bookingId={b.id} />
+                        </div>
+                      )}
+                    </dd>
+                  </>
+                )}
                 <dt>Party</dt>
                 <dd>
                   {b.adults} {b.adults === 1 ? "adult" : "adults"}
@@ -197,6 +241,7 @@ export default async function BookingPage({ params }: Props) {
         </div>
 
         <div className={styles.col}>
+          <BookingRequests requests={requests} />
           <section className="a-panel" aria-labelledby="pay-h">
             <div className="a-panel-head">
               <h2 id="pay-h" className="a-h2">
@@ -211,23 +256,29 @@ export default async function BookingPage({ params }: Props) {
                     Room · {nights} {nights === 1 ? "night" : "nights"}
                     {b.rooms > 1 ? ` × ${b.rooms} rooms` : ""} · avg {formatTaka(b.nightly_rate_bdt)} / night
                   </dt>
-                  <dd>{formatTaka(b.total_bdt)}</dd>
+                  <dd>{formatTaka(subtotal)}</dd>
                 </div>
-                {bill.service != null && (
+                {discount > 0 && (
                   <div>
-                    <dt>Service charge ({settings.service_charge_percent}%)</dt>
-                    <dd>{formatTaka(bill.service)}</dd>
+                    <dt>Promotion{b.price_detail?.promotion ? ` ${b.price_detail.promotion.code}` : ""}</dt>
+                    <dd>−{formatTaka(discount)}</dd>
                   </div>
                 )}
-                {bill.vat != null && (
+                {b.price_detail?.service_charge_percent != null && (
                   <div>
-                    <dt>VAT ({settings.vat_percent}%)</dt>
-                    <dd>{formatTaka(bill.vat)}</dd>
+                    <dt>Service charge ({b.price_detail.service_charge_percent}%)</dt>
+                    <dd>{formatTaka(b.service_charge_bdt ?? 0)}</dd>
+                  </div>
+                )}
+                {b.price_detail?.vat_percent != null && (
+                  <div>
+                    <dt>VAT ({b.price_detail.vat_percent}%)</dt>
+                    <dd>{formatTaka(b.vat_bdt ?? 0)}</dd>
                   </div>
                 )}
                 <div className={styles.folioTotal}>
-                  <dt>{bill.taxesKnown ? "Total" : "Room total"}</dt>
-                  <dd>{formatTaka(bill.total)}</dd>
+                  <dt>{taxesPending ? "Room total" : "Total"}</dt>
+                  <dd>{formatTaka(b.total_bdt)}</dd>
                 </div>
                 <div>
                   <dt>Received</dt>
@@ -238,9 +289,15 @@ export default async function BookingPage({ params }: Props) {
                   <dd>{formatTaka(balance)}</dd>
                 </div>
               </dl>
-              {!bill.taxesKnown && (
+              {taxesPending && (
                 <p className="a-hint" style={{ marginTop: 10 }}>
-                  VAT and service charge rates aren&apos;t set yet — add them in Settings to show full totals.
+                  VAT and service charge weren&apos;t set when this booking was priced; add them to the bill at check-in.
+                </p>
+              )}
+              {b.payment_option === "advance" && (
+                <p className="a-hint" style={{ marginTop: 10 }}>
+                  Guest chose to pay a {formatTaka(b.advance_due_bdt ?? 0)} advance
+                  {advanceOwed && b.payment_due_at ? `, due by ${dateTime(b.payment_due_at)}; the booking is released automatically if nothing is received` : ""}.
                 </p>
               )}
             </div>

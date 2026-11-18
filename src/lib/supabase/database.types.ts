@@ -51,6 +51,38 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_access_tokens: {
+        Row: {
+          booking_id: string
+          created_at: string
+          expires_at: string
+          purpose: string
+          token_hash: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          expires_at: string
+          purpose?: string
+          token_hash: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          expires_at?: string
+          purpose?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_access_tokens_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_events: {
         Row: {
           actor: string | null
@@ -140,6 +172,114 @@ export type Database = {
           },
         ]
       }
+      booking_hold_rooms: {
+        Row: {
+          hold_id: string
+          id: string
+          line_no: number
+          rate_plan_id: string | null
+          room_type_id: string
+        }
+        Insert: {
+          hold_id: string
+          id?: string
+          line_no: number
+          rate_plan_id?: string | null
+          room_type_id: string
+        }
+        Update: {
+          hold_id?: string
+          id?: string
+          line_no?: number
+          rate_plan_id?: string | null
+          room_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_hold_rooms_hold_id_fkey"
+            columns: ["hold_id"]
+            isOneToOne: false
+            referencedRelation: "booking_holds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_hold_rooms_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_hold_rooms_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "room_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_holds: {
+        Row: {
+          adults: number
+          booking_id: string | null
+          check_in: string
+          check_out: string
+          children: number
+          created_at: string
+          expires_at: string
+          id: string
+          promo_code: string | null
+          quote: Json
+          source: string
+          status: string
+          token_hash: string
+          total_bdt: number
+          updated_at: string
+        }
+        Insert: {
+          adults: number
+          booking_id?: string | null
+          check_in: string
+          check_out: string
+          children?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          promo_code?: string | null
+          quote: Json
+          source?: string
+          status?: string
+          token_hash: string
+          total_bdt: number
+          updated_at?: string
+        }
+        Update: {
+          adults?: number
+          booking_id?: string | null
+          check_in?: string
+          check_out?: string
+          children?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          promo_code?: string | null
+          quote?: Json
+          source?: string
+          status?: string
+          token_hash?: string
+          total_bdt?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_holds_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_lookup_attempts: {
         Row: {
           created_at: string
@@ -158,6 +298,80 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_promotions: {
+        Row: {
+          booking_id: string
+          discount_bdt: number
+          promotion_id: string
+        }
+        Insert: {
+          booking_id: string
+          discount_bdt: number
+          promotion_id: string
+        }
+        Update: {
+          booking_id?: string
+          discount_bdt?: number
+          promotion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_promotions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_promotions_promotion_id_fkey"
+            columns: ["promotion_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_requests: {
+        Row: {
+          booking_id: string
+          created_at: string
+          detail: Json
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          kind: string
+          status: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          detail?: Json
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          kind: string
+          status?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          detail?: Json
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          kind?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_rooms: {
         Row: {
           active: boolean
@@ -166,8 +380,12 @@ export type Database = {
           check_out: string
           created_at: string
           id: string
+          line_no: number | null
+          price_detail: Json | null
+          rate_plan_id: string | null
           room_id: string | null
           room_type_id: string
+          subtotal_bdt: number | null
         }
         Insert: {
           active?: boolean
@@ -176,8 +394,12 @@ export type Database = {
           check_out: string
           created_at?: string
           id?: string
+          line_no?: number | null
+          price_detail?: Json | null
+          rate_plan_id?: string | null
           room_id?: string | null
           room_type_id: string
+          subtotal_bdt?: number | null
         }
         Update: {
           active?: boolean
@@ -186,8 +408,12 @@ export type Database = {
           check_out?: string
           created_at?: string
           id?: string
+          line_no?: number | null
+          price_detail?: Json | null
+          rate_plan_id?: string | null
           room_id?: string | null
           room_type_id?: string
+          subtotal_bdt?: number | null
         }
         Relationships: [
           {
@@ -195,6 +421,13 @@ export type Database = {
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_rooms_rate_plan_id_fkey"
+            columns: ["rate_plan_id"]
+            isOneToOne: false
+            referencedRelation: "rate_plans"
             referencedColumns: ["id"]
           },
           {
@@ -216,6 +449,7 @@ export type Database = {
       bookings: {
         Row: {
           adults: number
+          advance_due_bdt: number
           airport_pickup: boolean
           amount_paid_bdt: number
           arrival_window: string | null
@@ -229,28 +463,38 @@ export type Database = {
           confirmed_at: string | null
           country: string | null
           created_at: string
+          discount_bdt: number
           email: string | null
           guest_id: string | null
           guest_name: string
+          hold_id: string | null
           id: string
+          idempotency_key: string | null
           internal_notes: string | null
           nightly_rate_bdt: number
+          payment_due_at: string | null
+          payment_option: string
           payment_status: string
           phone: string
+          price_detail: Json | null
           promotion_id: string | null
           rate_plan_id: string | null
           reference: string
           room_id: string | null
           room_type_id: string
           rooms: number
+          service_charge_bdt: number
           source: string
           special_requests: string | null
           status: string
+          subtotal_bdt: number | null
           total_bdt: number
           updated_at: string
+          vat_bdt: number
         }
         Insert: {
           adults: number
+          advance_due_bdt?: number
           airport_pickup?: boolean
           amount_paid_bdt?: number
           arrival_window?: string | null
@@ -264,28 +508,38 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string
+          discount_bdt?: number
           email?: string | null
           guest_id?: string | null
           guest_name: string
+          hold_id?: string | null
           id?: string
+          idempotency_key?: string | null
           internal_notes?: string | null
           nightly_rate_bdt: number
+          payment_due_at?: string | null
+          payment_option?: string
           payment_status?: string
           phone: string
+          price_detail?: Json | null
           promotion_id?: string | null
           rate_plan_id?: string | null
           reference: string
           room_id?: string | null
           room_type_id: string
           rooms?: number
+          service_charge_bdt?: number
           source?: string
           special_requests?: string | null
           status?: string
+          subtotal_bdt?: number | null
           total_bdt: number
           updated_at?: string
+          vat_bdt?: number
         }
         Update: {
           adults?: number
+          advance_due_bdt?: number
           airport_pickup?: boolean
           amount_paid_bdt?: number
           arrival_window?: string | null
@@ -299,25 +553,34 @@ export type Database = {
           confirmed_at?: string | null
           country?: string | null
           created_at?: string
+          discount_bdt?: number
           email?: string | null
           guest_id?: string | null
           guest_name?: string
+          hold_id?: string | null
           id?: string
+          idempotency_key?: string | null
           internal_notes?: string | null
           nightly_rate_bdt?: number
+          payment_due_at?: string | null
+          payment_option?: string
           payment_status?: string
           phone?: string
+          price_detail?: Json | null
           promotion_id?: string | null
           rate_plan_id?: string | null
           reference?: string
           room_id?: string | null
           room_type_id?: string
           rooms?: number
+          service_charge_bdt?: number
           source?: string
           special_requests?: string | null
           status?: string
+          subtotal_bdt?: number | null
           total_bdt?: number
           updated_at?: string
+          vat_bdt?: number
         }
         Relationships: [
           {
@@ -325,6 +588,13 @@ export type Database = {
             columns: ["guest_id"]
             isOneToOne: false
             referencedRelation: "guests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_hold_fkey"
+            columns: ["hold_id"]
+            isOneToOne: false
+            referencedRelation: "booking_holds"
             referencedColumns: ["id"]
           },
           {
@@ -442,28 +712,40 @@ export type Database = {
       }
       hotel_settings: {
         Row: {
+          advance_due_hours: number
+          advance_percent: number | null
           cancellation_policy: string
           children_policy: string
           confirm_call_within: string
+          hold_minutes: number
           id: number
+          max_discount_percent: number
           service_charge_percent: number | null
           updated_at: string
           vat_percent: number | null
         }
         Insert: {
+          advance_due_hours?: number
+          advance_percent?: number | null
           cancellation_policy?: string
           children_policy?: string
           confirm_call_within?: string
+          hold_minutes?: number
           id?: number
+          max_discount_percent?: number
           service_charge_percent?: number | null
           updated_at?: string
           vat_percent?: number | null
         }
         Update: {
+          advance_due_hours?: number
+          advance_percent?: number | null
           cancellation_policy?: string
           children_policy?: string
           confirm_call_within?: string
+          hold_minutes?: number
           id?: number
+          max_discount_percent?: number
           service_charge_percent?: number | null
           updated_at?: string
           vat_percent?: number | null
@@ -581,6 +863,54 @@ export type Database = {
         }
         Relationships: []
       }
+      media_assets: {
+        Row: {
+          alt: string
+          bucket: string
+          bytes: number | null
+          created_at: string
+          created_by: string | null
+          folder: string
+          height: number | null
+          id: string
+          mime: string
+          path: string
+          updated_at: string
+          url: string
+          width: number | null
+        }
+        Insert: {
+          alt?: string
+          bucket: string
+          bytes?: number | null
+          created_at?: string
+          created_by?: string | null
+          folder?: string
+          height?: number | null
+          id?: string
+          mime: string
+          path: string
+          updated_at?: string
+          url: string
+          width?: number | null
+        }
+        Update: {
+          alt?: string
+          bucket?: string
+          bytes?: number | null
+          created_at?: string
+          created_by?: string | null
+          folder?: string
+          height?: number | null
+          id?: string
+          mime?: string
+          path?: string
+          updated_at?: string
+          url?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -614,12 +944,60 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_intents: {
+        Row: {
+          amount_bdt: number
+          booking_id: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          idempotency_key: string
+          provider: string
+          provider_ref: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_bdt: number
+          booking_id: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          idempotency_key: string
+          provider: string
+          provider_ref?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_bdt?: number
+          booking_id?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          idempotency_key?: string
+          provider?: string
+          provider_ref?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_intents_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount_bdt: number
           booking_id: string
           created_at: string
           id: string
+          intent_id: string | null
           method: string
           note: string | null
           received_at: string
@@ -635,6 +1013,7 @@ export type Database = {
           booking_id: string
           created_at?: string
           id?: string
+          intent_id?: string | null
           method: string
           note?: string | null
           received_at?: string
@@ -650,6 +1029,7 @@ export type Database = {
           booking_id?: string
           created_at?: string
           id?: string
+          intent_id?: string | null
           method?: string
           note?: string | null
           received_at?: string
@@ -668,10 +1048,20 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payments_intent_fkey"
+            columns: ["intent_id"]
+            isOneToOne: true
+            referencedRelation: "payment_intents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       promotions: {
         Row: {
+          auto_apply: boolean
+          bookable_from: string | null
+          bookable_until: string | null
           code: string | null
           created_at: string
           created_by: string | null
@@ -682,13 +1072,19 @@ export type Database = {
           id: string
           is_active: boolean
           is_public: boolean
+          max_discount_bdt: number | null
+          max_redemptions: number | null
           min_nights: number
           name: string
           room_type_ids: string[]
+          stackable: boolean
           starts_on: string
           updated_at: string
         }
         Insert: {
+          auto_apply?: boolean
+          bookable_from?: string | null
+          bookable_until?: string | null
           code?: string | null
           created_at?: string
           created_by?: string | null
@@ -699,13 +1095,19 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_public?: boolean
+          max_discount_bdt?: number | null
+          max_redemptions?: number | null
           min_nights?: number
           name: string
           room_type_ids?: string[]
+          stackable?: boolean
           starts_on: string
           updated_at?: string
         }
         Update: {
+          auto_apply?: boolean
+          bookable_from?: string | null
+          bookable_until?: string | null
           code?: string | null
           created_at?: string
           created_by?: string | null
@@ -716,9 +1118,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_public?: boolean
+          max_discount_bdt?: number | null
+          max_redemptions?: number | null
           min_nights?: number
           name?: string
           room_type_ids?: string[]
+          stackable?: boolean
           starts_on?: string
           updated_at?: string
         }
@@ -1206,6 +1611,10 @@ export type Database = {
       site_content: {
         Row: {
           body: Json
+          draft_body: Json | null
+          draft_title: string | null
+          draft_updated_at: string | null
+          draft_updated_by: string | null
           key: string
           locale: string
           published_at: string | null
@@ -1213,9 +1622,14 @@ export type Database = {
           title: string | null
           updated_at: string
           updated_by: string | null
+          version: number
         }
         Insert: {
           body?: Json
+          draft_body?: Json | null
+          draft_title?: string | null
+          draft_updated_at?: string | null
+          draft_updated_by?: string | null
           key: string
           locale?: string
           published_at?: string | null
@@ -1223,9 +1637,14 @@ export type Database = {
           title?: string | null
           updated_at?: string
           updated_by?: string | null
+          version?: number
         }
         Update: {
           body?: Json
+          draft_body?: Json | null
+          draft_title?: string | null
+          draft_updated_at?: string | null
+          draft_updated_by?: string | null
           key?: string
           locale?: string
           published_at?: string | null
@@ -1233,6 +1652,37 @@ export type Database = {
           title?: string | null
           updated_at?: string
           updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      site_content_versions: {
+        Row: {
+          body: Json
+          key: string
+          locale: string
+          published_at: string
+          published_by: string | null
+          title: string | null
+          version: number
+        }
+        Insert: {
+          body: Json
+          key: string
+          locale: string
+          published_at?: string
+          published_by?: string | null
+          title?: string | null
+          version: number
+        }
+        Update: {
+          body?: Json
+          key?: string
+          locale?: string
+          published_at?: string
+          published_by?: string | null
+          title?: string | null
+          version?: number
         }
         Relationships: []
       }
@@ -1293,83 +1743,251 @@ export type Database = {
       }
     }
     Functions: {
-      _clean_room_number: {
+      _assert_capacity:
+        | {
+        Args: { p_exclude_hold: string; p_in: string; p_out: string; p_types: string[] }
+        Returns: undefined
+      }
+      _booking_for_token:
+        | {
+        Args: { p_token: string }
+        Returns: string
+      }
+      _check_party:
+        | {
+        Args: { p_adults: number; p_children: number; p_types: string[] }
+        Returns: undefined
+      }
+      _clean_room_number:
+        | {
         Args: { p_number: string }
         Returns: string
       }
-      _free_units: {
+      _content_key_ok:
+        | {
+        Args: { p_key: string; p_locale: string }
+        Returns: undefined
+      }
+      _free_units:
+        | {
         Args: { p_exclude: string; p_in: string; p_out: string; p_type: string }
         Returns: number
       }
-      _guest_document_path_ok: {
+        | {
+        Args: { p_exclude: string; p_exclude_hold: string; p_in: string; p_out: string; p_type: string }
+        Returns: number
+      }
+      _guest_document_path_ok:
+        | {
         Args: { p_name: string }
         Returns: boolean
       }
-      _insert_booking: {
+      _hold_for:
+        | {
+        Args: { p_lock: boolean; p_token: string }
+        Returns: string
+      }
+      _insert_booking:
+        | {
         Args: { p_adults: number; p_airport_pickup: boolean; p_arrival_window: string; p_check_in: string; p_check_out: string; p_children: number; p_country: string; p_email: string; p_guest_name: string; p_internal_notes: string; p_phone: string; p_room_slug: string; p_rooms: number; p_source: string; p_special_requests: string; p_status: string }
         Returns: string
       }
-      _is_weekend_night: {
+      _is_weekend_night:
+        | {
         Args: { p_night: string }
         Returns: boolean
       }
-      _log: {
+      _lock_limited_promotions:
+        | {
+        Args: never
+        Returns: undefined
+      }
+      _lock_types:
+        | {
+        Args: { p_types: string[] }
+        Returns: undefined
+      }
+      _log:
+        | {
         Args: { p_booking: string; p_detail: Json; p_kind: string }
         Returns: undefined
       }
-      _notify: {
+      _mask_email:
+        | {
+        Args: { p: string }
+        Returns: string
+      }
+      _mask_phone:
+        | {
+        Args: { p: string }
+        Returns: string
+      }
+      _modify:
+        | {
+        Args: { p_adults: number; p_booking: string; p_check_in: string; p_check_out: string; p_children: number; p_keep_rates: boolean; p_plans: string[]; p_types: string[] }
+        Returns: undefined
+      }
+      _new_token:
+        | {
+        Args: never
+        Returns: string
+      }
+      _night_rate:
+        | {
+        Args: { p_night: string; p_plan: string; p_type: string }
+        Returns: Json
+      }
+      _notify:
+        | {
         Args: { p_body: string; p_kind: string; p_link: string; p_permission: string; p_title: string }
         Returns: undefined
       }
-      _recalc_paid: {
+      _promo_applies:
+        | {
+        Args: { p: string; p_exclude_booking: string; p_in: string; p_out: string; p_types: string[] }
+        Returns: string
+      }
+      _promo_discount:
+        | {
+        Args: { p: string; p_lines: Json }
+        Returns: number
+      }
+      _promotion_for:
+        | {
+        Args: { p_code: string; p_in: string; p_out: string; p_strict: boolean; p_types: string[] }
+        Returns: string
+      }
+      _quote:
+        | {
+        Args: { p_in: string; p_out: string; p_plans: string[]; p_promo: string; p_strict: boolean; p_types: string[] }
+        Returns: Json
+      }
+        | {
+        Args: { p_exclude_booking: string; p_in: string; p_out: string; p_plans: string[]; p_promo: string; p_strict: boolean; p_types: string[] }
+        Returns: Json
+      }
+      _recalc_paid:
+        | {
         Args: { p_booking: string }
         Returns: undefined
       }
-      _require: {
+      _record_promotions:
+        | {
+        Args: { p_booking: string; p_quote: Json }
+        Returns: undefined
+      }
+      _require:
+        | {
         Args: { p_permission: string }
         Returns: undefined
       }
-      _require_manager: {
+      _require_manager:
+        | {
         Args: never
         Returns: undefined
       }
-      _require_staff: {
+      _require_media:
+        | {
+        Args: { p_bucket: string }
+        Returns: undefined
+      }
+      _require_staff:
+        | {
         Args: never
         Returns: undefined
       }
-      _role_needs_mfa: {
+      _reserve:
+        | {
+        Args: { p_adults: number; p_arrival: string; p_check_in: string; p_check_out: string; p_children: number; p_country: string; p_email: string; p_exclude_hold: string; p_guest_name: string; p_idempotency_key: string; p_notes: string; p_payment_option: string; p_phone: string; p_pickup: boolean; p_plans: string[]; p_promo: string; p_requests: string; p_source: string; p_status: string; p_types: string[] }
+        Returns: string
+      }
+      _reserve_inventory:
+        | {
+        Args: { p_exclude: string; p_exclude_hold: string; p_in: string; p_out: string; p_types: string[] }
+        Returns: undefined
+      }
+      _resolve_lines:
+        | {
+        Args: { p_lines: Json; p_nights: number; p_public: boolean }
+        Returns: Json
+      }
+      _role_needs_mfa:
+        | {
         Args: { p_role: string }
         Returns: boolean
       }
-      _role_rank: {
+      _role_rank:
+        | {
         Args: { p_role: string }
         Returns: number
       }
-      _stay_total: {
+      _room_assignable:
+        | {
+        Args: { p_in: string; p_out: string; p_room: string; p_type: string }
+        Returns: undefined
+      }
+      _stay_total:
+        | {
         Args: { p_in: string; p_out: string; p_type: string }
         Returns: number
       }
-      _type_still_fits: {
+      _today:
+        | {
+        Args: never
+        Returns: string
+      }
+      _token_hash:
+        | {
+        Args: { p_token: string }
+        Returns: string
+      }
+      _transition:
+        | {
+        Args: { p_booking: string; p_reason: string; p_status: string }
+        Returns: undefined
+      }
+      _type_still_fits:
+        | {
         Args: { p_fewer: number; p_type: string }
         Returns: boolean
       }
-      _upsert_guest: {
+      _upsert_guest:
+        | {
         Args: { p_country: string; p_email: string; p_name: string; p_phone: string }
         Returns: string
       }
-      admin_add_review: {
+      _validate_stay:
+        | {
+        Args: { p_in: string; p_out: string }
+        Returns: undefined
+      }
+      admin_add_review:
+        | {
         Args: { p_author: string; p_body: string; p_rating: number; p_source: string; p_source_url: string; p_stayed_on: string; p_title: string }
         Returns: string
       }
-      admin_add_room: {
+      admin_add_room:
+        | {
         Args: { p_floor: string; p_number: string; p_room_type: string }
         Returns: string
       }
-      admin_assign_room: {
+      admin_assign_room:
+        | {
         Args: { p_booking: string; p_room: string }
         Returns: undefined
       }
-      admin_audit_log: {
+      admin_assign_room_line:
+        | {
+        Args: { p_line: string; p_room: string }
+        Returns: undefined
+      }
+      admin_assign_task:
+        | {
+        Args: { p_task: string; p_user: string }
+        Returns: undefined
+      }
+      admin_audit_log:
+        | {
         Args: { p_limit?: number; p_record?: string; p_table?: string }
         Returns: {
           action: string
@@ -1384,107 +2002,357 @@ export type Database = {
           table_name: string
         }[]
       }
-      admin_block_room: {
+      admin_auto_assign:
+        | {
+        Args: { p_booking: string }
+        Returns: number
+      }
+      admin_block_room:
+        | {
         Args: { p_from: string; p_reason: string; p_room: string; p_to: string }
         Returns: string
       }
-      admin_complete_refund: {
+      admin_complete_refund:
+        | {
         Args: { p_reference: string; p_refund: string }
         Returns: undefined
       }
-      admin_create_booking: {
+      admin_content_versions:
+        | {
+        Args: { p_key: string; p_locale: string }
+        Returns: {
+          body: Json
+          published_at: string
+          published_by: string
+          title: string
+          version: number
+        }[]
+      }
+      admin_create_booking:
+        | {
         Args: { p_adults: number; p_airport_pickup: boolean; p_check_in: string; p_check_out: string; p_children: number; p_country: string; p_email: string; p_guest_name: string; p_internal_notes: string; p_phone: string; p_room_slug: string; p_rooms: number; p_source: string; p_special_requests: string; p_status: string }
         Returns: string
       }
-      admin_create_task: {
+      admin_create_reservation:
+        | {
+        Args: { p_adults: number; p_check_in: string; p_check_out: string; p_children: number; p_country: string; p_email: string; p_guest_name: string; p_lines: Json; p_notes: string; p_payment_option: string; p_phone: string; p_pickup: boolean; p_promo: string; p_requests: string; p_source: string; p_status: string }
+        Returns: string
+      }
+      admin_create_room_type:
+        | {
+        Args: { p_bed: string; p_blurb: string; p_description: string; p_name: string; p_price: number; p_sleeps: number; p_tag: string; p_weekend_price: number }
+        Returns: string
+      }
+      admin_create_task:
+        | {
         Args: { p_assigned: string; p_due: string; p_kind: string; p_notes: string; p_priority?: number; p_room: string }
         Returns: string
       }
-      admin_decide_refund: {
+      admin_decide_refund:
+        | {
         Args: { p_approve: boolean; p_refund: string }
         Returns: undefined
       }
-      admin_delete_room: {
+      admin_delete_media:
+        | {
+        Args: { p_id: string }
+        Returns: string
+      }
+      admin_delete_promotion:
+        | {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      admin_delete_room:
+        | {
         Args: { p_room: string }
         Returns: undefined
       }
-      admin_moderate_review: {
+      admin_delete_seasonal_rate:
+        | {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      admin_discard_content_draft:
+        | {
+        Args: { p_key: string; p_locale: string }
+        Returns: undefined
+      }
+      admin_list_content:
+        | {
+        Args: never
+        Returns: {
+          body: Json
+          draft_body: Json
+          draft_title: string
+          draft_updated_at: string
+          draft_updated_by: string
+          key: string
+          locale: string
+          published_at: string
+          status: string
+          title: string
+          updated_at: string
+          version: number
+        }[]
+      }
+      admin_media_usage:
+        | {
+        Args: { p_id: string }
+        Returns: {
+          kind: string
+          label: string
+          ref: string
+        }[]
+      }
+      admin_moderate_review:
+        | {
         Args: { p_review: string; p_status: string }
         Returns: undefined
       }
-      admin_modify_booking: {
+      admin_modify_booking:
+        | {
         Args: { p_adults: number; p_booking: string; p_check_in: string; p_check_out: string; p_children: number; p_room_slug: string; p_rooms: number }
         Returns: undefined
       }
-      admin_record_payment: {
+      admin_modify_reservation:
+        | {
+        Args: { p_adults: number; p_booking: string; p_check_in: string; p_check_out: string; p_children: number; p_lines: Json }
+        Returns: undefined
+      }
+      admin_promotion_usage:
+        | {
+        Args: never
+        Returns: {
+          bookings: number
+          discount_bdt: number
+          promotion_id: string
+        }[]
+      }
+      admin_publish_content:
+        | {
+        Args: { p_base: string; p_key: string; p_locale: string }
+        Returns: number
+      }
+      admin_record_payment:
+        | {
         Args: { p_amount: number; p_booking: string; p_method: string; p_note: string }
         Returns: undefined
       }
-      admin_release_block: {
+      admin_register_media:
+        | {
+        Args: { p_alt: string; p_bucket: string; p_bytes: number; p_folder: string; p_height: number; p_mime: string; p_path: string; p_url: string; p_width: number }
+        Returns: string
+      }
+      admin_release_block:
+        | {
         Args: { p_block: string }
         Returns: undefined
       }
-      admin_request_refund: {
+      admin_replace_media:
+        | {
+        Args: { p_new: string; p_old: string }
+        Returns: string
+      }
+      admin_request_refund:
+        | {
         Args: { p_amount: number; p_booking: string; p_method: string; p_payment?: string; p_reason: string }
         Returns: string
       }
-      admin_set_inquiry_status: {
+      admin_resolve_request:
+        | {
+        Args: { p_request: string; p_status: string }
+        Returns: undefined
+      }
+      admin_restore_content_version:
+        | {
+        Args: { p_key: string; p_locale: string; p_version: number }
+        Returns: string
+      }
+      admin_run_booking_jobs:
+        | {
+        Args: never
+        Returns: Json
+      }
+      admin_save_content_draft:
+        | {
+        Args: { p_base: string; p_body: Json; p_key: string; p_locale: string; p_title: string }
+        Returns: string
+      }
+      admin_save_promotion:
+        | {
+        Args: { p: Json; p_id: string }
+        Returns: string
+      }
+      admin_save_seasonal_rate:
+        | {
+        Args: { p_active: boolean; p_ends: string; p_id: string; p_name: string; p_price: number; p_room_type: string; p_starts: string; p_weekend_price: number }
+        Returns: string
+      }
+      admin_set_inquiry_status:
+        | {
         Args: { p_inquiry: string; p_status: string }
         Returns: undefined
       }
-      admin_set_staff_active: {
+      admin_set_promotion_active:
+        | {
+        Args: { p_active: boolean; p_id: string }
+        Returns: undefined
+      }
+      admin_set_staff_active:
+        | {
         Args: { p_active: boolean; p_user: string }
         Returns: undefined
       }
-      admin_set_staff_role: {
+      admin_set_staff_role:
+        | {
         Args: { p_role: string; p_user: string }
         Returns: undefined
       }
-      admin_set_status: {
+      admin_set_status:
+        | {
         Args: { p_booking: string; p_reason?: string; p_status: string }
         Returns: undefined
       }
-      admin_update_guest_details: {
+      admin_update_guest_details:
+        | {
         Args: { p_airport_pickup: boolean; p_arrival_window: string; p_booking: string; p_email: string; p_guest_name: string; p_internal_notes: string; p_phone: string; p_special_requests: string }
         Returns: undefined
       }
-      admin_update_room_unit: {
+      admin_update_media:
+        | {
+        Args: { p_alt: string; p_folder: string; p_id: string }
+        Returns: undefined
+      }
+      admin_update_room_unit:
+        | {
         Args: { p_floor: string; p_number: string; p_room: string; p_room_type: string }
         Returns: undefined
       }
-      admin_update_task: {
+      admin_update_task:
+        | {
         Args: { p_notes?: string; p_status: string; p_task: string }
         Returns: undefined
       }
-      admin_upsert_staff: {
+      admin_upsert_staff:
+        | {
         Args: { p_full_name: string; p_role: string; p_user: string }
         Returns: undefined
       }
-      admin_void_payment: {
+      admin_void_payment:
+        | {
         Args: { p_payment: string; p_reason: string }
         Returns: undefined
       }
-      claim_guest_profile: {
+      apply_payment_callback:
+        | {
+        Args: { p_amount: number; p_intent: string; p_provider: string; p_provider_ref: string; p_status: string }
+        Returns: string
+      }
+      claim_guest_profile:
+        | {
         Args: never
         Returns: string
       }
-      create_booking: {
+      confirm_hold:
+        | {
+        Args: { p_airport_pickup: boolean; p_arrival: string; p_country: string; p_email: string; p_guest_name: string; p_idempotency_key: string; p_payment_option: string; p_phone: string; p_quoted_total: number; p_requests: string; p_token: string }
+        Returns: Json
+      }
+      create_booking:
+        | {
         Args: { p_adults: number; p_airport_pickup: boolean; p_arrival_window: string; p_check_in: string; p_check_out: string; p_children: number; p_country: string; p_email: string; p_guest_name: string; p_phone: string; p_room_slug: string; p_rooms: number; p_special_requests: string }
         Returns: string
       }
-      has_permission: {
+      create_hold:
+        | {
+        Args: { p_adults: number; p_check_in: string; p_check_out: string; p_children: number; p_lines: Json; p_promo?: string }
+        Returns: Json
+      }
+      create_payment_intent:
+        | {
+        Args: { p_amount: number; p_idempotency_key: string; p_provider: string; p_reference: string }
+        Returns: Json
+      }
+      expire_holds:
+        | {
+        Args: never
+        Returns: number
+      }
+      expire_overdue_bookings:
+        | {
+        Args: never
+        Returns: number
+      }
+      get_hold:
+        | {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      guest_booking:
+        | {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      guest_cancel:
+        | {
+        Args: { p_reason: string; p_token: string }
+        Returns: string
+      }
+      guest_request_change:
+        | {
+        Args: { p_check_in: string; p_check_out: string; p_note: string; p_token: string }
+        Returns: Json
+      }
+      has_permission:
+        | {
         Args: { p_permission: string }
         Returns: boolean
       }
-      is_manager: {
+      hold_apply_promo:
+        | {
+        Args: { p_promo: string; p_token: string }
+        Returns: Json
+      }
+      housekeeping_board:
+        | {
+        Args: { p_day?: string }
+        Returns: {
+          arriving: boolean
+          blocked: boolean
+          departing: boolean
+          floor: string
+          housekeeping: string
+          number: string
+          occupied: boolean
+          open_issues: number
+          open_tasks: number
+          out_of_service: boolean
+          room_id: string
+          room_type: string
+          service_note: string
+        }[]
+      }
+      housekeeping_staff:
+        | {
+        Args: never
+        Returns: {
+          full_name: string
+          user_id: string
+        }[]
+      }
+      is_manager:
+        | {
         Args: never
         Returns: boolean
       }
-      is_staff: {
+      is_staff:
+        | {
         Args: never
         Returns: boolean
       }
-      lookup_booking: {
+      lookup_booking:
+        | {
         Args: { p_contact: string; p_reference: string }
         Returns: {
           adults: number
@@ -1502,15 +2370,18 @@ export type Database = {
           total_bdt: number
         }[]
       }
-      mark_notifications_read: {
+      mark_notifications_read:
+        | {
         Args: { p_ids?: string[] }
         Returns: number
       }
-      my_access: {
+      my_access:
+        | {
         Args: never
         Returns: Json
       }
-      my_bookings: {
+      my_bookings:
+        | {
         Args: never
         Returns: {
           adults: number
@@ -1527,28 +2398,64 @@ export type Database = {
           total_bdt: number
         }[]
       }
-      room_availability: {
+      release_hold:
+        | {
+        Args: { p_token: string }
+        Returns: undefined
+      }
+      report_maintenance_issue:
+        | {
+        Args: { p_room: string; p_summary: string; p_urgent: boolean }
+        Returns: string
+      }
+      room_availability:
+        | {
         Args: { p_check_in: string; p_check_out: string }
         Returns: {
           available: number
           slug: string
         }[]
       }
-      staff_role: {
+      search_availability:
+        | {
+        Args: { p_adults: number; p_check_in: string; p_check_out: string; p_children: number; p_promo?: string }
+        Returns: {
+          available: number
+          discount: number
+          name: string
+          nights: number
+          quote: Json
+          room_type: string
+          sleeps: number
+          subtotal: number
+          tag: string
+          total: number
+        }[]
+      }
+      staff_role:
+        | {
         Args: never
         Returns: string
       }
-      submit_event_inquiry: {
+      submit_event_inquiry:
+        | {
         Args: { p_budget: number; p_catering: boolean; p_email: string; p_event_date: string; p_event_type: string; p_guests: number; p_message: string; p_name: string; p_phone: string; p_rooms: number; p_space: string }
         Returns: string
       }
-      submit_inquiry: {
+      submit_inquiry:
+        | {
         Args: { p_email: string; p_event_date: string; p_guests: number; p_kind: string; p_message: string; p_name: string; p_phone: string }
         Returns: string
       }
-      submit_review: {
+      submit_review:
+        | {
         Args: { p_body: string; p_contact: string; p_rating: number; p_reference: string; p_title: string }
         Returns: undefined
+      }
+      verify_booking_access:
+        | {
+        Args: { p_contact: string; p_reference: string }
+        Returns: Json
       }
     }
     Enums: {

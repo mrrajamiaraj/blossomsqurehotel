@@ -1,5 +1,6 @@
+import { DEFAULT_HOTEL_INFO, type HotelInfo } from "../cms/hotel-info";
 import type { HotelSettings } from "../data/types";
-import { HOTEL, PAYMENT_METHODS, WHATSAPP } from "../hotel";
+import { PAYMENT_METHODS } from "../hotel";
 import { taxNote, WEEKEND_LABEL } from "../pricing";
 
 export type Faq = { q: string; a: string; link?: { label: string; href: string } };
@@ -12,8 +13,8 @@ const methods = PAYMENT_METHODS.map((m) => ({ bkash: "bKash", nagad: "Nagad", ba
  * policies managers keep in Admin → Settings. A policy left blank in Settings
  * gets a "please ask us" answer rather than an invented one.
  */
-export function buildFaqs(settings: HotelSettings): FaqGroup[] {
-  const call = `call ${HOTEL.phones[0].display} or WhatsApp ${WHATSAPP.display}`;
+export function buildFaqs(settings: HotelSettings, HOTEL: HotelInfo = DEFAULT_HOTEL_INFO): FaqGroup[] {
+  const call = `call ${HOTEL.phones[0]?.display ?? "the front desk"} or WhatsApp ${HOTEL.whatsapp.display}`;
   return [
     {
       id: "booking",

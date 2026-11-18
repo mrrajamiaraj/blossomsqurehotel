@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/Toaster";
 import type { InquiryKind } from "@/lib/data/types";
 import { INQUIRY_KINDS, inquiryText, validateInquiry, type InquiryErrors, type InquiryForm as Form } from "@/lib/guest-services";
-import { HOTEL, WHATSAPP } from "@/lib/hotel";
+import { useHotelInfo } from "@/components/cms/HotelInfo";
 import { cn } from "@/lib/utils";
 import { Chat, Check, Mail } from "../icons";
 
@@ -31,6 +31,8 @@ type Props = {
  * success is shown that didn't happen.
  */
 export default function InquiryForm({ today, defaultKind = "general", kinds, title = "Send us a message", className }: Props) {
+  const HOTEL = useHotelInfo();
+  const WHATSAPP = HOTEL.whatsapp;
   const [form, setForm] = useState<Form>({ kind: defaultKind, name: "", email: "", phone: "", message: "", eventDate: "", guests: "", website: "" });
   const [errors, setErrors] = useState<InquiryErrors>({});
   const [sent, setSent] = useState<{ reference: string; preview: boolean } | null>(null);
@@ -78,7 +80,7 @@ export default function InquiryForm({ today, defaultKind = "general", kinds, tit
         <h2 className="h3 mt-6">Thank you{first ? `, ${first}` : ""}.</h2>
         <p className="mt-3 max-w-[48ch] text-ink-soft">
           We&apos;ve received your message (reference <strong className="font-semibold text-ink">{sent.reference}</strong>). Our team replies by phone or email,
-          usually the same day. For anything urgent, call {HOTEL.phones[0].display}.
+          usually the same day. For anything urgent, call {HOTEL.phones[0]?.display ?? "the front desk"}.
         </p>
         {sent.preview && <p className="mt-4 text-sm text-muted-foreground">Preview mode: saved to local preview data only.</p>}
       </div>

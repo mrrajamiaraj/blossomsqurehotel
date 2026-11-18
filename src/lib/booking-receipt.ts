@@ -1,38 +1,36 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { isISODate } from "./dates";
 
 /**
- * After a website booking succeeds, the server sets a short-lived, httpOnly
- * cookie so /booking/confirmation can show *that* booking — looked up from
- * the database with the reference and phone — without putting either in the
- * URL. The snapshot is only what the database already accepted; it is used
- * as a fallback when the lookup function isn't available yet.
+ * Booking cookies. All are httpOnly (page scripts can't read them), scoped to
+ * /booking, and carry only random tokens the database hashes and checks:
+ *
+ *  - bsq_hold    the rooms held while the guest checks out (15 minutes).
+ *  - bsq_booking the receipt after confirming: reference + a private token
+ *                that lets /booking/confirmation read the booking back (2 h).
+ *  - bsq_manage  set after "Find my booking" verifies reference + contact
+ *                (30 minutes, matching the token's life in the database).
+ *
+ * A booking reference alone never opens anything.
  */
 export const RECEIPT_COOKIE = "bsq_booking";
-const MAX_AGE = 2 * 60 * 60;
+const HOLD_COOKIE = "bsq_hold";
+const MANAGE_COOKIE = "bsq_manage";
 
-export type Receipt = {
-  reference: string;
-  phone: string;
-  firstName: string;
-  room: string;
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  children: number;
-  rooms: number;
-  preview: boolean;
-};
+const TOKEN_RE = /^[0-9a-f]{64}$/;
+
+const base = (maxAge: number) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/booking",
+  maxAge,
+});
+
+export type Receipt = { reference: string; firstName: string; token: string; preview: boolean };
 
 export async function setReceipt(r: Receipt) {
-  (await cookies()).set(RECEIPT_COOKIE, Buffer.from(JSON.stringify(r)).toString("base64url"), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/booking",
-    maxAge: MAX_AGE,
-  });
+  (await cookies()).set(RECEIPT_COOKIE, Buffer.from(JSON.stringify(r)).toString("base64url"), base(2 * 60 * 60));
 }
 
 export async function readReceipt(): Promise<Receipt | null> {
@@ -40,15 +38,30 @@ export async function readReceipt(): Promise<Receipt | null> {
   if (!raw) return null;
   try {
     const r = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as Receipt;
-    const ok =
-      /^BSQ-\d{5}$/.test(r.reference) &&
-      typeof r.phone === "string" &&
-      typeof r.room === "string" &&
-      isISODate(r.checkIn) &&
-      isISODate(r.checkOut) &&
-      [r.adults, r.children, r.rooms].every((n) => Number.isInteger(n) && n >= 0 && n < 100);
-    return ok ? { ...r, firstName: String(r.firstName ?? "").slice(0, 60), preview: Boolean(r.preview) } : null;
+    if (!/^BSQ-\d{5}$/.test(r.reference) || !TOKEN_RE.test(r.token)) return null;
+    return { reference: r.reference, token: r.token, firstName: String(r.firstName ?? "").slice(0, 60), preview: Boolean(r.preview) };
   } catch {
     return null;
   }
+}
+
+async function readToken(name: string): Promise<string | null> {
+  const v = (await cookies()).get(name)?.value ?? "";
+  return TOKEN_RE.test(v) ? v : null;
+}
+
+export const readHoldToken = () => readToken(HOLD_COOKIE);
+export async function setHoldToken(token: string) {
+  (await cookies()).set(HOLD_COOKIE, token, base(60 * 60));
+}
+export async function clearHoldToken() {
+  (await cookies()).delete({ name: HOLD_COOKIE, path: "/booking" });
+}
+
+export const readManageToken = () => readToken(MANAGE_COOKIE);
+export async function setManageToken(token: string) {
+  (await cookies()).set(MANAGE_COOKIE, token, base(30 * 60));
+}
+export async function clearManageToken() {
+  (await cookies()).delete({ name: MANAGE_COOKIE, path: "/booking" });
 }

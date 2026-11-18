@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { RESERVATIONS } from "@/lib/hotel";
+import { useHotelInfo } from "@/components/cms/HotelInfo";
 import type { Photo } from "@/lib/photos";
 import { Monogram, Phone } from "../icons";
 import MenuOverlay from "./MenuOverlay";
@@ -21,6 +21,7 @@ const QUICK_LINKS = [
 
 export default function Header({ menuPhotos }: { menuPhotos: Photo[] }) {
   const pathname = usePathname();
+  const phone = useHotelInfo().phones[0];
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -104,10 +105,12 @@ export default function Header({ menuPhotos }: { menuPhotos: Photo[] }) {
 
           <div className={styles.right}>
             <ThemeToggle />
-            <a href={RESERVATIONS.href} className={styles.call}>
-              <Phone size={16} />
-              <span className={styles.callText}>{RESERVATIONS.display}</span>
-            </a>
+            {phone && (
+              <a href={phone.href} className={styles.call}>
+                <Phone size={16} />
+                <span className={styles.callText}>{phone.display}</span>
+              </a>
+            )}
             <Link href="/booking" className={`btn btn--sm ${styles.book}`}>
               <span>
                 Book<span className={styles.bookMore}> a stay</span>

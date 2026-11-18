@@ -48,6 +48,35 @@ const MESSAGES: Record<string, string> = {
   ALREADY_REVIEWED: "This stay has already been reviewed. Thank you!",
   AUDIT_IMMUTABLE: "The audit log can't be changed.",
   UNAVAILABLE: "This isn't available online yet. Please call or WhatsApp us and we'll help straight away.",
+  TOO_FAR: "We take online bookings up to a year ahead. For later dates, please call us.",
+  NO_RATE_PLAN: "That rate isn't available for this room. Please choose another.",
+  RATE_PLAN_NIGHTS: "That rate needs a different length of stay.",
+  TOO_MANY_ROOMS: "You can book up to 5 rooms online. For more, please call us about a group booking.",
+  BAD_GUEST: "Please check the guest's name, mobile number and requests.",
+  PROMO_INVALID: "That promo code isn't valid. Check the spelling, or continue without it.",
+  PROMO_NOT_APPLICABLE: "That promo code doesn't apply to these dates or rooms.",
+  PROMO_EXHAUSTED: "That promo code has been fully used.",
+  HOLD_NOT_FOUND: "We couldn't find your room selection. Please choose your rooms again.",
+  HOLD_EXPIRED: "Your rooms were held for 15 minutes and that time has passed. Please choose them again; we'll check they're still free.",
+  PRICE_CHANGED: "The price for these dates has just changed. Please review the new total before confirming.",
+  BAD_IDEMPOTENCY_KEY: "Something went wrong. Please refresh the page and try again.",
+  IDEMPOTENCY_CONFLICT: "This request was already used for another booking. Please refresh the page and try again.",
+  BAD_PAYMENT_OPTION: "Please choose how you'd like to pay.",
+  ACCESS_EXPIRED: "For your privacy, this page has expired. Look up your booking again with your reference and phone or email.",
+  ROOM_BLOCKED: "That room is blocked for maintenance on some of these nights.",
+  CAPACITY_BREACH: "Those rooms were just taken. Please choose again.",
+  CONTENT_CONFLICT: "Someone else saved this section after you opened it. Reload to see their changes, then make yours again.",
+  NOTHING_TO_PUBLISH: "There are no unpublished changes to publish.",
+  BAD_CONTENT: "Some of this content isn't valid. Check the highlighted fields.",
+  MEDIA_IN_USE: "This image is still used on the website. Replace it, or remove it from those pages first.",
+  BAD_MEDIA: "Upload a JPEG, PNG, WebP or AVIF image under 10 MB.",
+  BAD_ROOM_TYPE: "Give the room type a name (3–60 characters), a bed description, sleeps 1–10 and a rate between ৳500 and ৳1,000,000.",
+  SEASON_OVERLAP: "Another active season already covers some of those nights for this room type. Change the dates or switch the other season off.",
+  BAD_SEASON: "Give the season a name, an end date after the start (up to a year), and a rate between ৳500 and ৳1,000,000.",
+  BAD_PROMO: "Check the offer: a name, a discount (percent up to 90%), and an end date after the start.",
+  PROMO_CODE_TAKEN: "Another offer already uses that code. Choose a different code.",
+  PROMO_IN_USE: "Guests have already booked with this offer, so it can't be deleted. Switch it off instead.",
+  BAD_ROOM_DETAILS: "Check the room details: a name, a bed description, and sleeps 1–10.",
 };
 
 /** PostgREST / Postgres wording when a function or table hasn't been created yet. */
@@ -61,7 +90,10 @@ export function errorMessage(code: string): string {
 export function errorCode(err: unknown): string {
   if (err instanceof RepoError) return err.code;
   const text = err instanceof Error ? err.message : String(err);
-  const known = Object.keys(MESSAGES).find((code) => text.includes(code));
+  // Longest first: "ROOM_BLOCKED" contains "LOCKED", "HOLD_NOT_FOUND" contains "NOT_FOUND".
+  const known = Object.keys(MESSAGES)
+    .sort((a, b) => b.length - a.length)
+    .find((code) => text.includes(code));
   if (known) return known;
   return MISSING_OBJECT.test(text) ? "UNAVAILABLE" : "UNKNOWN";
 }

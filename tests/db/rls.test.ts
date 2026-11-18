@@ -96,8 +96,19 @@ describe("structure", () => {
       where grantee = 'anon' and table_schema = 'public' order by 1, 2`);
     expect(rows.filter((r) => r.privilege_type !== "SELECT")).toEqual([]);
     expect([...new Set(rows.map((r) => r.table_name))].sort()).toEqual(
-      ["amenities", "hotel_settings", "promotions", "rate_plans", "room_images", "room_type_amenities", "room_types", "site_content"].sort(),
+      ["amenities", "hotel_settings", "promotions", "rate_plans", "room_images", "room_type_amenities", "room_types"].sort(),
     );
+  });
+
+  it("visitors and signed-in non-editors read only the published columns of site content, never drafts", async () => {
+    for (const role of ["anon", "authenticated"]) {
+      const { rows } = await db.query<{ column_name: string; privilege_type: string }>(
+        `select column_name, privilege_type from information_schema.column_privileges where grantee = $1 and table_name = 'site_content'`,
+        [role],
+      );
+      expect(rows.every((r) => r.privilege_type === "SELECT"), role).toBe(true);
+      expect(rows.map((r) => r.column_name).sort(), role).toEqual(["body", "key", "locale", "published_at", "status", "title", "version"]);
+    }
   });
 
   it("anon can read only the public columns of reviews", async () => {
@@ -170,7 +181,8 @@ describe("anonymous visitor", () => {
   it("sees only approved reviews and published content", () =>
     as(db, anon, async (q) => {
       expect((await q("select id, author_name, body from reviews")).rows).toEqual([]);
-      expect((await q("select * from site_content")).rows).toEqual([]);
+      expect((await q("select key, body from site_content")).rows).toEqual([]);
+      expect(await rejects(q("select draft_body from site_content"))).toMatch(/permission denied/);
     }));
 
   it("can't review a stay that isn't finished, or with the wrong contact", async () => {
@@ -314,8 +326,10 @@ describe("housekeeping", () => {
 describe("content editor", () => {
   it("publishes content and moderates reviews, nothing operational", () =>
     as(db, user(id.editor), async (q) => {
-      await q("insert into site_content (key, title, body, status) values ('home.hero', 'Hello', '{}', 'published')");
-      await q("insert into site_content (key, title, body) values ('home.draft', 'Draft', '{}')");
+      const base = await one<{ t: string }>(q, "select public.admin_save_content_draft('home.hero', 'en', 'Hello', '{\"title\":\"Hi\"}', null) as t");
+      await q("select public.admin_publish_content('home.hero', 'en', $1)", [base.t]);
+      await q("select public.admin_save_content_draft('home.draft', 'en', 'Draft', '{}', null)");
+      expect(await rejects(q("insert into site_content (key, title, body, status) values ('x.y', 'X', '{}', 'published')"))).toMatch(/permission denied/);
       expect((await q("select * from bookings")).rows).toEqual([]);
       expect((await q("update room_types set price_bdt = 1")).affectedRows).toBe(0);
       expect(await rejects(q("select public.admin_add_review('A Guest', 5, null, 'Great place to stay.', 'google', null, null)"))).toMatch(/BAD_REVIEW/);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { directionsUrl, mapEmbedUrl } from "@/lib/hotel";
+import { useHotelInfo } from "@/components/cms/HotelInfo";
+import { mapEmbedUrlFor } from "@/lib/cms/hotel-info";
 import { ArrowUpRight, Pin } from "../icons";
 import styles from "./MapEmbed.module.css";
 
@@ -10,6 +11,9 @@ import styles from "./MapEmbed.module.css";
  * third-party requests until the guest chooses to see it.
  */
 export default function MapEmbed() {
+  const hotel = useHotelInfo();
+  const mapEmbedUrl = mapEmbedUrlFor(hotel);
+  const directionsUrl = hotel.mapUrl;
   const [loaded, setLoaded] = useState(false);
   const [ready, setReady] = useState(false);
 

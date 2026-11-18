@@ -3,30 +3,34 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { createBooking } from "@/app/booking/actions";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { applyPromo, confirmBooking, holdRooms } from "@/app/booking/actions";
+import type { PaymentOption, Quote } from "@/lib/data/engine-types";
 import type { HotelSettings } from "@/lib/data/types";
-import { dayOrdinal, formatLong, formatRange, nightsBetween } from "@/lib/dates";
+import { formatLong, formatRange, nightsBetween } from "@/lib/dates";
 import { formatTaka, plural, roomKind } from "@/lib/format";
-import { HOTEL, RESERVATIONS, WHATSAPP } from "@/lib/hotel";
-import { downloadStayEvent } from "@/lib/ics";
+import { useHotelInfo } from "@/components/cms/HotelInfo";
 import type { Photo } from "@/lib/photos";
-import { nightsLabel, priceBreakdown, stayCost, taxNote, type RoomRates } from "@/lib/pricing";
-import { guestsLabel, type Stay } from "@/lib/stay";
-import { ArrowLeft, ArrowRight, Calendar, Check, ChevronDown, Info, Print } from "../icons";
-import { WasPrice, WeekendNote } from "../ui/Rate";
+import { LIMITS, guestsLabel, type Stay } from "@/lib/stay";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, Info } from "../icons";
 import PaymentDetails from "./PaymentDetails";
 import StaySearch from "./StaySearch";
 import styles from "./BookingFlow.module.css";
 
+/** One room type as the database priced it for this search (one room, whole stay). */
 export type BookRoom = {
   slug: string;
   name: string;
   tag: string;
   meta: string;
-  rates: RoomRates;
+  sleeps: number;
   cover: Photo;
   available: number;
+  /** Server-computed: one room for the whole stay, taxes included when set. */
+  total: number;
+  subtotal: number;
+  /** Server-computed average per night (one room, before taxes). */
+  perNight: number;
 };
 
 type Guest = {
@@ -39,9 +43,9 @@ type Guest = {
   airportPickup: boolean;
 };
 
-type Errors = Partial<Record<keyof Guest | "room" | "agree" | "form", string>>;
+type Errors = Partial<Record<keyof Guest | "room" | "agree" | "form" | "promo", string>>;
 
-const STEPS = ["Room", "Guest details", "Review", "Requested"];
+const STEPS = ["Rooms", "Guest details", "Review & pay", "Reserved"];
 
 const COUNTRIES = [
   "Bangladesh", "India", "Nepal", "Bhutan", "Sri Lanka", "Myanmar", "Malaysia", "Singapore",
@@ -50,18 +54,12 @@ const COUNTRIES = [
 
 const ARRIVALS = ["Before 1 PM (early check-in)", "1 PM – 4 PM", "4 PM – 6 PM", "6 PM – 9 PM", "After 9 PM"];
 
-const EMPTY_GUEST: Guest = {
-  name: "",
-  email: "",
-  phone: "",
-  country: "Bangladesh",
-  arrival: "1 PM – 4 PM",
-  requests: "",
-  airportPickup: false,
-};
+const EMPTY_GUEST: Guest = { name: "", email: "", phone: "", country: "Bangladesh", arrival: "1 PM – 4 PM", requests: "", airportPickup: false };
 
 const DRAFT_KEY = "bsq-guest-draft";
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+/** Codes that mean the rooms must be chosen again. */
+const RESTART = new Set(["HOLD_EXPIRED", "HOLD_NOT_FOUND", "SOLD_OUT", "CAPACITY_BREACH", "IDEMPOTENCY_CONFLICT"]);
 
 function validateGuest(g: Guest): Errors {
   const e: Errors = {};
@@ -71,6 +69,16 @@ function validateGuest(g: Guest): Errors {
   if (digits.length < 8 || digits.length > 15) e.phone = "Please enter a mobile number we can call, e.g. +880 17XX-XXXXXX.";
   if (g.requests.length > 1000) e.requests = "Please keep requests under 1,000 characters.";
   return e;
+}
+
+/** Mirrors the database: each room takes up to `sleeps` adults plus one child. */
+function partyProblem(rooms: BookRoom[], sel: Record<string, number>, stay: Stay): string | null {
+  const chosen = rooms.flatMap((r) => Array<number>(sel[r.slug] ?? 0).fill(r.sleeps));
+  if (!chosen.length) return "Please choose at least one room.";
+  const sleeps = chosen.reduce((s, n) => s + n, 0);
+  if (stay.adults > sleeps || stay.adults + stay.children > sleeps + chosen.length)
+    return `The rooms chosen sleep up to ${plural(sleeps, "adult")} and ${plural(chosen.length, "child", "children")}. Add a room, or choose a larger one, for ${guestsLabel({ ...stay, rooms: 1 })}.`;
+  return null;
 }
 
 function Cover({ photo, sizes }: { photo: Photo; sizes: string }) {
@@ -84,6 +92,18 @@ function Cover({ photo, sizes }: { photo: Photo; sizes: string }) {
   );
 }
 
+function useCountdown(until: string | null) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!until) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [until]);
+  if (!until) return null;
+  const left = Math.max(0, Math.floor((Date.parse(until) - now) / 1000));
+  return { left, label: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` };
+}
+
 type Props = {
   today: string;
   stay: Stay;
@@ -94,23 +114,36 @@ type Props = {
 };
 
 export default function BookingFlow({ today, stay, rooms, initialRoom, live, settings }: Props) {
+  const HOTEL = useHotelInfo();
+  const RESERVATIONS = HOTEL.phones[0] ?? { href: "/contact", display: "the front desk" };
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState<1 | -1>(1);
-  const [roomSlug, setRoomSlug] = useState<string | null>(initialRoom);
+  const [sel, setSel] = useState<Record<string, number>>(() => {
+    const r = rooms.find((x) => x.slug === initialRoom && x.available > 0);
+    return r ? { [r.slug]: Math.min(stay.rooms, r.available) } : {};
+  });
   const [guest, setGuest] = useState<Guest>(EMPTY_GUEST);
   const [errors, setErrors] = useState<Errors>({});
   const [agree, setAgree] = useState(false);
+  const [option, setOption] = useState<PaymentOption>("pay_at_hotel");
+  const [promo, setPromo] = useState("");
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [heldAt, setHeldAt] = useState<{ key: string; expiresAt: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const idempotency = useRef<string>("");
   const router = useRouter();
   const topRef = useRef<HTMLDivElement>(null);
+  const countdown = useCountdown(heldAt?.expiresAt ?? null);
 
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
-  const room = rooms.find((r) => r.slug === roomSlug) ?? null;
-  const cost = room ? stayCost(room.rates, stay.checkIn, stay.checkOut, stay.rooms) : null;
-  const total = cost?.total ?? 0;
-  const bill = priceBreakdown(total, settings);
-  const canBook = (r: BookRoom) => !live || r.available >= stay.rooms;
+  const selKey = JSON.stringify([stay, Object.entries(sel).filter(([, n]) => n > 0).sort()]);
+  const roomCount = Object.values(sel).reduce((s, n) => s + n, 0);
+  const chosen = rooms.filter((r) => (sel[r.slug] ?? 0) > 0);
+  const estimate = chosen.reduce((s, r) => s + r.total * sel[r.slug], 0);
+  const held = heldAt?.key === selKey && quote;
+  const canAdvance = Boolean(quote?.advance_percent && quote.advance_due > 0);
 
   // Guest details survive a refresh within the session.
   useEffect(() => {
@@ -125,10 +158,10 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
     } catch {}
   }, [guest]);
 
-  // If new dates make the chosen room unavailable, let go of it.
+  // New dates or availability: keep only what can still be booked.
   useEffect(() => {
-    if (room && !canBook(room)) setRoomSlug(null);
-  }, [stay, rooms]); // eslint-disable-line react-hooks/exhaustive-deps
+    setSel((s) => Object.fromEntries(Object.entries(s).map(([k, n]) => [k, Math.min(n, rooms.find((r) => r.slug === k)?.available ?? 0)])));
+  }, [rooms]);
 
   const goTo = (next: number) => {
     setDir(next > step ? 1 : -1);
@@ -142,53 +175,97 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
     });
   };
 
-  const focusFirstError = () =>
-    requestAnimationFrame(() => document.querySelector<HTMLElement>("[aria-invalid='true']")?.focus());
+  const focusFirstError = () => requestAnimationFrame(() => document.querySelector<HTMLElement>("[aria-invalid='true']")?.focus());
 
+  const setQty = (slug: string, n: number) => {
+    setSel((s) => ({ ...s, [slug]: n }));
+    setErrors({});
+    setNotice(null);
+  };
+
+  /** Step 1 → 2: hold the rooms in the database (or keep the current hold). */
   const nextFromRoom = () => {
-    if (!room || !canBook(room)) {
-      setErrors({ room: "Please choose a room to continue." });
+    const problem = partyProblem(rooms, sel, stay);
+    if (problem) {
+      setErrors({ room: problem });
       return;
     }
-    setErrors({});
-    goTo(2);
+    if (held && countdown && countdown.left > 0) return goTo(2);
+    startTransition(async () => {
+      const res = await holdRooms({
+        checkIn: stay.checkIn,
+        checkOut: stay.checkOut,
+        adults: stay.adults,
+        children: stay.children,
+        rooms: Object.fromEntries(Object.entries(sel).filter(([, n]) => n > 0)),
+      });
+      if (!res.ok) {
+        setErrors({ room: res.message });
+        if (res.code === "SOLD_OUT") router.refresh();
+        return;
+      }
+      setQuote(res.quote);
+      setHeldAt({ key: selKey, expiresAt: res.expiresAt });
+      setPromo(res.quote.promotion?.code ?? "");
+      idempotency.current = crypto.randomUUID();
+      setErrors({});
+      goTo(2);
+    });
   };
 
   const nextFromGuest = () => {
     const e = validateGuest(guest);
     setErrors(e);
-    if (Object.keys(e).length) {
-      focusFirstError();
-      return;
-    }
+    if (Object.keys(e).length) return focusFirstError();
     goTo(3);
   };
+
+  const restart = (message: string) => {
+    setQuote(null);
+    setHeldAt(null);
+    setNotice(message);
+    router.refresh();
+    goTo(1);
+  };
+
+  const submitPromo = (code: string) =>
+    startTransition(async () => {
+      const res = await applyPromo(code);
+      if (res.ok) {
+        setQuote(res.quote);
+        setPromo(res.quote.promotion?.code ?? "");
+        setErrors((e) => ({ ...e, promo: undefined }));
+      } else if (RESTART.has(res.code)) restart(res.message);
+      else setErrors((e) => ({ ...e, promo: res.message }));
+    });
 
   const confirm = () => {
     if (!agree) {
       setErrors({ agree: "Please agree to the cancellation policy and house rules." });
-      focusFirstError();
-      return;
+      return focusFirstError();
     }
-    if (!room) return goTo(1);
+    if (!quote) return goTo(1);
     setErrors({});
     startTransition(async () => {
-      const res = await createBooking({
-        room: room.slug,
-        ...stay,
+      const res = await confirmBooking({
         ...guest,
+        idempotencyKey: idempotency.current,
+        quotedTotal: quote.total,
+        paymentOption: canAdvance ? option : "pay_at_hotel",
         agree,
       });
       if (res.ok) {
         try {
           sessionStorage.removeItem(DRAFT_KEY);
         } catch {}
-        // The server set a private receipt cookie; the confirmation page reads
-        // the booking back from the database.
         router.replace("/booking/confirmation");
-      } else {
-        setErrors({ form: res.message });
+        return;
       }
+      if (res.code === "PRICE_CHANGED" && res.quote) {
+        setQuote(res.quote);
+        setErrors({ form: `${res.message} New total: ${formatTaka(res.quote.total)}.` });
+      } else if (RESTART.has(res.code)) restart(res.message);
+      else setErrors({ form: res.message });
     });
   };
 
@@ -210,16 +287,32 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
       </span>
     ) : null;
 
-  /* ---------------------------------------------------------- Steps 1–3 */
+  /* ---------------------------------------------------------- Summary */
 
-  const summary = room && (
+  const lineGroups = useMemo(() => {
+    if (!quote) return [];
+    const groups = new Map<string, { name: string; count: number; subtotal: number; seasons: Set<string>; weekend: number }>();
+    for (const l of quote.lines) {
+      const g = groups.get(l.room_type) ?? { name: l.name, count: 0, subtotal: 0, seasons: new Set<string>(), weekend: 0 };
+      g.count++;
+      g.subtotal += l.subtotal;
+      for (const n of l.nights) {
+        if (n.kind === "season" && n.season) g.seasons.add(n.season);
+        if (n.kind === "weekend" && g.count === 1) g.weekend++;
+      }
+      groups.set(l.room_type, g);
+    }
+    return [...groups.values()];
+  }, [quote]);
+
+  const summary = chosen.length > 0 && (
     <div className={styles.summaryBody}>
       <div className={`photo ${styles.summaryPhoto}`}>
-        <Cover photo={room.cover} sizes="400px" />
+        <Cover photo={chosen[0].cover} sizes="400px" />
       </div>
       <div className={styles.summaryText}>
         <p className="caps eyebrow">Your stay</p>
-        <p className={styles.summaryName}>{room.name}</p>
+        <p className={styles.summaryName}>{chosen.length === 1 ? chosen[0].name : plural(roomCount, "room")}</p>
         <dl className={styles.lines}>
           <div>
             <dt>Dates</dt>
@@ -227,50 +320,89 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
           </div>
           <div>
             <dt>Guests</dt>
-            <dd>{guestsLabel(stay)}</dd>
+            <dd>{guestsLabel({ ...stay, rooms: roomCount })}</dd>
           </div>
-          {cost!.lines.map((l, i) => (
-            <div key={l.kind} className={i === 0 ? styles.sep : undefined}>
-              <dt>
-                {formatTaka(l.rate)} × {nightsLabel(l)}
-                {stay.rooms > 1 ? ` × ${stay.rooms}` : ""}
-              </dt>
-              <dd>{formatTaka(l.rate * l.nights * stay.rooms)}</dd>
-            </div>
-          ))}
-          <div>
-            <dt>Breakfast</dt>
-            <dd className={styles.included}>Included</dd>
-          </div>
-          {bill.service != null && (
-            <div>
-              <dt>Service charge ({settings.service_charge_percent}%)</dt>
-              <dd>{formatTaka(bill.service)}</dd>
-            </div>
+          {held ? (
+            <>
+              {lineGroups.map((g, i) => (
+                <div key={g.name} className={i === 0 ? styles.sep : undefined}>
+                  <dt>
+                    {g.name}
+                    {g.count > 1 ? ` × ${g.count}` : ""}, {plural(nights, "night")}
+                    {g.weekend > 0 && <span className="block text-[0.85em]">incl. {plural(g.weekend, "weekend night")}</span>}
+                    {g.seasons.size > 0 && <span className="block text-[0.85em]">{[...g.seasons].join(", ")} rate</span>}
+                  </dt>
+                  <dd>{formatTaka(g.subtotal)}</dd>
+                </div>
+              ))}
+              {quote.discount > 0 && (
+                <div>
+                  <dt>Promo {quote.promotion?.code}</dt>
+                  <dd className={styles.discount}>−{formatTaka(quote.discount)}</dd>
+                </div>
+              )}
+              <div>
+                <dt>Breakfast</dt>
+                <dd className={styles.included}>Included</dd>
+              </div>
+              {quote.service_charge_percent != null && (
+                <div>
+                  <dt>Service charge ({quote.service_charge_percent}%)</dt>
+                  <dd>{formatTaka(quote.service_charge)}</dd>
+                </div>
+              )}
+              {quote.vat_percent != null && (
+                <div>
+                  <dt>VAT ({quote.vat_percent}%)</dt>
+                  <dd>{formatTaka(quote.vat)}</dd>
+                </div>
+              )}
+              {quote.taxes_pending && (
+                <div>
+                  <dt>{quote.vat_percent == null && quote.service_charge_percent == null ? "VAT & service" : "Other charges"}</dt>
+                  <dd className={styles.mutedDd}>At check-in</dd>
+                </div>
+              )}
+              <div className={styles.totalLine}>
+                <dt>{quote.taxes_pending ? "Room total" : "Total"}</dt>
+                <dd key={quote.total}>{formatTaka(quote.total)}</dd>
+              </div>
+            </>
+          ) : (
+            <>
+              {chosen.map((r, i) => (
+                <div key={r.slug} className={i === 0 ? styles.sep : undefined}>
+                  <dt>
+                    {r.name}
+                    {sel[r.slug] > 1 ? ` × ${sel[r.slug]}` : ""}
+                  </dt>
+                  <dd>{formatTaka(r.total * sel[r.slug])}</dd>
+                </div>
+              ))}
+              <div className={styles.totalLine}>
+                <dt>{settings.vat_percent != null && settings.service_charge_percent != null ? "Total" : "Room total"}</dt>
+                <dd key={estimate}>{formatTaka(estimate)}</dd>
+              </div>
+            </>
           )}
-          {bill.vat != null && (
-            <div>
-              <dt>VAT ({settings.vat_percent}%)</dt>
-              <dd>{formatTaka(bill.vat)}</dd>
-            </div>
-          )}
-          {!bill.taxesKnown && (
-            <div>
-              <dt>{bill.vat == null && bill.service == null ? "VAT & service" : "Other charges"}</dt>
-              <dd className={styles.mutedDd}>At check-in</dd>
-            </div>
-          )}
-          <div className={styles.totalLine}>
-            <dt>{bill.taxesKnown ? "Total" : "Room total"}</dt>
-            <dd key={bill.total}>{formatTaka(bill.total)}</dd>
-          </div>
         </dl>
+        {held && countdown && (
+          <p className={`${styles.holdNote} ${countdown.left < 120 ? styles.holdLate : ""}`} aria-live="off">
+            {countdown.left > 0 ? (
+              <>Rooms held for you · {countdown.label}</>
+            ) : (
+              <>Hold time is up. We&apos;ll re-check the rooms when you confirm.</>
+            )}
+          </p>
+        )}
         <p className={styles.small}>
           Check-in from {HOTEL.checkIn} · Check-out until {HOTEL.checkOut}
         </p>
       </div>
     </div>
   );
+
+  /* ---------------------------------------------------------- Render */
 
   return (
     <div ref={topRef}>
@@ -282,13 +414,7 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
             const current = n === step;
             return (
               <li key={label} className={`${styles.stepItem} ${done ? styles.stepDone : ""} ${current ? styles.stepCurrent : ""}`}>
-                <button
-                  type="button"
-                  className={styles.stepBtn}
-                  onClick={() => done && goTo(n)}
-                  disabled={!done}
-                  aria-current={current ? "step" : undefined}
-                >
+                <button type="button" className={styles.stepBtn} onClick={() => done && goTo(n)} disabled={!done} aria-current={current ? "step" : undefined}>
                   <span className={styles.stepDot}>{done ? <Check size={14} /> : n}</span>
                   <span className={styles.stepLabel}>{label}</span>
                 </button>
@@ -300,19 +426,14 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
 
       <div className={`wrap ${styles.layout}`}>
         <div className={styles.main}>
-          {room && (
+          {chosen.length > 0 && (
             <div className={styles.mobileSummary}>
-              <button
-                type="button"
-                className={styles.mobileToggle}
-                aria-expanded={summaryOpen}
-                onClick={() => setSummaryOpen((o) => !o)}
-              >
+              <button type="button" className={styles.mobileToggle} aria-expanded={summaryOpen} onClick={() => setSummaryOpen((o) => !o)}>
                 <span>
-                  {room.name} · {plural(nights, "night")}
+                  {plural(roomCount, "room")} · {plural(nights, "night")}
                 </span>
                 <span className={styles.mobileTotal}>
-                  {formatTaka(total)} <ChevronDown />
+                  {formatTaka(held ? quote.total : estimate)} <ChevronDown />
                 </span>
               </button>
               <div className={`${styles.mobilePanel} ${summaryOpen ? styles.mobilePanelOpen : ""}`}>
@@ -326,7 +447,7 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
               <section aria-labelledby="s1">
                 <p className="caps eyebrow">Step one</p>
                 <h1 id="s1" className={`h2 ${styles.stepTitle}`}>
-                  Choose your <em>room</em>
+                  Choose your <em>rooms</em>
                 </h1>
 
                 <div className={styles.stayRow}>
@@ -335,29 +456,25 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                     today={today}
                     initial={stay}
                     action="/booking"
-                    extraParams={roomSlug ? { room: roomSlug } : undefined}
+                    extraParams={chosen[0] ? { room: chosen[0].slug } : undefined}
                     variant="card"
                     submitLabel="Update dates & guests"
                   />
                 </div>
 
-                <div role="radiogroup" aria-label="Room" className={styles.roomList} aria-describedby={errors.room ? "room-err" : undefined}>
+                {notice && (
+                  <p className={styles.formError} role="alert">
+                    {notice}
+                  </p>
+                )}
+
+                <div role="group" aria-label="Rooms" className={styles.roomList} aria-describedby={errors.room ? "room-err" : undefined}>
                   {rooms.map((r) => {
-                    const ok = canBook(r);
-                    const checked = r.slug === roomSlug;
+                    const n = sel[r.slug] ?? 0;
+                    const max = Math.min(r.available, LIMITS.maxRooms - roomCount + n);
+                    const soldOut = live && r.available < 1;
                     return (
-                      <button
-                        key={r.slug}
-                        type="button"
-                        role="radio"
-                        aria-checked={checked}
-                        disabled={!ok}
-                        className={`${styles.roomOpt} ${checked ? styles.roomOn : ""}`}
-                        onClick={() => {
-                          setRoomSlug(r.slug);
-                          setErrors({});
-                        }}
-                      >
+                      <div key={r.slug} className={`${styles.roomOpt} ${styles.roomMulti} ${n > 0 ? styles.roomOn : ""} ${soldOut ? styles.roomOff : ""}`}>
                         <span className={`photo ${styles.roomPhoto}`}>
                           <Cover photo={r.cover} sizes="220px" />
                         </span>
@@ -365,22 +482,30 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                           <span className={styles.roomTag}>{roomKind(r.tag)}</span>
                           <span className={styles.roomName}>{r.name}</span>
                           <span className={styles.roomMeta}>{r.meta}</span>
-                          {live && ok && r.available === 1 && <span className={styles.few}>Only one left for these dates</span>}
-                          {!ok && <span className={styles.few}>Fully booked for these dates</span>}
+                          {live && !soldOut && r.available <= 2 && (
+                            <span className={styles.few}>{r.available === 1 ? "Only one left for these dates" : "Two left for these dates"}</span>
+                          )}
+                          {soldOut && <span className={styles.few}>Fully booked for these dates</span>}
                         </span>
                         <span className={styles.roomPrice}>
-                          <span className={styles.roomRate}>
-                            <WasPrice rates={r.rates} />
-                            {formatTaka(r.rates.price_bdt)}
-                          </span>
-                          <span className={styles.roomPer}>per night</span>
-                          <WeekendNote rates={r.rates} />
+                          <span className={styles.roomRate}>{formatTaka(r.perNight)}</span>
+                          <span className={styles.roomPer}>avg. per night</span>
                           <span className={styles.roomTotal}>
-                            {formatTaka(stayCost(r.rates, stay.checkIn, stay.checkOut, stay.rooms).total)} total
+                            {formatTaka(r.total)} for {plural(nights, "night")}
                           </span>
                         </span>
-                        <span className={styles.radio} aria-hidden="true" />
-                      </button>
+                        <span className={styles.qty}>
+                          <button type="button" className={styles.qtyBtn} disabled={n < 1 || pending} onClick={() => setQty(r.slug, n - 1)} aria-label={`One fewer ${r.name}`}>
+                            −
+                          </button>
+                          <span className={styles.qtyCount} aria-live="polite" aria-label={`${n} ${r.name} selected`}>
+                            {n}
+                          </span>
+                          <button type="button" className={styles.qtyBtn} disabled={n >= max || pending} onClick={() => setQty(r.slug, n + 1)} aria-label={`Add a ${r.name}`}>
+                            +
+                          </button>
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
@@ -391,14 +516,23 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                 )}
 
                 <div className={styles.navRow}>
-                  <Link href={roomSlug ? `/rooms/${roomSlug}` : "/rooms"} className="link-line">
+                  <Link href={chosen[0] ? `/rooms/${chosen[0].slug}` : "/rooms"} className="link-line">
                     <ArrowLeft /> Back to rooms
                   </Link>
-                  <button type="button" className="btn" onClick={nextFromRoom}>
-                    Continue to guest details
-                    <ArrowRight />
+                  <button type="button" className="btn" onClick={nextFromRoom} disabled={pending || !live}>
+                    {pending ? "Checking availability…" : "Hold rooms & continue"}
+                    {!pending && <ArrowRight />}
                   </button>
                 </div>
+                {!live && (
+                  <p className={styles.small}>
+                    Online booking is paused. Please call{" "}
+                    <a href={RESERVATIONS.href} className="text-link">
+                      {RESERVATIONS.display}
+                    </a>
+                    .
+                  </p>
+                )}
               </section>
             )}
 
@@ -423,26 +557,12 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                   </label>
                   <label className="field">
                     <span className="field-label">Email *</span>
-                    <input
-                      className="input"
-                      type="email"
-                      inputMode="email"
-                      autoComplete="email"
-                      placeholder="name@example.com"
-                      {...field("email")}
-                    />
+                    <input className="input" type="email" inputMode="email" autoComplete="email" placeholder="name@example.com" {...field("email")} />
                     {err("email")}
                   </label>
                   <label className="field">
                     <span className="field-label">Mobile *</span>
-                    <input
-                      className="input"
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="+880 17XX-XXXXXX"
-                      {...field("phone")}
-                    />
+                    <input className="input" type="tel" inputMode="tel" autoComplete="tel" placeholder="+880 17XX-XXXXXX" {...field("phone")} />
                     {err("phone")}
                   </label>
                   <label className="field">
@@ -466,21 +586,11 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                       <span className="field-label">Special requests</span>
                       <span className={styles.counter}>{guest.requests.length} / 1000</span>
                     </span>
-                    <textarea
-                      className="input"
-                      rows={4}
-                      maxLength={1000}
-                      placeholder="A celebration, a dietary need, a quiet room…"
-                      {...field("requests")}
-                    />
+                    <textarea className="input" rows={4} maxLength={1000} placeholder="A celebration, a dietary need, a quiet room…" {...field("requests")} />
                     {err("requests")}
                   </label>
                   <label className={`check ${styles.full}`}>
-                    <input
-                      type="checkbox"
-                      checked={guest.airportPickup}
-                      onChange={(e) => setGuest((g) => ({ ...g, airportPickup: e.target.checked }))}
-                    />
+                    <input type="checkbox" checked={guest.airportPickup} onChange={(e) => setGuest((g) => ({ ...g, airportPickup: e.target.checked }))} />
                     <span>I&apos;d like an airport pickup (extra charge — we&apos;ll call to arrange it)</span>
                   </label>
 
@@ -497,7 +607,7 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
               </section>
             )}
 
-            {step === 3 && room && (
+            {step === 3 && quote && (
               <section aria-labelledby="s3">
                 <p className="caps eyebrow">Step three</p>
                 <h1 id="s3" className={`h2 ${styles.stepTitle}`}>
@@ -514,23 +624,31 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                     </div>
                     <dl className={styles.reviewList}>
                       <div>
-                        <dt>Room</dt>
+                        <dt>{lineGroups.length > 1 || roomCount > 1 ? "Rooms" : "Room"}</dt>
                         <dd>
-                          {room.name}
-                          {stay.rooms > 1 ? ` × ${stay.rooms}` : ""}
+                          {lineGroups.map((g) => (
+                            <span key={g.name} className="block">
+                              {g.name}
+                              {g.count > 1 ? ` × ${g.count}` : ""}
+                            </span>
+                          ))}
                         </dd>
                       </div>
                       <div>
                         <dt>Arrive</dt>
-                        <dd>{formatLong(stay.checkIn)}, from {HOTEL.checkIn}</dd>
+                        <dd>
+                          {formatLong(stay.checkIn)}, from {HOTEL.checkIn}
+                        </dd>
                       </div>
                       <div>
                         <dt>Depart</dt>
-                        <dd>{formatLong(stay.checkOut)}, by {HOTEL.checkOut}</dd>
+                        <dd>
+                          {formatLong(stay.checkOut)}, by {HOTEL.checkOut}
+                        </dd>
                       </div>
                       <div>
                         <dt>Guests</dt>
-                        <dd>{guestsLabel(stay)}</dd>
+                        <dd>{guestsLabel({ ...stay, rooms: roomCount })}</dd>
                       </div>
                     </dl>
                   </div>
@@ -574,18 +692,79 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                   </div>
                 </div>
 
-                <h2 className={`h3 ${styles.payTitle}`}>Paying for your stay</h2>
-                <p className={styles.notice}>
-                  <Info />
-                  <span>
-                    Your room is held and our front desk will call you{" "}
-                    {settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm. Nothing is charged online: pay at the hotel, or send an advance by bKash, Nagad or bank
-                    transfer using the details below. {taxNote(settings)}
-                  </span>
-                </p>
-                <PaymentDetails />
+                <form
+                  className={styles.promoRow}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    submitPromo(promo);
+                  }}
+                >
+                  <label className="field">
+                    <span className="field-label">Promo code</span>
+                    <input
+                      className="input"
+                      value={promo}
+                      maxLength={20}
+                      autoComplete="off"
+                      spellCheck={false}
+                      aria-invalid={errors.promo ? true : undefined}
+                      onChange={(e) => setPromo(e.target.value)}
+                    />
+                  </label>
+                  <button type="submit" className="btn btn-ghost" disabled={pending || !promo.trim()}>
+                    Apply
+                  </button>
+                  {quote.promotion && (
+                    <button type="button" className="link-line" disabled={pending} onClick={() => submitPromo("")}>
+                      Remove
+                    </button>
+                  )}
+                </form>
+                {err("promo")}
+                {quote.promotion && (
+                  <p className={styles.small}>
+                    {quote.promotion.name}: you save {formatTaka(quote.discount)}.
+                  </p>
+                )}
 
-                <label className="check">
+                <h2 className={`h3 ${styles.payTitle}`}>How would you like to pay?</h2>
+                <div className={styles.pays} role="radiogroup" aria-label="Payment">
+                  <button type="button" role="radio" aria-checked={option === "pay_at_hotel" || !canAdvance} className={`${styles.pay} ${option === "pay_at_hotel" || !canAdvance ? styles.payOn : ""}`} onClick={() => setOption("pay_at_hotel")}>
+                    <span className={styles.radio} aria-hidden="true" />
+                    <span className={styles.payText}>
+                      <span className={styles.payName}>Pay at the hotel</span>
+                      <span className={styles.payNote}>
+                        Nothing to pay now. Our front desk calls {settings.confirm_call_within ? `within ${settings.confirm_call_within}` : "shortly"} to confirm.
+                      </span>
+                    </span>
+                  </button>
+                  {canAdvance && (
+                    <button type="button" role="radio" aria-checked={option === "advance"} className={`${styles.pay} ${option === "advance" ? styles.payOn : ""}`} onClick={() => setOption("advance")}>
+                      <span className={styles.radio} aria-hidden="true" />
+                      <span className={styles.payText}>
+                        <span className={styles.payName}>
+                          Pay a {quote.advance_percent}% advance: {formatTaka(quote.advance_due)}
+                        </span>
+                        <span className={styles.payNote}>By bKash, Nagad or bank transfer within 24 hours to secure the rooms; the rest at the hotel.</span>
+                      </span>
+                    </button>
+                  )}
+                </div>
+                {(option === "advance" && canAdvance) ? (
+                  <div className="mt-6">
+                    <PaymentDetails />
+                  </div>
+                ) : (
+                  <p className={styles.notice}>
+                    <Info />
+                    <span>
+                      Nothing is charged online.{" "}
+                      {quote.taxes_pending ? "VAT and service charge are added at check-in." : "The total above includes VAT and service charge."}
+                    </span>
+                  </p>
+                )}
+
+                <label className="check mt-6">
                   <input
                     type="checkbox"
                     checked={agree}
@@ -621,7 +800,7 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
                     <ArrowLeft /> Back
                   </button>
                   <button type="button" className="btn" onClick={confirm} disabled={pending}>
-                    {pending ? "Sending your request…" : "Send booking request"}
+                    {pending ? "Reserving your rooms…" : `Reserve · ${formatTaka(quote.total)}`}
                     {!pending && <ArrowRight />}
                   </button>
                 </div>
@@ -631,14 +810,14 @@ export default function BookingFlow({ today, stay, rooms, initialRoom, live, set
         </div>
 
         <aside className={styles.side} aria-label="Your booking">
-          {summary ?? (
+          {summary || (
             <div className={styles.summaryEmpty}>
               <p className="caps eyebrow">Your stay</p>
               <p className={styles.summaryName}>{formatRange(stay.checkIn, stay.checkOut)}</p>
               <p className={styles.small}>
                 {plural(nights, "night")} · {guestsLabel(stay)}
               </p>
-              <p className={styles.emptyHint}>Choose a room to see your total.</p>
+              <p className={styles.emptyHint}>Choose rooms to see your total.</p>
             </div>
           )}
         </aside>

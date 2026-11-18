@@ -37,6 +37,21 @@ export const ICalendar = (p: P) => (
     <path d="M3 10h18M8 3v4M16 3v4" />
   </I>
 );
+export const ITag = (p: P) => (
+  <I {...p}>
+    <path d="M3 12V4h8l10 10-8 8zM7.5 7.5h.01" />
+  </I>
+);
+export const IPage = (p: P) => (
+  <I {...p}>
+    <path d="M4 4h16v16H4zM4 9h16M9 9v11" />
+  </I>
+);
+export const ITeam = (p: P) => (
+  <I {...p}>
+    <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 6.5M18 14a6 6 0 0 1 3.5 6" />
+  </I>
+);
 export const IRooms = (p: P) => (
   <I {...p}>
     <path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5" />

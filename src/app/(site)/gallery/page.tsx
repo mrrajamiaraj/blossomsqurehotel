@@ -3,14 +3,13 @@ import PageHero from "@/components/site/PageHero";
 import PhotoGallery from "@/components/system/PhotoGallery";
 import { categoriesWithPhotos, galleryItems, missingCategories } from "@/lib/content/gallery";
 import { photo } from "@/lib/photos";
-import { pageMetadata } from "@/lib/seo";
+import { seoMetadata } from "@/lib/cms/seo";
 
-export const metadata = pageMetadata({
-  title: "Photo gallery",
-  description: "Photographs of the rooms, suites and interiors at Blossom Square Hotel & Suites, Kolatoli, Cox's Bazar.",
-  path: "/gallery",
-  image: "/photos/DSC5566.jpg",
-});
+export const revalidate = 300;
+
+export async function generateMetadata() {
+  return seoMetadata("gallery", "/photos/DSC5566.jpg");
+}
 
 export default function GalleryPage() {
   const items = galleryItems();

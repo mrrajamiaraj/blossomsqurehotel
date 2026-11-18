@@ -15,6 +15,8 @@ export function PoliciesForm({ initial }: { initial: HotelSettings }) {
     ...initial,
     vat: initial.vat_percent == null ? "" : String(initial.vat_percent),
     svc: initial.service_charge_percent == null ? "" : String(initial.service_charge_percent),
+    advance: initial.advance_percent == null ? "" : String(initial.advance_percent),
+    maxDiscount: String(initial.max_discount_percent ?? 50),
   });
   const [pending, start] = useTransition();
   const example = priceBreakdown(10000, {
@@ -31,6 +33,8 @@ export function PoliciesForm({ initial }: { initial: HotelSettings }) {
         confirm_call_within: s.confirm_call_within,
         vat_percent: s.vat === "" ? null : Number(s.vat),
         service_charge_percent: s.svc === "" ? null : Number(s.svc),
+        advance_percent: s.advance === "" ? null : Number(s.advance),
+        max_discount_percent: Number(s.maxDiscount),
       });
       if (res.ok) toast.success((res.message ?? "Saved")); else toast.error(res.message);
     });
@@ -68,6 +72,16 @@ export function PoliciesForm({ initial }: { initial: HotelSettings }) {
             <input className="a-input a-num" inputMode="decimal" value={s.vat} onChange={(e) => setS({ ...s, vat: e.target.value.replace(/[^\d.]/g, "") })} placeholder="Not set" />
           </label>
         </div>
+        <label className="a-field">
+          <span className="a-label">Advance to ask for (%)</span>
+          <input className="a-input a-num" inputMode="decimal" value={s.advance} onChange={(e) => setS({ ...s, advance: e.target.value.replace(/[^\d.]/g, "") })} placeholder="None — pay at the hotel" />
+          <span className="a-hint">When set, guests can choose to send this share of the total in advance.</span>
+        </label>
+        <label className="a-field">
+          <span className="a-label">Most offers can take off (%)</span>
+          <input className="a-input a-num" inputMode="decimal" value={s.maxDiscount} onChange={(e) => setS({ ...s, maxDiscount: e.target.value.replace(/[^\d.]/g, "") })} required />
+          <span className="a-hint">Combined discounts never go beyond this share of the room charges (0–90).</span>
+        </label>
         <p className="a-span-2 a-hint" aria-live="polite">
           {example.taxesKnown
             ? `A ${formatTaka(10000)} stay becomes ${formatTaka(example.total)} (service ${formatTaka(example.service ?? 0)}, then VAT on room + service ${formatTaka(example.vat ?? 0)}).`

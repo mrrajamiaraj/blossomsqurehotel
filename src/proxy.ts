@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/setup", "/admin/auth"];
+const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/setup", "/admin/auth", "/admin/preview/exit"];
 
 /**
  * Keeps staff sessions fresh and sends signed-out visitors to the sign-in

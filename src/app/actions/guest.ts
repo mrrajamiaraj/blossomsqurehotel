@@ -1,9 +1,10 @@
 "use server";
 
 import { headers } from "next/headers";
+import { setManageToken } from "@/lib/booking-receipt";
 import { getPublicRepo } from "@/lib/data";
+import { getEngine } from "@/lib/data/engine";
 import { errorCode, errorMessage } from "@/lib/data/errors";
-import type { GuestBookingView } from "@/lib/data/types";
 import { hotelToday } from "@/lib/dates";
 import { normaliseReference, toInquiryInput, validateInquiry, validContact, type InquiryErrors, type InquiryForm } from "@/lib/guest-services";
 import { allow } from "@/lib/rate-limit";
@@ -52,11 +53,17 @@ export async function submitInquiry(form: InquiryForm): Promise<InquiryResult> {
 
 /* ------------------------------------------------------------- Booking lookup */
 
-export type LookupResult = { ok: true; booking: GuestBookingView } | { ok: false; message: string; unavailable?: boolean };
+export type LookupResult = { ok: true } | { ok: false; message: string; unavailable?: boolean };
 
 const NOT_MATCHED =
   "We couldn't find a booking with that reference and contact. Check both match your confirmation, or call us and we'll look it up.";
 
+/**
+ * Reference + the phone or email on the booking → a private, 30-minute
+ * token (httpOnly cookie) that opens /booking/manage. A mismatch never
+ * reveals whether the reference exists, and failed guesses are throttled
+ * per reference in the database.
+ */
 export async function lookupBooking(rawReference: string, rawContact: string): Promise<LookupResult> {
   const reference = normaliseReference(String(rawReference ?? ""));
   const contact = String(rawContact ?? "").slice(0, 200);
@@ -65,11 +72,13 @@ export async function lookupBooking(rawReference: string, rawContact: string): P
 
   if (!allow(`lookup:${await clientIp()}`, 10, 10 * 60_000)) return { ok: false, message: "Too many attempts. Please wait a few minutes, or call us." };
 
-  const repo = getPublicRepo();
-  if (!repo) return { ok: false, message: errorMessage("UNAVAILABLE"), unavailable: true };
+  const engine = getEngine();
+  if (!engine) return { ok: false, message: errorMessage("UNAVAILABLE"), unavailable: true };
   try {
-    const booking = await repo.lookupBooking(reference, contact);
-    return booking ? { ok: true, booking } : { ok: false, message: NOT_MATCHED };
+    const access = await engine.verifyAccess(reference, contact);
+    if (!access) return { ok: false, message: NOT_MATCHED };
+    await setManageToken(access.token);
+    return { ok: true };
   } catch (err) {
     const code = errorCode(err);
     if (code === "RATE_LIMITED") return { ok: false, message: "Too many attempts for this booking. Please try again in an hour, or call us." };

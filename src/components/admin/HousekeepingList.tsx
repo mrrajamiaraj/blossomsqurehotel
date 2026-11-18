@@ -45,7 +45,13 @@ export default function HousekeepingList({ rooms }: { rooms: Row[] }) {
           <span style={{ flex: 1, minWidth: 0, lineHeight: 1.3 }}>
             <span style={{ display: "block", fontSize: "0.8rem" }}>{r.type}</span>
             <span style={{ fontSize: "0.74rem", color: r.outOfService ? "var(--s-cancel-fg)" : "var(--a-muted)" }}>
-              {r.outOfService ? `Out of service${r.note ? ` — ${r.note}` : ""}` : r.housekeeping === "dirty" ? "Needs cleaning" : "Clean, not inspected"}
+              {r.outOfService
+                ? `Out of service${r.note ? ` — ${r.note}` : ""}`
+                : r.housekeeping === "dirty"
+                  ? "Needs cleaning"
+                  : r.housekeeping === "cleaning"
+                    ? "Being cleaned"
+                    : "Clean, not inspected"}
             </span>
           </span>
           {!r.outOfService && r.housekeeping === "dirty" && (

@@ -1,26 +1,32 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HOTEL, NAV_LINKS, PAYMENT_METHODS, SERVICE_LINKS, WHATSAPP, directionsUrl } from "@/lib/hotel";
+import { getHotelInfo, getSection } from "@/lib/cms/content";
+import { NAV_LINKS, PAYMENT_METHODS, SERVICE_LINKS } from "@/lib/hotel";
 import { getSettings } from "@/lib/rooms";
+import Accent from "../cms/Accent";
 import { ArrowRight, ArrowUpRight, Monogram } from "../icons";
 import BackToTop from "./BackToTop";
 import styles from "./Footer.module.css";
 
 export default async function Footer() {
-  const settings = await getSettings();
+  const [settings, HOTEL, f] = await Promise.all([getSettings(), getHotelInfo(), getSection("footer")]);
+  const WHATSAPP = HOTEL.whatsapp;
+  const directionsUrl = HOTEL.mapUrl;
   return (
     <footer className={`${styles.footer} on-dark`}>
       <div className={`wrap ${styles.top}`}>
         <div className={styles.lead}>
         <div className={styles.invite}>
-          <p className="caps eyebrow" data-reveal="up">
-            Reservations
-          </p>
+          {f.invite_eyebrow && (
+            <p className="caps eyebrow" data-reveal="up">
+              {f.invite_eyebrow}
+            </p>
+          )}
           <p className={`h2 ${styles.inviteLine}`} data-reveal="up" style={{ "--d": "100ms" } as React.CSSProperties}>
-            The sea is <em>a short walk</em> from your door.
+            <Accent text={f.invite_line} />
           </p>
           <Link href="/booking" className="btn btn--light" data-reveal="up" style={{ "--d": "200ms" } as React.CSSProperties}>
-            Reserve your stay
+            {f.button || "Reserve your stay"}
             <ArrowRight />
           </Link>
         </div>
@@ -98,7 +104,7 @@ export default async function Footer() {
           <Monogram size={22} className={styles.mono} />© {new Date().getFullYear()} {HOTEL.fullName}
         </span>
         <span className={styles.legal}>
-          No pets{settings.cancellation_policy ? ` · Cancellation: ${settings.cancellation_policy}` : ""}
+          {[f.legal_note, settings.cancellation_policy ? `Cancellation: ${settings.cancellation_policy}` : ""].filter(Boolean).join(" · ")}
         </span>
         <Link href="/admin/login" className={styles.staff} prefetch={false}>
           Staff login

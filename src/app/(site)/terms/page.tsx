@@ -1,6 +1,7 @@
 import Link from "next/link";
 import LegalPage from "@/components/site/LegalPage";
-import { HOTEL, PAYMENT_METHODS } from "@/lib/hotel";
+import { getHotelInfo } from "@/lib/cms/content";
+import { PAYMENT_METHODS } from "@/lib/hotel";
 import { taxNote, WEEKEND_LABEL } from "@/lib/pricing";
 import { getSettings } from "@/lib/rooms";
 import { pageMetadata } from "@/lib/seo";
@@ -14,9 +15,9 @@ export const metadata = pageMetadata({
 });
 
 export default async function TermsPage() {
-  const s = await getSettings();
+  const [s, HOTEL] = await Promise.all([getSettings(), getHotelInfo()]);
   const methods = PAYMENT_METHODS.map((m) => m.name).join("; ");
-  const call = `${HOTEL.phones[0].display}`;
+  const call = `${HOTEL.phones[0]?.display ?? "the front desk"}`;
   return (
     <LegalPage
       crumb="Terms"

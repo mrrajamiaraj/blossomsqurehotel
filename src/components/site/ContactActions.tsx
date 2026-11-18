@@ -1,5 +1,7 @@
+"use client";
+
+import { useHotelInfo } from "@/components/cms/HotelInfo";
 import { Button } from "@/components/primitives/button";
-import { HOTEL, RESERVATIONS, WHATSAPP } from "@/lib/hotel";
 import { cn } from "@/lib/utils";
 import { Chat, Mail, Phone } from "../icons";
 
@@ -20,19 +22,23 @@ export default function ContactActions({
   email?: boolean;
   size?: "sm" | "md";
 }) {
-  const wa = message ? `${WHATSAPP.href}?text=${encodeURIComponent(message)}` : WHATSAPP.href;
-  const mail = `mailto:${HOTEL.email}${message ? `?subject=${encodeURIComponent(message)}` : ""}`;
+  const hotel = useHotelInfo();
+  const phone = hotel.phones[0];
+  const wa = message ? `${hotel.whatsapp.href}?text=${encodeURIComponent(message)}` : hotel.whatsapp.href;
+  const mail = `mailto:${hotel.email}${message ? `?subject=${encodeURIComponent(message)}` : ""}`;
   return (
     <div className={cn("flex flex-wrap gap-3", className)}>
-      <Button asChild variant={onDark ? "light" : "primary"} size={size}>
-        <a href={RESERVATIONS.href}>
-          <Phone size={16} />
-          <span>
-            Call <span className="sr-only">the hotel on </span>
-            <span className="hidden sm:inline">{RESERVATIONS.display}</span>
-          </span>
-        </a>
-      </Button>
+      {phone && (
+        <Button asChild variant={onDark ? "light" : "primary"} size={size}>
+          <a href={phone.href}>
+            <Phone size={16} />
+            <span>
+              Call <span className="sr-only">the hotel on </span>
+              <span className="hidden sm:inline">{phone.display}</span>
+            </span>
+          </a>
+        </Button>
+      )}
       <Button asChild variant={onDark ? "ghost-light" : "outline"} size={size}>
         <a href={wa} target="_blank" rel="noopener noreferrer">
           <Chat size={16} />

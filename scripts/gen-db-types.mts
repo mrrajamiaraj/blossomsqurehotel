@@ -103,7 +103,14 @@ const fnBlock = (f: Fn) => {
   const ret = f.cols
     ? `{\n${[...f.cols].sort((a, b) => a.name.localeCompare(b.name)).map((c) => `${pad(10)}${c.name}: ${c.type}`).join("\n")}\n${pad(8)}}[]`
     : `${f.ret}${f.retset ? "[]" : ""}`;
-  return `${pad(6)}${f.name}: {\n${pad(8)}Args: ${args}\n${pad(8)}Returns: ${ret}\n${pad(6)}}`;
+  return `{\n${pad(8)}Args: ${args}\n${pad(8)}Returns: ${ret}\n${pad(6)}}`;
+};
+
+// Overloaded functions (same name, different arguments) become a union, as Supabase's generator does.
+const fnEntries = () => {
+  const byName = new Map<string, string[]>();
+  for (const f of fns) byName.set(f.name, [...(byName.get(f.name) ?? []), fnBlock(f)]);
+  return [...byName].map(([name, forms]) => `${pad(6)}${name}:\n${pad(6)}  | ${forms.join(`\n${pad(6)}  | `)}`).join("\n");
 };
 
 const tables = group(cols);
@@ -131,7 +138,7 @@ ${Object.entries(tables).map(([n, r]) => tableBlock(n, r)).join("\n")}
 ${Object.entries(views).map(([n, r]) => viewBlock(n, r)).join("\n")}
     }
     Functions: {
-${fns.map(fnBlock).join("\n")}
+${fnEntries()}
     }
     Enums: {
       [_ in never]: never

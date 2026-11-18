@@ -5,19 +5,17 @@ import CtaBand from "@/components/site/CtaBand";
 import PageHero from "@/components/site/PageHero";
 import { getAvailability } from "@/lib/availability";
 import { formatRange, hotelToday, nightsBetween } from "@/lib/dates";
-import { HOTEL } from "@/lib/hotel";
+import { getHotelInfo } from "@/lib/cms/content";
 import { WEEKEND_LABEL } from "@/lib/pricing";
 import { parseFilters } from "@/lib/room-filters";
 import { getRooms, getSettings, ratesOf } from "@/lib/rooms";
-import { pageMetadata } from "@/lib/seo";
+import { seoMetadata } from "@/lib/cms/seo";
 import { parseStay } from "@/lib/stay";
 import styles from "./rooms.module.css";
 
-export const metadata = pageMetadata({
-  title: "Rooms & Suites",
-  description: "Seven ways to stay at Blossom Square in Kolatoli, Cox's Bazar, from a couple's room to a family suite. Live availability and direct rates.",
-  path: "/rooms",
-});
+export async function generateMetadata() {
+  return seoMetadata("rooms");
+}
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -25,7 +23,7 @@ export default async function RoomsPage({ searchParams }: Props) {
   const params = await searchParams;
   const today = hotelToday();
   const stay = parseStay(params, today);
-  const [rooms, settings] = await Promise.all([getRooms(), getSettings()]);
+  const [rooms, settings, HOTEL] = await Promise.all([getRooms(), getSettings(), getHotelInfo()]);
   const availability = await getAvailability(rooms, stay.checkIn, stay.checkOut);
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
 

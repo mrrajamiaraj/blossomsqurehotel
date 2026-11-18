@@ -1,20 +1,23 @@
 import Link from "next/link";
+import { HotelInfoProvider } from "@/components/cms/HotelInfo";
 import { Lock, Monogram, Phone } from "@/components/icons";
 import SmoothScroll from "@/components/motion/SmoothScroll";
 import ThemeToggle from "@/components/site/ThemeToggle";
-import { HOTEL, RESERVATIONS } from "@/lib/hotel";
+import { getHotelInfo } from "@/lib/cms/content";
 import styles from "./booking.module.css";
 
 /** Checkout keeps its own quiet chrome: no menu, nothing to wander off to. */
-export default function BookingLayout({ children }: { children: React.ReactNode }) {
+export default async function BookingLayout({ children }: { children: React.ReactNode }) {
+  const hotel = await getHotelInfo();
+  const phone = hotel.phones[0];
   return (
-    <>
+    <HotelInfoProvider value={hotel}>
       <header className={styles.header}>
         <div className={`wrap ${styles.headerInner}`}>
           <Link href="/" className={styles.logo} aria-label="Blossom Square, home">
             <Monogram size={28} className={styles.mark} />
             <span className={styles.logoText}>
-              <span className={styles.logoName}>{HOTEL.name}</span>
+              <span className={styles.logoName}>{hotel.name}</span>
               <span className={styles.logoSub}>Hotel &amp; Suites</span>
             </span>
           </Link>
@@ -23,10 +26,12 @@ export default function BookingLayout({ children }: { children: React.ReactNode 
             <span className={styles.secure}>
               <Lock /> Secure booking
             </span>
-            <a href={RESERVATIONS.href} className={styles.help}>
-              <Phone size={16} />
-              <span>Help {RESERVATIONS.display}</span>
-            </a>
+            {phone && (
+              <a href={phone.href} className={styles.help}>
+                <Phone size={16} />
+                <span>Help {phone.display}</span>
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -36,7 +41,9 @@ export default function BookingLayout({ children }: { children: React.ReactNode 
       <SmoothScroll />
       <footer className={styles.footer}>
         <div className={`wrap ${styles.footerInner}`}>
-          <span>© {new Date().getFullYear()} {HOTEL.fullName}</span>
+          <span>
+            © {new Date().getFullYear()} {hotel.fullName}
+          </span>
           <nav aria-label="Booking help" className={styles.footLinks}>
             <Link href="/booking/lookup">Find my booking</Link>
             <Link href="/faq">Questions</Link>
@@ -45,6 +52,6 @@ export default function BookingLayout({ children }: { children: React.ReactNode 
           </nav>
         </div>
       </footer>
-    </>
+    </HotelInfoProvider>
   );
 }

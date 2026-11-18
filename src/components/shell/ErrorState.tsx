@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { RESERVATIONS } from "@/lib/hotel";
+import { useHotelInfo } from "@/components/cms/HotelInfo";
 
 type Props = {
   error: unknown;
@@ -27,6 +27,7 @@ export default function ErrorState({
   homeHref = "/",
   homeLabel = "Return home",
 }: Props) {
+  const RESERVATIONS = useHotelInfo().phones[0] ?? { href: "/contact", display: "the front desk" };
   const digest = error instanceof Error && "digest" in error ? String((error as { digest?: string }).digest ?? "") : "";
 
   useEffect(() => {

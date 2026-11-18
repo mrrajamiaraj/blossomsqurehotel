@@ -5,6 +5,8 @@ import type {
   BookingChange,
   BookingEvent,
   BookingFilter,
+  BookingLine,
+  BookingRequest,
   BookingStatus,
   GuestBookingView,
   GuestDetails,
@@ -61,6 +63,13 @@ export interface AdminRepo extends PublicRepo {
   createStaffBooking(input: StaffBookingInput): Promise<string>;
   setStatus(id: string, status: BookingStatus, reason?: string): Promise<void>;
   assignRoom(id: string, roomId: string | null): Promise<void>;
+  /** Reserved-room lines of live stays touching [from, to) (all bookings). */
+  linesBetween(from: string, to: string): Promise<BookingLine[]>;
+  assignRoomLine(lineId: string, roomId: string | null): Promise<void>;
+  /** Gives every unassigned line a free room of its type; returns how many. */
+  autoAssign(id: string): Promise<number>;
+  bookingRequests(bookingId: string): Promise<BookingRequest[]>;
+  resolveRequest(requestId: string, status: "done" | "declined"): Promise<void>;
   modifyBooking(id: string, change: BookingChange): Promise<void>;
   recordPayment(id: string, amount: number, method: PaymentMethod, note: string): Promise<void>;
   updateGuestDetails(id: string, details: GuestDetails): Promise<void>;

@@ -26,6 +26,20 @@ function findFile(ref: string): string | null {
   return src;
 }
 
+/** Every photo in public/photos, for the admin's image picker. */
+export function localPhotos(): { ref: string; src: string }[] {
+  try {
+    return fs
+      .readdirSync(PHOTO_DIR)
+      .map((f) => /^([A-Za-z0-9_-]{2,60})\.(jpe?g|webp|png|avif)$/i.exec(f))
+      .filter((m): m is RegExpExecArray => Boolean(m))
+      .map((m) => ({ ref: m[1], src: `/photos/${m[0]}` }))
+      .sort((a, b) => a.ref.localeCompare(b.ref));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * A gallery entry is either a full URL (a photo uploaded from Admin → Rooms,
  * kept in Supabase Storage) or a reference to a file in public/photos

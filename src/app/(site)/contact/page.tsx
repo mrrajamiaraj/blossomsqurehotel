@@ -1,23 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
+import Accent from "@/components/cms/Accent";
 import MapEmbed from "@/components/home/MapEmbed";
 import { ArrowUpRight } from "@/components/icons";
 import ContactActions from "@/components/site/ContactActions";
 import InquiryForm from "@/components/site/InquiryForm";
 import PageHero from "@/components/site/PageHero";
 import CopyButton from "@/components/ui/CopyButton";
-import { NEARBY } from "@/lib/content/location";
+import { getHotelInfo, getSection } from "@/lib/cms/content";
+import { seoMetadata } from "@/lib/cms/seo";
 import { hotelToday } from "@/lib/dates";
-import { HOTEL, WHATSAPP, directionsUrl } from "@/lib/hotel";
-import { hotelJsonLd, JsonLd, pageMetadata } from "@/lib/seo";
+import { hotelJsonLd, JsonLd } from "@/lib/seo";
 
 export const revalidate = 300;
 
-export const metadata = pageMetadata({
-  title: "Contact & location",
-  description: `Call, WhatsApp or email Blossom Square Hotel & Suites. ${HOTEL.address}.`,
-  path: "/contact",
-});
+export async function generateMetadata() {
+  return seoMetadata("contact");
+}
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -28,17 +27,15 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const [c, HOTEL, home] = await Promise.all([getSection("contact"), getHotelInfo(), getSection("home")]);
+  const WHATSAPP = HOTEL.whatsapp;
   return (
     <>
       <PageHero
-        eyebrow="Contact & location"
-        title={
-          <>
-            Speak to us, <em>or come and see.</em>
-          </>
-        }
-        lede="Our front desk answers calls and WhatsApp messages around the clock. For events and group stays, send a message and we'll come back with options."
+        eyebrow={c.hero_eyebrow}
+        title={<Accent text={c.hero_title} />}
+        lede={c.hero_lede}
         crumbs={[{ label: "Contact" }]}
         actions={<ContactActions message="Hello Blossom Square," />}
       />
@@ -52,7 +49,7 @@ export default function ContactPage() {
                 <span className="block">{HOTEL.address}</span>
                 <span className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
                   <CopyButton text={HOTEL.address} label="Address" />
-                  <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="text-link inline-flex min-h-11 items-center gap-1.5">
+                  <a href={HOTEL.mapUrl} target="_blank" rel="noopener noreferrer" className="text-link inline-flex min-h-11 items-center gap-1.5">
                     Directions in Google Maps <ArrowUpRight size={14} />
                   </a>
                 </span>
@@ -71,7 +68,7 @@ export default function ContactPage() {
                   <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className="text-link inline-flex min-h-11 items-center">
                     {WHATSAPP.display}
                   </a>
-                  <Image src={WHATSAPP.qr} alt="QR code: scan to chat with Blossom Square on WhatsApp" width={104} height={104} className="border border-line bg-white p-1.5" />
+                  {WHATSAPP.qr && <Image src={WHATSAPP.qr} alt="QR code: scan to chat with Blossom Square on WhatsApp" width={104} height={104} className="border border-line bg-white p-1.5" />}
                 </span>
               </Row>
               <Row label="Email">
@@ -82,12 +79,14 @@ export default function ContactPage() {
               <Row label="Check-in / out">
                 From {HOTEL.checkIn} · until {HOTEL.checkOut}
               </Row>
-              <Row label="Arriving">
-                Airport pickup and drop-off on request, at an extra charge.{" "}
-                <Link href="/faq" className="text-link">
-                  More questions
-                </Link>
-              </Row>
+              {HOTEL.arriving && (
+                <Row label="Arriving">
+                  {HOTEL.arriving}{" "}
+                  <Link href="/faq" className="text-link">
+                    More questions
+                  </Link>
+                </Row>
+              )}
             </dl>
           </div>
 
@@ -100,11 +99,11 @@ export default function ContactPage() {
           <div>
             <p className="caps eyebrow">Find us</p>
             <h2 id="map-h" className="h2 mt-5">
-              In the heart <em>of Kolatoli.</em>
+              <Accent text={c.map_title} />
             </h2>
-            <p className="lede mt-5">Cox&apos;s Bazar&apos;s hotel quarter, a few minutes on foot from the beach.</p>
+            {c.map_lede && <p className="lede mt-5">{c.map_lede}</p>}
             <ul role="list" className="mt-8 divide-y divide-line border-y border-line">
-              {NEARBY.map(([place, note]) => (
+              {home.nearby.map(({ place, note }) => (
                 <li key={place} className="flex flex-wrap justify-between gap-x-6 gap-y-1 py-4">
                   <span className="text-ink">{place}</span>
                   <span className="text-sm text-muted-foreground">{note}</span>
@@ -116,7 +115,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <JsonLd data={hotelJsonLd()} />
+      <JsonLd data={hotelJsonLd({ hotel: HOTEL })} />
     </>
   );
 }

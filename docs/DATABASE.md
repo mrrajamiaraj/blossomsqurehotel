@@ -1,4 +1,4 @@
-# Blossom Square — Database & access architecture
+﻿# Blossom Square â€” Database & access architecture
 
 Supabase Postgres with Row Level Security on every table, permission-based
 staff roles, MFA for privileged roles, an append-only audit log and
@@ -7,7 +7,7 @@ per-bucket storage policies.
 - **Migrations:** `supabase/migrations/` (applied in filename order).
 - **Rollback for this release:** `supabase/rollbacks/20261117203948_access_architecture.down.sql`.
 - **Tests:** `tests/db/` (real PostgreSQL via PGlite: `npm run test:db`).
-- **Status (18 Nov 2026):** applied to production together with the app release. See [MIGRATION_AND_ROLLBACK.md](MIGRATION_AND_ROLLBACK.md#access-architecture-release) §C.6.
+- **Status (18 Nov 2026):** applied to production together with the app release. See [MIGRATION_AND_ROLLBACK.md](MIGRATION_AND_ROLLBACK.md#access-architecture-release) Â§C.6.
 
 ## 1. Schemas
 
@@ -24,13 +24,13 @@ The requested model maps onto these tables. "Reservations" are the existing `boo
 
 | Requirement | Table | Notes |
 | ----------- | ----- | ----- |
-| Staff profiles | `staff` | `user_id` → `auth.users`; role → `private.roles`; email, phone, job title |
+| Staff profiles | `staff` | `user_id` â†’ `auth.users`; role â†’ `private.roles`; email, phone, job title |
 | Roles & permissions | `private.roles`, `private.permissions`, `private.role_permissions` | seven roles, 26 permissions |
 | Guests | `guests` | matched by email, then the last 10 digits of the phone; optional `user_id` for a guest account |
 | Room types | `room_types` | prices used for every total today |
 | Physical rooms | `rooms` | housekeeping status, out of service |
 | Amenities | `amenities`, `room_type_amenities` | seeded from the room types' feature lists |
-| Room images | `room_images` | path in `room-photos` or `/photos/…`; one cover per type |
+| Room images | `room_images` | path in `room-photos` or `/photos/â€¦`; one cover per type |
 | Rate plans | `rate_plans` | a STANDARD plan per room type is seeded |
 | Seasonal prices | `seasonal_rates` | no overlapping active season per type and plan (exclusion constraint) |
 | Maintenance blocks | `room_blocks` | no overlapping active blocks per room; availability subtracts them |
@@ -38,7 +38,7 @@ The requested model maps onto these tables. "Reservations" are the existing `boo
 | Reserved rooms | `booking_rooms` | one row per room; synced from `bookings` by trigger; no double assignment (exclusion) |
 | Booking guests | `booking_guests` | primary guest synced; `id_document_path` points into the private bucket |
 | Payments | `payments` | ledger; `bookings.amount_paid_bdt` is derived from it by trigger |
-| Refunds | `refunds` | requested → approved/rejected → completed; the requester can't approve (four eyes) |
+| Refunds | `refunds` | requested â†’ approved/rejected â†’ completed; the requester can't approve (four eyes) |
 | Promotions | `promotions` | public when active and public |
 | Housekeeping tasks | `housekeeping_tasks` | a cleaning task is created automatically at check-out |
 | Contact enquiries | `inquiries` | from the website forms |
@@ -51,7 +51,7 @@ The requested model maps onto these tables. "Reservations" are the existing `boo
 
 Also: `booking_events` (per-booking history), `booking_lookup_attempts` (throttle log) and the `guest_summary` view (`security_invoker`).
 
-> **Pricing:** rate plans, seasonal rates and promotions are stored and protected, but **don't change any total yet**. `_stay_total()` and the website quote still use `room_types` prices. They are switched together in the next phase, so the price shown always equals the price charged.
+> **Pricing (booking engine, 20261118120000):** every total comes from `_quote()`: night-by-night weekday/weekend or seasonal rate, promotion, service charge, then VAT. The breakdown is stored on the booking. Holds, idempotent confirmation, guest tokens and payment intents are described in [MIGRATION_AND_ROLLBACK.md](MIGRATION_AND_ROLLBACK.md) Â§D.
 
 ## 3. Roles
 
@@ -61,9 +61,9 @@ Also: `booking_events` (per-booking history), `booking_lookup_attempts` (throttl
 | Super admin | 90 | required | everything below owner |
 | Manager | 70 | required | everything except approving refunds; team below manager |
 | Finance | 50 | required | payments, voids, refunds (request and approve), reports, read bookings and guests |
-| Receptionist | 40 | — | bookings, guests, desk payments, refund requests, housekeeping, enquiries, guest documents |
-| Content editor | 30 | — | website content, media, reviews |
-| Housekeeping | 20 | — | housekeeping tasks and room cleaning status |
+| Receptionist | 40 | â€” | bookings, guests, desk payments, refund requests, housekeeping, enquiries, guest documents |
+| Content editor | 30 | â€” | website content, media, reviews |
+| Housekeeping | 20 | â€” | housekeeping tasks and room cleaning status |
 
 The full matrix is in `20261117203948_rbac.sql`. `src/lib/access.ts` mirrors it for the UI, and a test fails if the two differ.
 
@@ -85,14 +85,14 @@ select id, 'Owner Name', 'owner', email from auth.users where email = 'owner@exa
 | --- | --- | --- | --- |
 | room types, amenities, rate plans, promotions, images | read public rows | same | read all; write by permission |
 | site content, reviews | read published / approved (public columns only for reviews) | same | editors read/write all |
-| bookings, booking_events, booking_rooms | — | own via `my_bookings()` (safe columns) | `bookings.read` |
-| guests, booking_guests | — | own profile; may edit name/phone/country/opt-in | `guests.read` |
-| payments, refunds | — | — | `payments.read`; writes via functions only |
+| bookings, booking_events, booking_rooms | â€” | own via `my_bookings()` (safe columns) | `bookings.read` |
+| guests, booking_guests | â€” | own profile; may edit name/phone/country/opt-in | `guests.read` |
+| payments, refunds | â€” | â€” | `payments.read`; writes via functions only |
 | inquiries, event_inquiries | submit via functions | same | `inquiries.read` |
-| housekeeping_tasks, room_blocks | — | — | `housekeeping.read` / staff |
-| notifications | — | — | own inbox only |
-| staff | — | — | own row, or `staff.read` |
-| private.*, audit.* | — | — | via functions only (`admin_audit_log` needs `audit.read`) |
+| housekeeping_tasks, room_blocks | â€” | â€” | `housekeeping.read` / staff |
+| notifications | â€” | â€” | own inbox only |
+| staff | â€” | â€” | own row, or `staff.read` |
+| private.*, audit.* | â€” | â€” | via functions only (`admin_audit_log` needs `audit.read`) |
 
 **Never writable through the API:**
 - `staff`, `bookings`, `payments`, `refunds`, `booking_events`, `booking_rooms`, `inquiries`, `notifications`, `audit.logs`;
@@ -125,7 +125,7 @@ select id, 'Owner Name', 'owner', email from auth.users where email = 'owner@exa
 | Staff | `admin_upsert_staff`, `admin_set_staff_role`, `admin_set_staff_active` |
 | Audit, access and inbox | `admin_audit_log`, `my_access`, `mark_notifications_read` |
 
-All are `SECURITY DEFINER` with a pinned `search_path`. Internal helpers (`_require`, `_free_units`, `_recalc_paid`, …) aren't executable by `anon` or `authenticated`.
+All are `SECURITY DEFINER` with a pinned `search_path`. Internal helpers (`_require`, `_free_units`, `_recalc_paid`, â€¦) aren't executable by `anon` or `authenticated`.
 
 The app calls them through server actions (`src/app/admin/actions.ts`, `src/app/admin/operations.ts`). Each action validates input and checks the permission first. The secret key is used only to create Auth users for invitations and to read staff emails. It never writes staff rows.
 

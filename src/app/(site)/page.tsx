@@ -8,8 +8,11 @@ import { ArrowRight, ArrowUpRight, PathIcon } from "@/components/icons";
 import Gallery from "@/components/system/Gallery";
 import RoomCard from "@/components/system/RoomCard";
 import TestimonialCard from "@/components/system/TestimonialCard";
+import { getHotelInfo, getSection } from "@/lib/cms/content";
+import type { ImageValue } from "@/lib/cms/fields";
+import { iconPath } from "@/lib/cms/sections";
+import { seoMetadata } from "@/lib/cms/seo";
 import { galleryItems } from "@/lib/content/gallery";
-import { NEARBY } from "@/lib/content/location";
 import { rateOffers } from "@/lib/content/offers";
 import { getReviews, REVIEWS_URL } from "@/lib/content/reviews";
 import { roomKind } from "@/lib/format";
@@ -18,10 +21,8 @@ import Parallax from "@/components/motion/Parallax";
 import SplitWords from "@/components/motion/SplitWords";
 import CopyButton from "@/components/ui/CopyButton";
 import PhotoFrame from "@/components/ui/PhotoFrame";
-import { HOTEL_AMENITIES } from "@/lib/amenities";
 import { hotelToday } from "@/lib/dates";
-import { HOTEL, RESERVATIONS, WHATSAPP } from "@/lib/hotel";
-import { photo } from "@/lib/photos";
+import { photo, type Tone } from "@/lib/photos";
 import { getRooms } from "@/lib/rooms";
 import { defaultStay } from "@/lib/stay";
 import styles from "./home.module.css";
@@ -31,37 +32,12 @@ export const revalidate = 300;
 
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties;
 
-const STORIES: Story[] = [
-  {
-    id: "dining",
-    tab: "Dining",
-    eyebrow: "Restaurant & café",
-    title: "Seafood from these shores, *breakfast on us.*",
-    body: "The restaurant and café serve Bangladeshi and international dishes, with fish from Cox's Bazar's own catch. The lounge stays open for evening coffee.",
-    points: [
-      "Breakfast buffet, included with every room",
-      "Bangladeshi & international kitchen",
-      "Fish from the morning's local catch",
-      "Twenty-four-hour room service",
-    ],
-    cta: { label: "Dining at Blossom Square", href: "/dining" },
-    photo: photo("RESTAURANT", "The restaurant and café", "dusk"),
-  },
-  {
-    id: "events",
-    tab: "Meetings & Events",
-    eyebrow: "Banquet & conference",
-    title: "From board meetings to *wedding receptions.*",
-    body: "A conference room with high-speed Wi-Fi and a banquet hall with full catering. Our events team looks after the setup, décor and menus.",
-    points: [
-      "Conference room with high-speed Wi-Fi",
-      "Banquet hall with full catering",
-      "Setup, décor and menus arranged for you",
-    ],
-    cta: { label: "Plan an event", href: "/meetings-events" },
-    photo: photo("BANQUET", "The banquet hall", "forest"),
-  },
-];
+export async function generateMetadata() {
+  return seoMetadata("home", "/photos/DSC5566.jpg");
+}
+
+/** A CMS photo slot as the site's Photo (empty slots show the tonal plate). */
+const pic = (img: ImageValue | null, fallbackAlt: string, tone: Tone) => (img ? photo(img.src, img.alt || fallbackAlt, tone) : photo("", fallbackAlt, tone));
 
 /** Three rooms that span the range: the first by price, the middle, and the top suite. */
 function pickFeatured<T extends { price_bdt: number; gallery: { src: string | null }[] }>(rooms: T[]): T[] {
@@ -71,17 +47,40 @@ function pickFeatured<T extends { price_bdt: number; gallery: { src: string | nu
 }
 
 export default async function HomePage() {
-  const [rooms, reviews] = await Promise.all([getRooms(), getReviews({ limit: 2 })]);
+  const [rooms, reviews, c, HOTEL] = await Promise.all([getRooms(), getReviews({ limit: 2 }), getSection("home"), getHotelInfo()]);
+  const WHATSAPP = HOTEL.whatsapp;
   const today = hotelToday();
   const fromPrice = Math.min(...rooms.map((r) => r.price_bdt));
   const featured = pickFeatured(rooms);
   const offer = rateOffers(rooms)[0] ?? null;
   const gallery = galleryItems();
 
-  const hero = photo("DSC5566", "The Connecting King Suite in the evening, lamps lit above the bed", "dusk");
-  const lobby = photo("DSC5562", "The upstairs corridor, with original artwork on the walls", "sand");
-  const pool = photo("DSC5552", "Turn-down in a Deluxe Couple room", "sea");
-  const bay = photo("DSC5579", "A Standard Couple room, curtains drawn", "sea");
+  const hero = pic(c.hero_photo, "Blossom Square Hotel & Suites", "dusk");
+  const lobby = pic(c.intro_photo_a, "Inside the hotel", "sand");
+  const pool = pic(c.intro_photo_b, "A room at the hotel", "sea");
+  const bay = pic(c.bay_photo, "The view", "sea");
+  const STORIES: Story[] = [
+    {
+      id: "dining",
+      tab: c.dining_tab || "Dining",
+      eyebrow: c.dining_eyebrow,
+      title: c.dining_title,
+      body: c.dining_body,
+      points: c.dining_points,
+      cta: { label: "Dining at Blossom Square", href: "/dining" },
+      photo: pic(c.dining_photo, "The restaurant and café", "dusk"),
+    },
+    {
+      id: "events",
+      tab: c.events_tab || "Meetings & Events",
+      eyebrow: c.events_eyebrow,
+      title: c.events_title,
+      body: c.events_body,
+      points: c.events_points,
+      cta: { label: "Plan an event", href: "/meetings-events" },
+      photo: pic(c.events_photo, "The banquet hall", "forest"),
+    },
+  ];
 
   return (
     <>
@@ -96,17 +95,17 @@ export default async function HomePage() {
 
         <div className={`wrap ${styles.heroInner}`}>
           <div className={styles.heroMeta} data-reveal="fade" style={d(200)}>
-            <span className="caps">Kolatoli · Cox&apos;s Bazar</span>
+            <span className="caps">{c.hero_eyebrow}</span>
             <span className={`caps ${styles.coords}`}>21°25′ N — 91°59′ E</span>
           </div>
 
           <h1 className={`display ${styles.heroTitle}`} data-reveal="words" style={d(150)}>
-            <SplitWords text="A short walk from the *world's longest* sea beach." />
+            <SplitWords text={c.hero_title} />
           </h1>
 
           <div className={styles.heroFoot}>
             <p className={styles.heroLede} data-reveal="up" style={d(700)}>
-              Sea-view suites with private balconies, a pool to come back to, and breakfast with every room.
+              {c.hero_lede}
             </p>
             <div className={styles.scrollCue} aria-hidden="true" data-reveal="fade" style={d(1100)}>
               <span className="caps">Scroll</span>
@@ -124,24 +123,18 @@ export default async function HomePage() {
       <section className={`section ${styles.about}`} aria-labelledby="about-h">
         <div className={`wrap ${styles.aboutGrid}`}>
           <p className={`caps eyebrow ${styles.aboutEyebrow}`} data-reveal="up">
-            The hotel
+            {c.intro_eyebrow}
           </p>
           <h2 id="about-h" className={`h2 ${styles.aboutTitle}`} data-reveal="words">
-            <SplitWords text="Quiet rooms on Light House Road, *the sea at the end of the street.*" />
+            <SplitWords text={c.intro_title} />
           </h2>
 
           <div className={styles.aboutCopy}>
             <p className={`lede ${styles.dropcap}`} data-reveal="up">
-              Blossom Square sits in Kolatoli, Cox&apos;s Bazar&apos;s hotel quarter, a few minutes on foot from the sand.
-              Come for the beach, stay in for the pool, the restaurant and round-the-clock room service, whether
-              you&apos;re here on holiday or on business.
+              {c.intro_body}
             </p>
             <dl className={styles.facts}>
-              {[
-                ["Steps", "to the sea beach"],
-                ["Included", "breakfast, every room"],
-                ["24 hours", "room service"],
-              ].map(([value, label], i) => (
+              {c.intro_facts.map(({ value, label }, i) => (
                 <div key={value} className={styles.fact} data-reveal="up" style={d(120 * i)}>
                   <dt className={styles.factLabel}>{label}</dt>
                   <dd className={styles.factValue}>{value}</dd>
@@ -161,9 +154,11 @@ export default async function HomePage() {
                 <PhotoFrame photo={pool} sizes="(max-width: 900px) 60vw, 28vw" />
               </div>
             </div>
-            <p className={styles.caption} data-reveal="fade" style={d(400)}>
-              Upstairs, and a Deluxe Couple room at turn-down.
-            </p>
+            {c.intro_caption && (
+              <p className={styles.caption} data-reveal="fade" style={d(400)}>
+                {c.intro_caption}
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -174,10 +169,10 @@ export default async function HomePage() {
           <div className={styles.head}>
             <div>
               <p className="caps eyebrow" data-reveal="up">
-                Rooms &amp; Suites
+                {c.rooms_eyebrow}
               </p>
               <h2 id="rooms-h" className={`h2 ${styles.headTitle}`} data-reveal="words">
-                <SplitWords text="A room *for every trip.*" />
+                <SplitWords text={c.rooms_title} />
               </h2>
             </div>
             <Link href="/rooms" className="link-line" data-reveal="fade">
@@ -221,14 +216,13 @@ export default async function HomePage() {
         <div className={`wrap ${styles.amenGrid}`}>
           <div className={styles.amenIntro}>
             <p className="caps eyebrow" data-reveal="up">
-              With every stay
+              {c.amenities_eyebrow}
             </p>
             <h2 id="amen-h" className="h2" data-reveal="words">
-              <SplitWords text="Nothing to add *at checkout.*" />
+              <SplitWords text={c.amenities_title} />
             </h2>
             <p className={styles.amenLede} data-reveal="up" style={d(200)}>
-              Breakfast, parking, Wi-Fi and the pool are part of the room rate. Airport pickup and drop-off can be
-              arranged for an extra charge.
+              {c.amenities_lede}
             </p>
             <Link href="/facilities" className="link-line" data-reveal="fade">
               All facilities
@@ -236,10 +230,10 @@ export default async function HomePage() {
             </Link>
           </div>
           <ul role="list" className={styles.amenList}>
-            {HOTEL_AMENITIES.map((a, i) => (
-              <li key={a.name} className={styles.amenity} data-reveal="up" style={d((i % 2) * 90 + Math.floor(i / 2) * 60)}>
+            {c.amenities.map((a, i) => (
+              <li key={`${a.name}-${i}`} className={styles.amenity} data-reveal="up" style={d((i % 2) * 90 + Math.floor(i / 2) * 60)}>
                 <span className={styles.amenIcon}>
-                  <PathIcon d={a.icon} size={30} strokeWidth={1.1} />
+                  <PathIcon d={iconPath(a.icon)} size={30} strokeWidth={1.1} />
                 </span>
                 <span className={styles.amenName}>{a.name}</span>
                 <span className={styles.amenNote}>{a.note}</span>
@@ -259,19 +253,21 @@ export default async function HomePage() {
         </div>
         <div className={`wrap on-dark ${styles.bayInner}`}>
           <p className="caps eyebrow" data-reveal="up">
-            From your balcony
+            {c.bay_eyebrow}
           </p>
           <p className={`h1 ${styles.bayLine}`} data-reveal="words">
-            <SplitWords text="The Bay of Bengal, *every morning.*" />
+            <SplitWords text={c.bay_title} />
           </p>
           <div className={styles.bayActions} data-reveal="up" style={d(300)}>
             <Link href="/booking" className="btn btn--light">
               Reserve your stay
               <ArrowRight />
             </Link>
-            <a href={RESERVATIONS.href} className="btn btn--ghost-light">
-              Call to book
-            </a>
+            {HOTEL.phones[0] && (
+              <a href={HOTEL.phones[0].href} className="btn btn--ghost-light">
+                Call to book
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -281,7 +277,7 @@ export default async function HomePage() {
         <div className="wrap">
           <div className={styles.head}>
             <h2 id="stories-h" className="h2" data-reveal="words">
-              <SplitWords text="At the table, *and beyond it.*" />
+              <SplitWords text={c.stories_title} />
             </h2>
           </div>
           <div data-reveal="up" style={d(150)}>
@@ -296,10 +292,10 @@ export default async function HomePage() {
           <div className={styles.head}>
             <div>
               <p className="caps eyebrow" data-reveal="up">
-                Gallery
+                {c.gallery_eyebrow}
               </p>
               <h2 id="gallery-h" className={`h2 ${styles.headTitle}`} data-reveal="words">
-                <SplitWords text="The hotel, *as it is.*" />
+                <SplitWords text={c.gallery_title} />
               </h2>
             </div>
             <Link href="/gallery" className="link-line" data-reveal="fade">
@@ -358,10 +354,10 @@ export default async function HomePage() {
         <div className={`wrap ${styles.locGrid}`}>
           <div>
             <p className="caps eyebrow" data-reveal="up">
-              Find us
+              {c.location_eyebrow}
             </p>
             <h2 id="loc-h" className="h2" data-reveal="words">
-              <SplitWords text="In the heart *of Kolatoli.*" />
+              <SplitWords text={c.location_title} />
             </h2>
             <dl className={styles.details}>
               <div className={styles.detail} data-reveal="up">
@@ -387,13 +383,15 @@ export default async function HomePage() {
                   <a href={WHATSAPP.href} target="_blank" rel="noopener noreferrer" className="text-link">
                     {WHATSAPP.display}
                   </a>
-                  <Image
-                    src={WHATSAPP.qr}
-                    alt="QR code: scan to chat with Blossom Square on WhatsApp"
-                    width={120}
-                    height={120}
-                    className={styles.qr}
-                  />
+                  {WHATSAPP.qr && (
+                    <Image
+                      src={WHATSAPP.qr}
+                      alt="QR code: scan to chat with Blossom Square on WhatsApp"
+                      width={120}
+                      height={120}
+                      className={styles.qr}
+                    />
+                  )}
                 </dd>
               </div>
               <div className={styles.detail} data-reveal="up" style={d(160)}>
@@ -406,13 +404,13 @@ export default async function HomePage() {
               </div>
               <div className={styles.detail} data-reveal="up" style={d(240)}>
                 <dt>Arriving</dt>
-                <dd>Airport pickup and drop-off on request, at an extra charge.</dd>
+                <dd>{HOTEL.arriving}</dd>
               </div>
             </dl>
             <div className={styles.nearby} data-reveal="up">
               <p className={styles.nearbyTitle}>Nearby</p>
               <ul role="list">
-                {NEARBY.map(([place, note]) => (
+                {c.nearby.map(({ place, note }) => (
                   <li key={place}>
                     <span>{place}</span>
                     <span className={styles.nearbyNote}>{note}</span>
@@ -428,7 +426,7 @@ export default async function HomePage() {
       </section>
 
       <StickyBook fromPrice={fromPrice} />
-      <JsonLd data={hotelJsonLd({ image: "/photos/DSC5566.jpg", priceRange: `৳${fromPrice.toLocaleString("en-US")}+ per night` })} />
+      <JsonLd data={hotelJsonLd({ image: hero.src ?? "/photos/DSC5566.jpg", priceRange: `৳${fromPrice.toLocaleString("en-US")}+ per night`, hotel: HOTEL })} />
     </>
   );
 }

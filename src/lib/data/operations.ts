@@ -50,6 +50,60 @@ export type HousekeepingTask = {
   completed_at: string | null;
 };
 
+export type BoardRoom = {
+  room_id: string;
+  number: string;
+  floor: string | null;
+  room_type: string;
+  housekeeping: "dirty" | "cleaning" | "clean" | "inspected";
+  out_of_service: boolean;
+  service_note: string | null;
+  occupied: boolean;
+  arriving: boolean;
+  departing: boolean;
+  blocked: boolean;
+  open_tasks: number;
+  open_issues: number;
+};
+
+export { roomStatus, type RoomStatus } from "../room-status";
+
+export type SeasonalRate = {
+  id: string;
+  room_type_id: string;
+  name: string;
+  starts_on: string;
+  ends_on: string;
+  price_bdt: number;
+  weekend_price_bdt: number | null;
+  is_active: boolean;
+};
+
+export type AmenityRow = { id: string; code: string; name: string; note: string | null; category: string; is_active: boolean; sort_order: number };
+
+export type Promotion = {
+  id: string;
+  code: string | null;
+  name: string;
+  description: string;
+  discount_type: "percent" | "amount";
+  discount_value: number;
+  starts_on: string;
+  ends_on: string;
+  min_nights: number;
+  room_type_ids: string[];
+  is_public: boolean;
+  is_active: boolean;
+  stackable: boolean;
+  auto_apply: boolean;
+  max_redemptions: number | null;
+  max_discount_bdt: number | null;
+  bookable_from: string | null;
+  bookable_until: string | null;
+};
+export type PromotionInput = Omit<Promotion, "id" | "auto_apply">;
+export type PromotionUsage = { promotion_id: string; bookings: number; discount_bdt: number };
+
 export type Notification = { id: string; kind: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string };
 
 export type AuditEntry = {
@@ -154,6 +208,87 @@ export class OperationsRepo {
   }
   async updateTask(taskId: string, status: TaskStatus, notes?: string) {
     check(await this.db.rpc("admin_update_task", { p_task: taskId, p_status: status, p_notes: notes ?? "" }));
+  }
+  async assignTask(taskId: string, userId: string | null) {
+    check(await this.db.rpc("admin_assign_task", { p_task: taskId, p_user: userId as string }));
+  }
+  async reportIssue(roomId: string, summary: string, urgent: boolean): Promise<string> {
+    return String(check(await this.db.rpc("report_maintenance_issue", { p_room: roomId, p_summary: summary, p_urgent: urgent })));
+  }
+  async board(day?: string): Promise<BoardRoom[]> {
+    return check(await this.db.rpc("housekeeping_board", { p_day: day as string })) as unknown as BoardRoom[];
+  }
+  async housekeepingStaff(): Promise<{ user_id: string; full_name: string }[]> {
+    return check(await this.db.rpc("housekeeping_staff")) as unknown as { user_id: string; full_name: string }[];
+  }
+
+  /* Room setup */
+  async createRoomType(i: { name: string; tag: "SUITE" | "DELUXE"; bed: string; sleeps: number; price: number; weekendPrice: number | null; blurb: string; description: string }): Promise<string> {
+    return String(
+      check(
+        await this.db.rpc("admin_create_room_type", {
+          p_name: i.name, p_tag: i.tag, p_bed: i.bed, p_sleeps: i.sleeps, p_price: i.price,
+          p_weekend_price: i.weekendPrice as number, p_blurb: i.blurb, p_description: i.description,
+        }),
+      ),
+    );
+  }
+  async seasonalRates(): Promise<SeasonalRate[]> {
+    return check(await this.db.from("seasonal_rates").select("id, room_type_id, name, starts_on, ends_on, price_bdt, weekend_price_bdt, is_active").order("starts_on")) as SeasonalRate[];
+  }
+  async saveSeason(s: Omit<SeasonalRate, "id"> & { id?: string | null }): Promise<string> {
+    return String(
+      check(
+        await this.db.rpc("admin_save_seasonal_rate", {
+          p_id: (s.id ?? null) as string, p_room_type: s.room_type_id, p_name: s.name, p_starts: s.starts_on, p_ends: s.ends_on,
+          p_price: s.price_bdt, p_weekend_price: s.weekend_price_bdt as number, p_active: s.is_active,
+        }),
+      ),
+    );
+  }
+  async deleteSeason(id: string) {
+    check(await this.db.rpc("admin_delete_seasonal_rate", { p_id: id }));
+  }
+  async amenities(): Promise<AmenityRow[]> {
+    return check(await this.db.from("amenities").select("id, code, name, note, category, is_active, sort_order").order("sort_order")) as AmenityRow[];
+  }
+  async roomTypeAmenities(): Promise<{ room_type_id: string; amenity_id: string }[]> {
+    return check(await this.db.from("room_type_amenities").select("room_type_id, amenity_id")) as { room_type_id: string; amenity_id: string }[];
+  }
+  /** Replaces a room type's amenities (rooms.manage; RLS checks it). */
+  async setRoomTypeAmenities(typeId: string, amenityIds: string[]) {
+    check(await this.db.from("room_type_amenities").delete().eq("room_type_id", typeId));
+    if (amenityIds.length) check(await this.db.from("room_type_amenities").insert(amenityIds.map((amenity_id) => ({ room_type_id: typeId, amenity_id }))));
+  }
+  async addAmenity(a: { code: string; name: string; note: string | null; category: string; sort_order: number }): Promise<string> {
+    const res = check(await this.db.from("amenities").insert(a).select("id").single()) as { id: string };
+    return res.id;
+  }
+  async updateAmenity(id: string, patch: Partial<Pick<AmenityRow, "name" | "note" | "is_active" | "category">>) {
+    check(await this.db.from("amenities").update(patch).eq("id", id));
+  }
+
+  /* Promotions */
+  async promotions(): Promise<Promotion[]> {
+    return check(
+      await this.db
+        .from("promotions")
+        .select("id, code, name, description, discount_type, discount_value, starts_on, ends_on, min_nights, room_type_ids, is_public, is_active, stackable, auto_apply, max_redemptions, max_discount_bdt, bookable_from, bookable_until")
+        .order("is_active", { ascending: false })
+        .order("starts_on", { ascending: false }),
+    ) as Promotion[];
+  }
+  async promotionUsage(): Promise<PromotionUsage[]> {
+    return check(await this.db.rpc("admin_promotion_usage")) as unknown as PromotionUsage[];
+  }
+  async savePromotion(id: string | null, p: PromotionInput): Promise<string> {
+    return String(check(await this.db.rpc("admin_save_promotion", { p_id: id as string, p: p as never })));
+  }
+  async setPromotionActive(id: string, active: boolean) {
+    check(await this.db.rpc("admin_set_promotion_active", { p_id: id, p_active: active }));
+  }
+  async deletePromotion(id: string) {
+    check(await this.db.rpc("admin_delete_promotion", { p_id: id }));
   }
 
   /* Notifications & audit */

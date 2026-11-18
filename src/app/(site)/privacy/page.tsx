@@ -1,6 +1,6 @@
 import Link from "next/link";
 import LegalPage from "@/components/site/LegalPage";
-import { HOTEL } from "@/lib/hotel";
+import { getHotelInfo } from "@/lib/cms/content";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -11,7 +11,10 @@ export const metadata = pageMetadata({
 
 // Describes what this website actually does. Review with the hotel's adviser
 // before relying on it as a legal document (see docs/PUBLIC_SITE.md).
-export default function PrivacyPage() {
+export const revalidate = 300;
+
+export default async function PrivacyPage() {
+  const HOTEL = await getHotelInfo();
   const mail = <a href={`mailto:${HOTEL.email}`}>{HOTEL.email}</a>;
   return (
     <LegalPage
@@ -29,7 +32,8 @@ export default function PrivacyPage() {
           title: "Who we are",
           body: (
             <p>
-              {HOTEL.fullName}, {HOTEL.address}. Questions about your information: {mail} or {HOTEL.phones[0].display}.
+              {HOTEL.fullName}, {HOTEL.address}. Questions about your information: {mail}
+              {HOTEL.phones[0] ? ` or ${HOTEL.phones[0].display}` : ""}.
             </p>
           ),
         },

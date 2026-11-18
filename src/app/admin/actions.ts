@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PREVIEW_ROLE_COOKIE, requireAdmin, requirePermission } from "@/lib/admin/session";
 import { assignableRoles, isStaffRole } from "@/lib/access";
+import { CmsRepo } from "@/lib/cms/repo";
 import { previewEnabled } from "@/lib/data";
 import { errorCode, errorMessage } from "@/lib/data/errors";
 import type { AdminRepo } from "@/lib/data/repo";
@@ -28,7 +29,7 @@ export type ActionResult = { ok: true; message?: string; reference?: string } | 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const STATUSES: BookingStatus[] = ["pending", "confirmed", "checked_in", "checked_out", "cancelled", "no_show"];
 const METHODS: PaymentMethod[] = ["cash", "bkash", "nagad", "card", "bank", "other"];
-const HOUSEKEEPING: Housekeeping[] = ["clean", "dirty", "inspected"];
+const HOUSEKEEPING: Housekeeping[] = ["dirty", "cleaning", "clean", "inspected"];
 
 /** Runs a repository change, refreshes admin and public pages, maps errors. */
 async function run(fn: () => Promise<unknown>, message?: string): Promise<ActionResult> {
@@ -65,6 +66,31 @@ export async function setBookingStatus(id: string, status: BookingStatus, reason
 export async function assignRoom(id: string, roomId: string | null): Promise<ActionResult> {
   const { repo } = await requireAdmin();
   return run(() => repo.assignRoom(id, roomId || null), roomId ? "Room assigned" : "Room unassigned");
+}
+
+const UUID = /^[0-9a-f-]{36}(:\d+)?$/i;
+
+export async function assignRoomLine(lineId: string, roomId: string | null): Promise<ActionResult> {
+  const { repo } = await requireAdmin();
+  if (!UUID.test(String(lineId)) || (roomId && !UUID.test(roomId))) return { ok: false, message: errorMessage("NOT_FOUND") };
+  return run(() => repo.assignRoomLine(lineId, roomId || null), roomId ? "Room assigned" : "Room unassigned");
+}
+
+export async function autoAssignRooms(id: string): Promise<ActionResult> {
+  const { repo } = await requireAdmin();
+  try {
+    const n = await repo.autoAssign(id);
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: n ? `${n} ${n === 1 ? "room" : "rooms"} assigned` : "Every room is already assigned" };
+  } catch (err) {
+    return { ok: false, message: errorMessage(errorCode(err)) };
+  }
+}
+
+export async function resolveBookingRequest(requestId: string, status: "done" | "declined"): Promise<ActionResult> {
+  const { repo } = await requireAdmin();
+  if (status !== "done" && status !== "declined") return { ok: false, message: errorMessage("BAD_TRANSITION") };
+  return run(() => repo.resolveRequest(requestId, status), status === "done" ? "Marked as done" : "Request declined");
 }
 
 export async function modifyBooking(id: string, change: BookingChange): Promise<ActionResult> {
@@ -187,6 +213,33 @@ export async function updateRoomType(
   return run(() => repo.updateRoomType(id, clean), "Saved — the website shows the change now");
 }
 
+/** Name, beds, occupancy and descriptions of a room type (room setup, not prices). */
+export async function updateRoomTypeDetails(
+  id: string,
+  d: { name: string; tag: string; bed: string; sleeps: number; view: string; size_sqft: number | null; blurb: string; description: string; features: string[] },
+): Promise<ActionResult> {
+  const { repo } = await requirePermission("rooms.manage");
+  if (!UUID_RE.test(id)) return { ok: false, message: errorMessage("NO_ROOM") };
+  const name = text(d.name, 60);
+  const bed = text(d.bed, 80);
+  const sleeps = Math.round(Number(d.sleeps));
+  if (name.length < 3) return { ok: false, message: "Give the room type a name of at least 3 characters." };
+  if (d.tag !== "SUITE" && d.tag !== "DELUXE") return { ok: false, message: "Choose Suite or Deluxe." };
+  if (bed.length < 2) return { ok: false, message: "Describe the beds, e.g. “Queen-size bed”." };
+  if (!Number.isInteger(sleeps) || sleeps < 1 || sleeps > 10) return { ok: false, message: "A room can sleep 1 to 10 guests." };
+  const size = d.size_sqft === null || (d.size_sqft as unknown) === "" ? null : Math.round(Number(d.size_sqft));
+  if (size !== null && (!Number.isInteger(size) || size < 50 || size > 5000)) return { ok: false, message: "Enter a room size between 50 and 5,000 sq ft, or leave it empty." };
+  const features = (Array.isArray(d.features) ? d.features : []).map((f) => text(f, 60)).filter(Boolean).slice(0, 16);
+  return run(
+    () =>
+      repo.updateRoomType(id, {
+        name, tag: d.tag as "SUITE" | "DELUXE", bed, sleeps, view: text(d.view, 40), size_sqft: size,
+        blurb: text(d.blurb, 240), description: text(d.description, 1500), features,
+      }),
+    "Room details saved — the website shows them now",
+  );
+}
+
 export async function updateRoom(
   id: string,
   patch: { housekeeping?: Housekeeping; out_of_service?: boolean; service_note?: string | null },
@@ -272,7 +325,18 @@ export async function uploadRoomPhoto(roomTypeId: string, form: FormData): Promi
   }
   const url = bucket.getPublicUrl(path).data.publicUrl;
   const result = await run(() => repo.updateRoomType(roomTypeId, { gallery: [...type.gallery, url] }), "Photo added");
-  if (!result.ok) await bucket.remove([path]);
+  if (!result.ok) {
+    await bucket.remove([path]);
+    return result;
+  }
+  // Listed in the photo library too (so it can be described, found and replaced).
+  const dims = (k: string) => {
+    const n = Math.round(Number(form.get(k)));
+    return Number.isFinite(n) && n >= 1 && n <= 12000 ? n : null;
+  };
+  await new CmsRepo(db)
+    .registerMedia({ bucket: PHOTO_BUCKET, path, url, alt: `${type.name} photo`, folder: "rooms", width: dims("width"), height: dims("height"), bytes: file.size, mime: file.type })
+    .catch((err) => console.error("Photo library:", err));
   return result;
 }
 
@@ -290,10 +354,22 @@ export async function setRoomGallery(roomTypeId: string, gallery: string[]): Pro
   const result = await run(() => repo.updateRoomType(roomTypeId, { gallery: next }), "Photos saved");
   if (result.ok && mode === "live") {
     const prefix = photoUrlPrefix();
-    const removed = type.gallery.filter((g) => !next.includes(g) && g.startsWith(prefix)).map((g) => g.slice(prefix.length));
+    const removed = type.gallery.filter((g) => !next.includes(g) && g.startsWith(prefix));
     if (removed.length) {
-      const { error } = await (await getSessionClient()).storage.from(PHOTO_BUCKET).remove(removed);
-      if (error) console.error("Photo cleanup:", error.message);
+      const db = await getSessionClient();
+      const cms = new CmsRepo(db);
+      const library = await cms.media().catch(() => []);
+      const keep: string[] = [];
+      for (const url of removed) {
+        const asset = library.find((m) => m.url === url);
+        // Still used elsewhere (another room or a page)? Then keep the file.
+        if (asset) await cms.deleteMedia(asset.id).catch(() => keep.push(url));
+      }
+      const paths = removed.filter((u) => !keep.includes(u)).map((g) => g.slice(prefix.length));
+      if (paths.length) {
+        const { error } = await db.storage.from(PHOTO_BUCKET).remove(paths);
+        if (error) console.error("Photo cleanup:", error.message);
+      }
     }
   }
   return result;
@@ -311,6 +387,15 @@ export async function updateSettings(patch: Partial<HotelSettings>): Promise<Act
   const vat = pct(patch.vat_percent);
   const svc = pct(patch.service_charge_percent);
   if (Number.isNaN(vat) || Number.isNaN(svc)) return { ok: false, message: "Rates must be between 0 and 50%." };
+  const share = (v: unknown, max: number) => {
+    if (v === null || v === "" || v === undefined) return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 && n <= max ? Math.round(n * 100) / 100 : NaN;
+  };
+  const advance = share(patch.advance_percent, 100);
+  const maxDiscount = patch.max_discount_percent === undefined ? undefined : share(patch.max_discount_percent, 90);
+  if (Number.isNaN(advance)) return { ok: false, message: "The advance is between 0 and 100% (or empty for pay at the hotel only)." };
+  if (maxDiscount !== undefined && (maxDiscount === null || Number.isNaN(maxDiscount))) return { ok: false, message: "The maximum total discount is between 0 and 90%." };
   return run(
     () =>
       repo.updateSettings({
@@ -319,6 +404,8 @@ export async function updateSettings(patch: Partial<HotelSettings>): Promise<Act
         confirm_call_within: text(patch.confirm_call_within, 40),
         vat_percent: vat,
         service_charge_percent: svc,
+        ...(patch.advance_percent !== undefined ? { advance_percent: advance } : {}),
+        ...(maxDiscount !== undefined ? { max_discount_percent: maxDiscount as number } : {}),
       }),
     "Policies saved — the website shows them now",
   );
@@ -355,7 +442,7 @@ export async function inviteStaff(email: string, fullName: string, role: StaffRo
     await service.auth.admin.deleteUser(data.user.id).catch(() => undefined);
     return { ok: false, message: errorMessage(errorCode(new Error(staffError.message))) };
   }
-  revalidatePath("/admin/settings");
+  revalidatePath("/admin/team");
   return { ok: true, message: `Invitation sent to ${addr}` };
 }
 
@@ -374,9 +461,17 @@ export async function updateStaffMember(userId: string, patch: { role?: StaffRol
   if (patch.active !== undefined) {
     const { error } = await db.rpc("admin_set_staff_active", { p_user: userId, p_active: Boolean(patch.active) });
     if (error) return { ok: false, message: errorMessage(errorCode(new Error(error.message))) };
+    // The database already refuses everything to an inactive account; also end
+    // their sign-in so open sessions stop at once (and allow it again on restore).
+    const service = getServiceClient();
+    if (service) {
+      const { error: banError } = await service.auth.admin.updateUserById(userId, { ban_duration: patch.active ? "none" : "876000h" });
+      if (banError) console.error("Sign-in ban:", banError.message);
+    }
   }
+  revalidatePath("/admin/team");
   revalidatePath("/admin/settings");
-  return { ok: true, message: "Team updated" };
+  return { ok: true, message: patch.active === false ? "Access removed — they've been signed out" : patch.active ? "Access restored" : "Role changed" };
 }
 
 /* ---------------------------------------------------------- Auth */

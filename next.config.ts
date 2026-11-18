@@ -62,7 +62,10 @@ const nextConfig: NextConfig = {
     // shrunk in the browser, so serve the files as they are.
     unoptimized: true,
     remotePatterns: supabaseHost
-      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/room-photos/**" }]
+      ? [
+          { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/room-photos/**" },
+          { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/site-media/**" },
+        ]
       : [],
   },
   experimental: {

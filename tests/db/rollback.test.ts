@@ -7,6 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { as, createDevDatabase, type Db } from "./harness";
 
 const BEFORE = "20261117194819_guest_services_staff_grant.sql";
+// Last migration of the access-architecture release this rollback undoes.
+const RELEASE_END = "20261117204245_storage.sql";
 const DOWN = readFileSync("supabase/rollbacks/20261117203948_access_architecture.down.sql", "utf8");
 
 // Everything that defines the API surface and its security.
@@ -53,7 +55,7 @@ let before: Db;
 let after: Db;
 
 beforeAll(async () => {
-  [before, after] = await Promise.all([createDevDatabase({ upTo: BEFORE }), createDevDatabase()]);
+  [before, after] = await Promise.all([createDevDatabase({ upTo: BEFORE }), createDevDatabase({ upTo: RELEASE_END })]);
   // Some real use first, so the rollback has data and staff roles to deal with.
   const owner = randomUUID();
   const desk = randomUUID();
@@ -78,7 +80,7 @@ describe("rollback of the access-architecture migrations", () => {
   });
 
   it("the comparison is sensitive: without the rollback, the schemas differ", async () => {
-    const full = await createDevDatabase();
+    const full = await createDevDatabase({ upTo: RELEASE_END });
     try {
       const a = (await before.query<{ kind: string; item: string }>(SNAPSHOT)).rows.map((r) => `${r.kind}: ${r.item}`);
       const c = (await full.query<{ kind: string; item: string }>(SNAPSHOT)).rows.map((r) => `${r.kind}: ${r.item}`);
@@ -108,7 +110,7 @@ describe("rollback of the access-architecture migrations", () => {
   });
 
   it("refuses to run while the private document bucket holds files", async () => {
-    const db = await createDevDatabase();
+    const db = await createDevDatabase({ upTo: RELEASE_END });
     try {
       const bookingId = (await db.query<{ id: string }>(
         "select id from bookings where reference = public.create_booking('deluxe-couple', current_date + 10, current_date + 12, 1, 2, 0, 'Doc Test', 'doc@example.com', '+880 1711-222222', '', '', '', false)",

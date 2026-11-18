@@ -9,7 +9,11 @@ import { Monogram } from "../icons";
 import CommandPalette, { openCommandPalette } from "./CommandPalette";
 import {
   IBookings,
+  IBroom,
   ICalendar,
+  IPage,
+  ITag,
+  ITeam,
   IClose,
   ICommand,
   IExternal,
@@ -40,9 +44,13 @@ const NAV: { href: string; label: string; icon: (p: { size?: number }) => React.
   { href: "/admin/bookings", label: "Bookings", icon: IBookings, perm: "bookings.read" },
   { href: "/admin/calendar", label: "Calendar", icon: ICalendar, perm: "bookings.read" },
   { href: "/admin/rooms", label: "Rooms & rates", icon: IRooms },
+  { href: "/admin/housekeeping", label: "Housekeeping", icon: IBroom, perm: "housekeeping.read" },
   { href: "/admin/guests", label: "Guests", icon: IGuests, perm: "guests.read" },
   { href: "/admin/inquiries", label: "Enquiries", icon: IInbox, perm: "inquiries.read" },
+  { href: "/admin/promotions", label: "Offers", icon: ITag, perm: "promotions.manage" },
+  { href: "/admin/content", label: "Website content", icon: IPage, perm: "content.manage" },
   { href: "/admin/reports", label: "Reports", icon: IReports, perm: "reports.read" },
+  { href: "/admin/team", label: "Team", icon: ITeam, perm: "staff.read" },
   { href: "/admin/settings", label: "Settings", icon: ISettings, perm: "settings.manage" },
 ];
 
@@ -88,7 +96,7 @@ export default function AdminShell({ staff, permissions, mode, pending, dirtyRoo
         <nav className={styles.nav} aria-label="Sections">
           {NAV.filter((n) => !n.perm || permissions.includes(n.perm)).map(({ href, label, icon: Icon, exact }) => {
             const active = isActive(href, exact);
-            const badge = href === "/admin/bookings" ? pending : href === "/admin/rooms" ? dirtyRooms : 0;
+            const badge = href === "/admin/bookings" ? pending : href === "/admin/housekeeping" ? dirtyRooms : 0;
             return (
               <Link key={href} href={href} className={`${styles.navLink} ${active ? styles.navActive : ""}`} aria-current={active ? "page" : undefined}>
                 <Icon />

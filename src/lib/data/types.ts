@@ -3,7 +3,8 @@
 export type BookingStatus = "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled" | "no_show";
 export type PaymentStatus = "unpaid" | "partial" | "paid";
 export type BookingSource = "website" | "phone" | "walk_in" | "other";
-export type Housekeeping = "clean" | "dirty" | "inspected";
+/** Set by staff. "Occupied" and "Out of service" are derived (a checked-in guest / the room's service flag). */
+export type Housekeeping = "dirty" | "cleaning" | "clean" | "inspected";
 export type { StaffRole } from "../access";
 import type { StaffRole } from "../access";
 export type PaymentMethod = "cash" | "bkash" | "nagad" | "card" | "bank" | "other";
@@ -73,6 +74,41 @@ export type Booking = {
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
+  /* Booking engine (20261118120000). Optional: the preview store omits them. */
+  /** Room charges before discount and taxes. */
+  subtotal_bdt?: number | null;
+  discount_bdt?: number;
+  service_charge_bdt?: number;
+  vat_bdt?: number;
+  payment_option?: "pay_at_hotel" | "advance" | "online";
+  advance_due_bdt?: number;
+  payment_due_at?: string | null;
+  /** The quote the total came from (night-by-night rates, promotion, tax rates). */
+  price_detail?: { taxes_pending?: boolean; service_charge_percent?: number | null; vat_percent?: number | null; promotion?: { code: string; name: string } | null } | null;
+};
+
+/** One reserved room of a booking (booking_rooms). */
+export type BookingLine = {
+  id: string;
+  booking_id: string;
+  line_no: number | null;
+  room_type_id: string;
+  room_id: string | null;
+  check_in: string;
+  check_out: string;
+  active: boolean;
+  subtotal_bdt: number | null;
+};
+
+/** A guest's cancellation or date-change request from the website. */
+export type BookingRequest = {
+  id: string;
+  booking_id: string;
+  kind: "cancel" | "change";
+  status: "open" | "done" | "declined";
+  detail: { reason?: string; check_in?: string; check_out?: string; note?: string; available_when_requested?: boolean };
+  created_at: string;
+  handled_at: string | null;
 };
 
 export type BookingEvent = {
@@ -92,6 +128,10 @@ export type HotelSettings = {
   confirm_call_within: string;
   vat_percent: number | null;
   service_charge_percent: number | null;
+  /** Share of the total asked as an advance (null = guests only pay at the hotel). */
+  advance_percent?: number | null;
+  /** Most that offers together may take off the room charges, in percent. */
+  max_discount_percent?: number;
 };
 
 export type StaffMember = {
@@ -217,7 +257,8 @@ export type BookingView = "active" | "requests" | "arrivals" | "in_house" | "dep
 export type RoomTypePatch = Partial<
   Pick<
     RoomTypeRecord,
-    "price_bdt" | "weekend_price_bdt" | "rack_price_bdt" | "is_published" | "blurb" | "description" | "size_sqft" | "gallery"
+    | "price_bdt" | "weekend_price_bdt" | "rack_price_bdt" | "is_published" | "blurb" | "description" | "size_sqft" | "gallery"
+    | "name" | "bed" | "sleeps" | "tag" | "features" | "view" | "floor" | "sort_order"
   >
 >;
 /** A room's identity: its number, type and floor. */

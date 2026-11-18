@@ -12,6 +12,8 @@ import type {
   BookingChange,
   BookingEvent,
   BookingFilter,
+  BookingLine,
+  BookingRequest,
   BookingStatus,
   GuestBookingView,
   GuestDetails,
@@ -461,6 +463,50 @@ export class PreviewRepo implements AdminRepo {
     b.room_id = roomId;
     this.touch(b);
     this.log(b.id, "room", { from, to: target?.number ?? null });
+  }
+
+  /** The preview keeps one room type per booking; lines are derived (line 1 carries the room). */
+  async linesBetween(from: string, to: string): Promise<BookingLine[]> {
+    this.requireStaff();
+    return store()
+      .bookings.filter((b) => isLive(b.status) && overlaps(b.check_in, b.check_out, from, to))
+      .flatMap((b) =>
+        Array.from({ length: b.rooms }, (_, i) => ({
+          id: `${b.id}:${i + 1}`,
+          booking_id: b.id,
+          line_no: i + 1,
+          room_type_id: b.room_type_id,
+          room_id: i === 0 && b.rooms === 1 ? b.room_id : null,
+          check_in: b.check_in,
+          check_out: b.check_out,
+          active: true,
+          subtotal_bdt: Math.round(b.total_bdt / b.rooms),
+        })),
+      );
+  }
+
+  async assignRoomLine(lineId: string, roomId: string | null) {
+    const [id] = lineId.split(":");
+    await this.assignRoom(id, roomId);
+  }
+
+  async autoAssign(id: string) {
+    this.requirePermission("bookings.write");
+    const b = this.find(id);
+    if (b.rooms !== 1 || b.room_id) return 0;
+    const free = store().rooms.find((r) => r.room_type_id === b.room_type_id && !r.out_of_service && !this.roomClash(r.id, b.check_in, b.check_out, b.id));
+    if (!free) throw new RepoError("ROOM_TAKEN");
+    await this.assignRoom(id, free.id);
+    return 1;
+  }
+
+  async bookingRequests(): Promise<BookingRequest[]> {
+    this.requireStaff();
+    return [];
+  }
+
+  async resolveRequest() {
+    this.requirePermission("bookings.write");
   }
 
   async modifyBooking(id: string, c: BookingChange) {

@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { HOTEL, NAV_LINKS, RESERVATIONS, SERVICE_LINKS, WHATSAPP, directionsUrl } from "@/lib/hotel";
+import { useHotelInfo } from "@/components/cms/HotelInfo";
+import { NAV_LINKS, SERVICE_LINKS } from "@/lib/hotel";
 import type { Photo } from "@/lib/photos";
 import { ArrowRight, ArrowUpRight, Close, Monogram, Phone } from "../icons";
 import { lockScroll } from "../motion/SmoothScroll";
@@ -18,6 +19,10 @@ type Props = { open: boolean; onClose: () => void; photos: Photo[] };
  * close it; focus stays inside while open and returns to the trigger after.
  */
 export default function MenuOverlay({ open, onClose, photos }: Props) {
+  const HOTEL = useHotelInfo();
+  const RESERVATIONS = HOTEL.phones[0] ?? { href: "/contact", display: "the front desk" };
+  const WHATSAPP = HOTEL.whatsapp;
+  const directionsUrl = HOTEL.mapUrl;
   const pathname = usePathname();
   const [hovered, setHovered] = useState(0);
   const panelRef = useRef<HTMLElement>(null);

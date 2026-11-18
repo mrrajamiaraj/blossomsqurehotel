@@ -6,6 +6,7 @@ import { addRoom, deleteRoom, editRoom, setRoomGallery, updateRoom, updateRoomTy
 import type { Housekeeping } from "@/lib/data/types";
 import { formatTaka } from "@/lib/format";
 import { WEEKEND_LABEL } from "@/lib/pricing";
+import { optimiseImage } from "@/lib/cms/optimize";
 import { toast } from "../ui/Toaster";
 
 /* ---------------------------------------------------------- Room type */
@@ -122,25 +123,11 @@ export function RoomTypeEditor(p: TypeProps) {
 
 type PhotoItem = { ref: string; src: string | null };
 
-/**
- * Resizes a phone photo in the browser (longest side 2000px, JPEG) so uploads
- * are fast and small. Falls back to the original file if the browser can't.
- */
-async function shrink(file: File): Promise<File> {
-  try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
-    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
-    if (blob) return new File([blob], "photo.jpg", { type: "image/jpeg" });
-  } catch {
-    // Unsupported format or browser: send the original and let the server check it.
-  }
-  return file;
+function moveRef(list: string[], from: number, to: number) {
+  const next = [...list];
+  const [x] = next.splice(from, 1);
+  next.splice(to, 0, x);
+  return next;
 }
 
 export function RoomPhotos({ typeId, name, photos, canEdit }: { typeId: string; name: string; photos: PhotoItem[]; canEdit: boolean }) {
@@ -163,8 +150,11 @@ export function RoomPhotos({ typeId, name, photos, canEdit }: { typeId: string; 
       let added = 0;
       for (const [i, original] of list.entries()) {
         setProgress(`Uploading ${i + 1} of ${list.length}…`);
+        const { file, width, height } = await optimiseImage(original);
         const form = new FormData();
-        form.append("photo", await shrink(original));
+        form.append("photo", file);
+        if (width) form.append("width", String(width));
+        if (height) form.append("height", String(height));
         const res = await uploadRoomPhoto(typeId, form);
         if (!res.ok) {
           toast(res.message);
@@ -211,6 +201,16 @@ export function RoomPhotos({ typeId, name, photos, canEdit }: { typeId: string; 
                       onClick={() => saveOrder([p.ref, ...refs.filter((r) => r !== p.ref)], "Cover photo changed")}
                     >
                       Cover
+                    </button>
+                  )}
+                  {i > 0 && (
+                    <button type="button" className="a-btn a-btn--sm a-btn--ghost" disabled={pending} aria-label={`Move photo ${i + 1} earlier`} onClick={() => saveOrder(moveRef(refs, i, i - 1), "Order saved")}>
+                      ←
+                    </button>
+                  )}
+                  {i < refs.length - 1 && (
+                    <button type="button" className="a-btn a-btn--sm a-btn--ghost" disabled={pending} aria-label={`Move photo ${i + 1} later`} onClick={() => saveOrder(moveRef(refs, i, i + 1), "Order saved")}>
+                      →
                     </button>
                   )}
                   <button
@@ -321,6 +321,8 @@ type RoomProps = {
   note: string | null;
   occupant: string | null;
   canManage: boolean;
+  /** Extra controls, e.g. maintenance blocks. */
+  children?: React.ReactNode;
 };
 
 function RoomSetup(p: RoomProps) {
@@ -386,6 +388,7 @@ function RoomSetup(p: RoomProps) {
 
 const HK: { id: Housekeeping; label: string }[] = [
   { id: "dirty", label: "Dirty" },
+  { id: "cleaning", label: "Cleaning" },
   { id: "clean", label: "Clean" },
   { id: "inspected", label: "Inspected" },
 ];
@@ -478,6 +481,7 @@ export function RoomTile(p: RoomProps) {
           </div>
         </details>
       )}
+      {p.children}
       {p.canManage && <RoomSetup {...p} />}
     </article>
   );
