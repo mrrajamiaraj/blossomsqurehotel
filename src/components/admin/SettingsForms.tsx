@@ -131,7 +131,7 @@ export function TeamPanel({ staff, selfId, live, myRole }: { staff: StaffMember[
         <h2 className="a-h2">
           Team<span className="a-count">{staff.length}</span>
         </h2>
-        <span className="a-hint">You can appoint and change people below your own role. Owners, managers and finance sign in with an authenticator app.</span>
+        <span className="a-hint">You can appoint and change people below your own role. Anyone can add an authenticator-app code to their sign-in from My account.</span>
       </div>
       <div className="a-table-wrap">
         <table className="a-table a-table--stack">

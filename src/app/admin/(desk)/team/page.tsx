@@ -50,7 +50,7 @@ export default async function TeamPage() {
           <h2 id="roles-h" className="a-h2">
             What each role can do
           </h2>
-          <span className="a-hint">Owners, super admins, managers and finance sign in with an authenticator app.</span>
+          <span className="a-hint">An authenticator-app code is optional for every role; each person can turn it on from My account.</span>
         </div>
         <ul role="list" style={{ listStyle: "none", margin: 0, padding: 0 }}>
           {ROLES.map((r) => (
